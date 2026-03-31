@@ -78,7 +78,7 @@
                 {
                     <MudChip T="string" Text="@($"{tag.Name} ({tag.ComicCount})")"
                              Color="Color.Default" Size="Size.Medium"
-                             OnClose="@(() => DeleteTag(tag))" />
+                             OnClose="@(async (MudChip<string> _) => await DeleteTag(tag))" />
                 }
             </div>
             @if (!_tags.Any())
@@ -100,14 +100,14 @@
 
     private async Task LoadAll()
     {
-        _genres = await Mediator.Send(new ComicBooks.Application.Features.Genres.Queries.GetAllGenresQuery());
-        _tags = await Mediator.Send(new ComicBooks.Application.Features.Tags.Queries.GetAllTagsQuery());
+        _genres = await Mediator.Send(new GetAllGenresQuery());
+        _tags = await Mediator.Send(new GetAllTagsQuery());
     }
 
     private async Task AddGenre()
     {
         if (string.IsNullOrWhiteSpace(_newGenreName)) return;
-        await Mediator.Send(new ComicBooks.Application.Features.Genres.Commands.CreateGenreCommand(_newGenreName, _newGenreDesc));
+        await Mediator.Send(new CreateGenreCommand(_newGenreName, _newGenreDesc));
         Snackbar.Add($"Genre '{_newGenreName}' added.", Severity.Success);
         _newGenreName = ""; _newGenreDesc = "";
         await LoadAll();
@@ -118,7 +118,7 @@
         var result = await DialogService.ShowMessageBox("Delete Genre", $"Delete '{genre.Name}'?", yesText: "Delete", cancelText: "Cancel");
         if (result == true)
         {
-            await Mediator.Send(new ComicBooks.Application.Features.Genres.Commands.DeleteGenreCommand(genre.Id));
+            await Mediator.Send(new DeleteGenreCommand(genre.Id));
             Snackbar.Add($"Genre '{genre.Name}' deleted.", Severity.Success);
             await LoadAll();
         }
@@ -127,7 +127,7 @@
     private async Task AddTag()
     {
         if (string.IsNullOrWhiteSpace(_newTagName)) return;
-        await Mediator.Send(new ComicBooks.Application.Features.Tags.Commands.CreateTagCommand(_newTagName));
+        await Mediator.Send(new CreateTagCommand(_newTagName));
         Snackbar.Add($"Tag '{_newTagName}' added.", Severity.Success);
         _newTagName = "";
         await LoadAll();
@@ -135,7 +135,12 @@
 
     private async Task DeleteTag(TagDto tag)
     {
-        // Using DeleteGenreCommand pattern for tags - simplified
-        Snackbar.Add($"Tag '{tag.Name}' delete feature coming soon.", Severity.Info);
+        var result = await DialogService.ShowMessageBox("Delete Tag", $"Delete '{tag.Name}'?", yesText: "Delete", cancelText: "Cancel");
+        if (result == true)
+        {
+            await Mediator.Send(new DeleteTagCommand(tag.Id));
+            Snackbar.Add($"Tag '{tag.Name}' deleted.", Severity.Success);
+            await LoadAll();
+        }
     }
 }

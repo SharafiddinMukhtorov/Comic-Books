@@ -37,7 +37,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _genres = await Mediator.Send(new ComicBooks.Application.Features.Genres.Queries.GetAllGenresQuery());
+        _genres = await Mediator.Send(new GetAllGenresQuery());
         _loading = false;
     }
 }

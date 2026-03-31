@@ -125,23 +125,23 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _recentComics = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(PageSize: 10));
+        _recentComics = await Mediator.Send(new GetComicsQuery(PageSize: 10));
         _totalComics = _recentComics.TotalCount;
 
-        var genres = await Mediator.Send(new ComicBooks.Application.Features.Genres.Queries.GetAllGenresQuery());
+        var genres = await Mediator.Send(new GetAllGenresQuery());
         _totalGenres = genres.Count;
         _totalChapters = _recentComics.Items.Sum(c => c.ChapterCount);
 
-        var tags = await Mediator.Send(new ComicBooks.Application.Features.Tags.Queries.GetAllTagsQuery());
+        var tags = await Mediator.Send(new GetAllTagsQuery());
         _totalTags = tags.Count;
     }
 
     private Color GetStatusColor(ComicBooks.Domain.Enums.ComicStatus s) => s switch
     {
-        ComicBooks.Domain.Enums.ComicStatus.Ongoing => Color.Success,
-        ComicBooks.Domain.Enums.ComicStatus.Completed => Color.Primary,
-        ComicBooks.Domain.Enums.ComicStatus.Hiatus => Color.Warning,
-        ComicBooks.Domain.Enums.ComicStatus.Cancelled => Color.Error,
+        ComicStatus.Ongoing => Color.Success,
+        ComicStatus.Completed => Color.Primary,
+        ComicStatus.Hiatus => Color.Warning,
+        ComicStatus.Cancelled => Color.Error,
         _ => Color.Default
     };
 }

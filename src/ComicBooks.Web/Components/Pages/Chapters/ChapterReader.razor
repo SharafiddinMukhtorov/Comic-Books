@@ -3,7 +3,7 @@
 @inject IMediator Mediator
 @inject NavigationManager Navigation
 
-<PageTitle>@(_chapter != null ? $"Ch.{_chapter.ChapterNumber} - {_chapter.ComicTitle}" : "Reading...") - ComicBooks</PageTitle>
+<PageTitle>@GetTitle() - ComicBooks</PageTitle>
 
 @if (_loading)
 {
@@ -15,27 +15,32 @@ else if (_chapter is null)
 }
 else
 {
-    <!-- Reader Toolbar -->
-    <MudPaper Elevation="2" Class="pa-3 mb-4 d-flex align-center gap-3 flex-wrap" Style="position:sticky; top:64px; z-index:10; border-radius:8px;">
+    <MudPaper Elevation="2" Class="pa-3 mb-4 d-flex align-center gap-3 flex-wrap"
+              Style="position:sticky; top:64px; z-index:10; border-radius:8px;">
+
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
                        Size="Size.Small"
                        Href="@($"/comic/{_chapter.ComicTitle?.ToLower().Replace(" ", "-")}")"
                        Title="Back to comic" />
 
-        <MudText Typo="Typo.body2" Class="font-medium" Style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+        <MudText Typo="Typo.body2" Class="font-medium"
+                 Style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
             @_chapter.ComicTitle - Chapter @_chapter.ChapterNumber
-            @if (!string.IsNullOrEmpty(_chapter.Title)) { <text> - @_chapter.Title</text> }
+            @if (!string.IsNullOrEmpty(_chapter.Title))
+            {
+                <text> - @_chapter.Title</text>
+            }
         </MudText>
 
         <MudSpacer />
 
-        <!-- Width control -->
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudSelect @bind-Value="_readerWidth" Label="Width" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:110px;">
-                <MudSelectItem Value="@("600px")">Narrow</MudSelectItem>
-                <MudSelectItem Value="@("800px")">Medium</MudSelectItem>
-                <MudSelectItem Value="@("1000px")">Wide</MudSelectItem>
-                <MudSelectItem Value="@("100%")">Full</MudSelectItem>
+            <MudSelect T="string" Value="@_readerWidth" ValueChanged="OnWidthChanged"
+                       Label="Width" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:110px;">
+                <MudSelectItem T="string" Value="@("600px")">Narrow</MudSelectItem>
+                <MudSelectItem T="string" Value="@("800px")">Medium</MudSelectItem>
+                <MudSelectItem T="string" Value="@("1000px")">Wide</MudSelectItem>
+                <MudSelectItem T="string" Value="@("100%")">Full</MudSelectItem>
             </MudSelect>
         </MudHidden>
 
@@ -54,7 +59,6 @@ else
         </MudButton>
     </MudPaper>
 
-    <!-- Pages -->
     <div class="mx-auto" style="max-width:@_readerWidth; transition: max-width 0.3s;">
         @foreach (var page in _pages.OrderBy(p => p.PageNumber))
         {
@@ -67,7 +71,6 @@ else
         }
     </div>
 
-    <!-- Bottom nav -->
     <div class="d-flex justify-center gap-4 mt-8 mb-8">
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large"
                    Disabled="_prevChapterId == Guid.Empty"
@@ -93,6 +96,11 @@ else
     private string _readerWidth = "800px";
     private bool _loading = true;
 
+    private string GetTitle() =>
+        _chapter != null ? $"Ch.{_chapter.ChapterNumber} - {_chapter.ComicTitle}" : "Reading...";
+
+    private void OnWidthChanged(string value) => _readerWidth = value;
+
     protected override async Task OnInitializedAsync() => await LoadChapter();
 
     protected override async Task OnParametersSetAsync()
@@ -105,13 +113,15 @@ else
         _loading = true;
         StateHasChanged();
 
-        var result = await Mediator.Send(new ComicBooks.Application.Features.Chapters.Queries.GetChapterWithPagesQuery(ChapterId));
+        var result = await Mediator.Send(
+            new GetChapterWithPagesQuery(ChapterId));
         _chapter = result.Chapter;
         _pages = result.Pages;
 
         if (_chapter != null)
         {
-            _allChapters = await Mediator.Send(new ComicBooks.Application.Features.Chapters.Queries.GetChaptersByComicQuery(_chapter.ComicId));
+            _allChapters = await Mediator.Send(
+                new GetChaptersByComicQuery(_chapter.ComicId));
             var ordered = _allChapters.OrderBy(c => c.ChapterNumber).ToList();
             var idx = ordered.FindIndex(c => c.Id == ChapterId);
             _prevChapterId = idx > 0 ? ordered[idx - 1].Id : Guid.Empty;

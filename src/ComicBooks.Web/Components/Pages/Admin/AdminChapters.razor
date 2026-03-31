@@ -70,10 +70,11 @@ else
 
     <!-- Comic filter -->
     <MudPaper Elevation="1" Class="pa-4 mb-4">
-        <MudSelect @bind-Value="_filterComicId" Label="Filter by Comic"
+        <MudSelect T="Guid?" Value="_filterComicId"
+                   ValueChanged="@(async (Guid? id) => await OnComicFilterChanged(id))"
+                   Label="Filter by Comic"
                    Variant="Variant.Outlined" Margin="Margin.Dense"
-                   Clearable="true"
-                   ValueChanged="@(async (Guid? id) => await OnComicFilterChanged(id))">
+                   Clearable="true">
             @foreach (var comic in _comics?.Items ?? new())
             {
                 <MudSelectItem Value="@((Guid?)comic.Id)">@comic.Title</MudSelectItem>
@@ -137,7 +138,7 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _comics = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(PageSize: 200));
+        _comics = await Mediator.Send(new GetComicsQuery(PageSize: 200));
         if (Navigation.Uri.Contains("/create")) _showForm = true;
     }
 
@@ -145,7 +146,7 @@ else
     {
         _filterComicId = id;
         if (id.HasValue)
-            _chapters = await Mediator.Send(new ComicBooks.Application.Features.Chapters.Queries.GetChaptersByComicQuery(id.Value));
+            _chapters = await Mediator.Send(new GetChaptersByComicQuery(id.Value));
         else
             _chapters = new();
     }
@@ -163,8 +164,8 @@ else
         _saving = true;
         try
         {
-            var pages = urls.Select((url, i) => new ComicBooks.Application.Features.Chapters.Commands.CreateChapterPageDto(i + 1, url, null, null)).ToList();
-            await Mediator.Send(new ComicBooks.Application.Features.Chapters.Commands.CreateChapterCommand(
+            var pages = urls.Select((url, i) => new CreateChapterPageDto(i + 1, url, null, null)).ToList();
+            await Mediator.Send(new CreateChapterCommand(
                 _form.ComicId, _form.ChapterNumber, _form.Title, null, _form.IsLocked, DateTime.UtcNow, pages));
             Snackbar.Add("Chapter created successfully!", Severity.Success);
             _form = new();
@@ -181,10 +182,10 @@ else
             $"Delete Chapter {chapter.ChapterNumber}?", yesText: "Delete", cancelText: "Cancel");
         if (result == true)
         {
-            await Mediator.Send(new ComicBooks.Application.Features.Chapters.Commands.DeleteChapterCommand(chapter.Id));
+            await Mediator.Send(new DeleteChapterCommand(chapter.Id));
             Snackbar.Add("Chapter deleted.", Severity.Success);
             if (_filterComicId.HasValue)
-                _chapters = await Mediator.Send(new ComicBooks.Application.Features.Chapters.Queries.GetChaptersByComicQuery(_filterComicId.Value));
+                _chapters = await Mediator.Send(new GetChaptersByComicQuery(_filterComicId.Value));
         }
     }
 

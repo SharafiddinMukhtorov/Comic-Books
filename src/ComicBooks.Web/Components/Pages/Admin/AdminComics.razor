@@ -50,7 +50,7 @@
     </HeaderContent>
     <RowTemplate>
         <MudTd>
-            <MudAvatar Image="@context.CoverImageUrl" Size="Size.Medium" Variant="Variant.Rounded" />
+            <MudAvatar Image="@context.CoverImageUrl" Size="Size.Medium" />
         </MudTd>
         <MudTd>
             <MudText Typo="Typo.body2" Class="font-medium">@context.Title</MudText>
@@ -90,7 +90,7 @@
 @if (_comics?.TotalPages > 1)
 {
     <div class="d-flex justify-center mt-4">
-        <MudPagination Count="_comics.TotalPages" @bind-Selected="_page" SelectedChanged="OnPageChanged" Color="Color.Primary" />
+        <MudPagination Count="_comics.TotalPages" Selected="_page" SelectedChanged="OnPageChanged" Color="Color.Primary" />
     </div>
 }
 
@@ -105,7 +105,7 @@
     private async Task LoadComics()
     {
         _loading = true;
-        _comics = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(
+        _comics = await Mediator.Send(new GetComicsQuery(
             PageNumber: _page, PageSize: 20,
             Search: string.IsNullOrWhiteSpace(_search) ? null : _search));
         _loading = false;
@@ -123,7 +123,7 @@
 
         if (result == true)
         {
-            await Mediator.Send(new ComicBooks.Application.Features.Comics.Commands.DeleteComicCommand(comic.Id));
+            await Mediator.Send(new DeleteComicCommand(comic.Id));
             Snackbar.Add($"'{comic.Title}' deleted.", Severity.Success);
             await LoadComics();
         }
@@ -131,10 +131,10 @@
 
     private Color GetStatusColor(ComicBooks.Domain.Enums.ComicStatus s) => s switch
     {
-        ComicBooks.Domain.Enums.ComicStatus.Ongoing => Color.Success,
-        ComicBooks.Domain.Enums.ComicStatus.Completed => Color.Primary,
-        ComicBooks.Domain.Enums.ComicStatus.Hiatus => Color.Warning,
-        ComicBooks.Domain.Enums.ComicStatus.Cancelled => Color.Error,
+        ComicStatus.Ongoing => Color.Success,
+        ComicStatus.Completed => Color.Primary,
+        ComicStatus.Hiatus => Color.Warning,
+        ComicStatus.Cancelled => Color.Error,
         _ => Color.Default
     };
 }

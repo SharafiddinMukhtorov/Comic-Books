@@ -143,9 +143,9 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _comic = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicBySlugQuery(Slug));
+        _comic = await Mediator.Send(new GetComicBySlugQuery(Slug));
         if (_comic != null)
-            _chapters = await Mediator.Send(new ComicBooks.Application.Features.Chapters.Queries.GetChaptersByComicQuery(_comic.Id));
+            _chapters = await Mediator.Send(new GetChaptersByComicQuery(_comic.Id));
         _loading = false;
     }
 
