@@ -1,0 +1,108 @@
+@inherits LayoutComponentBase
+@inject ThemeService ThemeService
+@implements IDisposable
+
+<MudThemeProvider Theme="ThemeService.ComicTheme" IsDarkMode="ThemeService.IsDarkMode" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Elevation="1" Fixed="true" Dense="false">
+        <MudIconButton Icon="@Icons.Material.Filled.Menu"
+                       Color="Color.Inherit"
+                       Edge="Edge.Start"
+                       OnClick="@ToggleDrawer" />
+
+        <MudLink Href="/" Underline="Underline.None">
+            <MudText Typo="Typo.h6" Color="Color.Primary" Class="font-bold ml-2">
+                📚 ComicBooks
+            </MudText>
+        </MudLink>
+
+        <MudSpacer />
+
+        <!-- Search bar - hidden on mobile -->
+        <MudHidden Breakpoint="Breakpoint.SmAndDown">
+            <MudTextField @bind-Value="_searchQuery"
+                          Placeholder="Search comics..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mr-4"
+                          Style="width:300px"
+                          OnKeyDown="@OnSearchKeyDown" />
+        </MudHidden>
+
+        <MudIconButton Icon="@(ThemeService.IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit"
+                       OnClick="ThemeService.ToggleTheme"
+                       Title="Toggle theme" />
+
+        <MudIconButton Icon="@Icons.Material.Filled.AdminPanelSettings"
+                       Color="Color.Inherit"
+                       Href="/admin"
+                       Title="Admin Panel" />
+    </MudAppBar>
+
+    <MudDrawer @bind-Open="_drawerOpen" Elevation="2" Variant="@DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
+        <MudDrawerHeader>
+            <MudText Typo="Typo.h6" Color="Color.Primary">📚 ComicBooks</MudText>
+        </MudDrawerHeader>
+
+        <!-- Mobile search -->
+        <MudHidden Breakpoint="Breakpoint.MdAndUp">
+            <MudTextField @bind-Value="_searchQuery"
+                          Placeholder="Search..."
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Class="mx-3 mb-2"
+                          OnKeyDown="@OnSearchKeyDown" />
+        </MudHidden>
+
+        <MudNavMenu>
+            <MudNavLink Href="/" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Home">Home</MudNavLink>
+            <MudNavLink Href="/comics" Icon="@Icons.Material.Filled.MenuBook">All Comics</MudNavLink>
+            <MudNavLink Href="/comics?type=Manhwa" Icon="@Icons.Material.Filled.AutoStories">Manhwa</MudNavLink>
+            <MudNavLink Href="/comics?type=Manga" Icon="@Icons.Material.Filled.Book">Manga</MudNavLink>
+            <MudNavLink Href="/comics?type=Manhua" Icon="@Icons.Material.Filled.LibraryBooks">Manhua</MudNavLink>
+            <MudNavLink Href="/comics?status=Completed" Icon="@Icons.Material.Filled.CheckCircle">Completed</MudNavLink>
+            <MudNavLink Href="/genres" Icon="@Icons.Material.Filled.Label">Genres</MudNavLink>
+            <MudDivider Class="my-2" />
+            <MudNavLink Href="/admin" Icon="@Icons.Material.Filled.AdminPanelSettings">Admin Panel</MudNavLink>
+        </MudNavMenu>
+    </MudDrawer>
+
+    <MudMainContent Class="pt-16">
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
+            @Body
+        </MudContainer>
+    </MudMainContent>
+</MudLayout>
+
+@code {
+    private bool _drawerOpen = false;
+    private string _searchQuery = "";
+
+    protected override void OnInitialized()
+    {
+        ThemeService.OnThemeChanged += StateHasChanged;
+    }
+
+    private void ToggleDrawer() => _drawerOpen = !_drawerOpen;
+
+    private void OnSearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            Navigation.NavigateTo($"/comics?search={Uri.EscapeDataString(_searchQuery)}");
+        }
+    }
+
+    public void Dispose() => ThemeService.OnThemeChanged -= StateHasChanged;
+
+    [Inject] private NavigationManager Navigation { get; set; } = default!;
+}
