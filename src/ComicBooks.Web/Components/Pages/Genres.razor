@@ -1,0 +1,43 @@
+@page "/genres"
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>Genres - ComicBooks</PageTitle>
+
+<MudText Typo="Typo.h4" Class="mb-6 font-bold">Browse by Genre</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        @foreach (var genre in _genres)
+        {
+            <MudItem xs="6" sm="4" md="3" lg="2">
+                <MudCard Elevation="2" Style="cursor:pointer; border-radius:12px; transition: transform 0.2s, box-shadow 0.2s;"
+                         Class="h-100"
+                         @onclick="@(() => Navigation.NavigateTo($"/comics?genreId={genre.Id}"))">
+                    <MudCardContent Class="text-center pa-4">
+                        <MudIcon Icon="@Icons.Material.Filled.Label" Color="Color.Primary" Style="font-size:36px;" />
+                        <MudText Typo="Typo.h6" Class="mt-2 font-bold">@genre.Name</MudText>
+                        <MudText Typo="Typo.caption" Style="opacity:0.6;">@genre.ComicCount comics</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+@code {
+    private List<GenreDto> _genres = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _genres = await Mediator.Send(new ComicBooks.Application.Features.Genres.Queries.GetAllGenresQuery());
+        _loading = false;
+    }
+}

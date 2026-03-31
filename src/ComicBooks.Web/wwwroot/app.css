@@ -1,0 +1,73 @@
+/* Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    font-family: 'Inter', sans-serif;
+    scroll-behavior: smooth;
+}
+
+/* Comic Card hover effect */
+.comic-card:hover {
+    transform: translateY(-4px) !important;
+    box-shadow: 0 12px 30px rgba(233, 69, 96, 0.2) !important;
+}
+
+.comic-card:hover img {
+    transform: scale(1.05);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #e94560;
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #c73652;
+}
+
+/* Font utilities */
+.font-bold { font-weight: 700 !important; }
+.font-medium { font-weight: 500 !important; }
+
+/* Reader page body background */
+.reader-page {
+    background: #0a0a0a;
+}
+
+/* MudBlazor overrides */
+.mud-nav-link.active {
+    color: #e94560 !important;
+    background: rgba(233, 69, 96, 0.1) !important;
+}
+
+.mud-appbar {
+    backdrop-filter: blur(10px);
+}
+
+/* Responsive grid gap */
+@media (max-width: 600px) {
+    .mud-container {
+        padding-left: 12px !important;
+        padding-right: 12px !important;
+    }
+}
+
+/* Loading skeleton animation */
+@keyframes shimmer {
+    0% { background-position: -200px 0; }
+    100% { background-position: calc(200px + 100%) 0; }
+}

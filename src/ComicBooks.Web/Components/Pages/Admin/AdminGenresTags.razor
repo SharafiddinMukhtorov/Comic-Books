@@ -1,0 +1,141 @@
+@page "/admin/genres"
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Genres - Admin</PageTitle>
+
+<MudGrid>
+    <!-- Genres -->
+    <MudItem xs="12" md="6">
+        <div class="d-flex justify-space-between align-center mb-4">
+            <MudText Typo="Typo.h5" Class="font-bold">Genres</MudText>
+        </div>
+
+        <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius:12px;">
+            <MudText Typo="Typo.subtitle2" Class="mb-3">Add New Genre</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="7">
+                    <MudTextField @bind-Value="_newGenreName" Label="Genre Name" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" Placeholder="e.g. Action" />
+                </MudItem>
+                <MudItem xs="12" sm="5">
+                    <MudTextField @bind-Value="_newGenreDesc" Label="Description" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" />
+                </MudItem>
+            </MudGrid>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddGenre"
+                       StartIcon="@Icons.Material.Filled.Add" Class="mt-3">Add Genre</MudButton>
+        </MudPaper>
+
+        <MudTable Items="_genres" Hover="true" Elevation="2" Dense="true" Style="border-radius:12px;">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Comics</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudText Typo="Typo.body2" Class="font-medium">@context.Name</MudText>
+                    <MudText Typo="Typo.caption" Style="opacity:0.6;">/@context.Slug</MudText>
+                </MudTd>
+                <MudTd><MudChip T="string" Size="Size.Small" Label="true">@context.ComicCount</MudChip></MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                                   OnClick="@(() => DeleteGenre(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudItem>
+
+    <!-- Tags -->
+    <MudItem xs="12" md="6">
+        <div class="d-flex justify-space-between align-center mb-4">
+            <MudText Typo="Typo.h5" Class="font-bold">Tags</MudText>
+        </div>
+
+        <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius:12px;">
+            <MudText Typo="Typo.subtitle2" Class="mb-3">Add New Tag</MudText>
+            <MudGrid>
+                <MudItem xs="12" sm="8">
+                    <MudTextField @bind-Value="_newTagName" Label="Tag Name" Variant="Variant.Outlined"
+                                  Margin="Margin.Dense" Placeholder="e.g. Strong MC" />
+                </MudItem>
+                <MudItem xs="12" sm="4">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddTag"
+                               StartIcon="@Icons.Material.Filled.Add" FullWidth="true" Style="height:40px;">
+                        Add Tag
+                    </MudButton>
+                </MudItem>
+            </MudGrid>
+        </MudPaper>
+
+        <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var tag in _tags)
+                {
+                    <MudChip T="string" Text="@($"{tag.Name} ({tag.ComicCount})")"
+                             Color="Color.Default" Size="Size.Medium"
+                             OnClose="@(() => DeleteTag(tag))" />
+                }
+            </div>
+            @if (!_tags.Any())
+            {
+                <MudText Typo="Typo.body2" Style="opacity:0.5;">No tags yet.</MudText>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    private List<GenreDto> _genres = new();
+    private List<TagDto> _tags = new();
+    private string _newGenreName = "";
+    private string _newGenreDesc = "";
+    private string _newTagName = "";
+
+    protected override async Task OnInitializedAsync() => await LoadAll();
+
+    private async Task LoadAll()
+    {
+        _genres = await Mediator.Send(new ComicBooks.Application.Features.Genres.Queries.GetAllGenresQuery());
+        _tags = await Mediator.Send(new ComicBooks.Application.Features.Tags.Queries.GetAllTagsQuery());
+    }
+
+    private async Task AddGenre()
+    {
+        if (string.IsNullOrWhiteSpace(_newGenreName)) return;
+        await Mediator.Send(new ComicBooks.Application.Features.Genres.Commands.CreateGenreCommand(_newGenreName, _newGenreDesc));
+        Snackbar.Add($"Genre '{_newGenreName}' added.", Severity.Success);
+        _newGenreName = ""; _newGenreDesc = "";
+        await LoadAll();
+    }
+
+    private async Task DeleteGenre(GenreDto genre)
+    {
+        var result = await DialogService.ShowMessageBox("Delete Genre", $"Delete '{genre.Name}'?", yesText: "Delete", cancelText: "Cancel");
+        if (result == true)
+        {
+            await Mediator.Send(new ComicBooks.Application.Features.Genres.Commands.DeleteGenreCommand(genre.Id));
+            Snackbar.Add($"Genre '{genre.Name}' deleted.", Severity.Success);
+            await LoadAll();
+        }
+    }
+
+    private async Task AddTag()
+    {
+        if (string.IsNullOrWhiteSpace(_newTagName)) return;
+        await Mediator.Send(new ComicBooks.Application.Features.Tags.Commands.CreateTagCommand(_newTagName));
+        Snackbar.Add($"Tag '{_newTagName}' added.", Severity.Success);
+        _newTagName = "";
+        await LoadAll();
+    }
+
+    private async Task DeleteTag(TagDto tag)
+    {
+        // Using DeleteGenreCommand pattern for tags - simplified
+        Snackbar.Add($"Tag '{tag.Name}' delete feature coming soon.", Severity.Info);
+    }
+}

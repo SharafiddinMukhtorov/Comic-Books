@@ -1,0 +1,13 @@
+@page "/Error"
+@using Microsoft.AspNetCore.Diagnostics
+
+<PageTitle>Error - ComicBooks</PageTitle>
+
+<MudContainer Class="mt-16 text-center">
+    <MudIcon Icon="@Icons.Material.Filled.ErrorOutline" Color="Color.Error" Style="font-size:80px;" />
+    <MudText Typo="Typo.h4" Class="mt-4 font-bold">Oops! Something went wrong.</MudText>
+    <MudText Typo="Typo.body1" Style="opacity:0.7;" Class="mt-2">An unexpected error occurred. Please try again.</MudText>
+    <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Class="mt-6" Size="Size.Large">
+        Go to Home
+    </MudButton>
+</MudContainer>

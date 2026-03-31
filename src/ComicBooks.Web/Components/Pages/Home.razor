@@ -1,0 +1,87 @@
+@page "/"
+@rendermode InteractiveServer
+@inject IMediator Mediator
+
+<PageTitle>ComicBooks - Read Manga, Manhwa, Manhua Online</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+
+<!-- Hero Banner: Featured Comics -->
+@if (_featured?.Items.Any() == true)
+{
+    <MudText Typo="Typo.h4" Class="mb-4 font-bold">
+        <MudIcon Icon="@Icons.Material.Filled.Stars" Color="Color.Warning" Class="mr-2" />
+        Featured
+    </MudText>
+
+    <MudGrid Class="mb-8">
+        @foreach (var comic in _featured.Items.Take(4))
+        {
+            <MudItem xs="6" sm="4" md="3">
+                <ComicCard Comic="comic" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+<!-- Popular -->
+@if (_popular?.Items.Any() == true)
+{
+    <MudText Typo="Typo.h5" Class="mb-4 font-bold">
+        <MudIcon Icon="@Icons.Material.Filled.LocalFireDepartment" Color="Color.Error" Class="mr-2" />
+        Popular
+    </MudText>
+
+    <MudGrid Class="mb-8">
+        @foreach (var comic in _popular.Items.Take(8))
+        {
+            <MudItem xs="6" sm="4" md="3" lg="2">
+                <ComicCard Comic="comic" />
+            </MudItem>
+        }
+    </MudGrid>
+}
+
+<!-- Latest Updates -->
+@if (_latest?.Items.Any() == true)
+{
+    <MudText Typo="Typo.h5" Class="mb-4 font-bold">
+        <MudIcon Icon="@Icons.Material.Filled.Update" Color="Color.Primary" Class="mr-2" />
+        Latest Updates
+    </MudText>
+
+    <MudGrid>
+        @foreach (var comic in _latest.Items)
+        {
+            <MudItem xs="6" sm="4" md="3" lg="2">
+                <ComicCard Comic="comic" />
+            </MudItem>
+        }
+    </MudGrid>
+
+    <MudButton Href="/comics"
+               Variant="Variant.Outlined"
+               Color="Color.Primary"
+               Class="mt-6 d-block mx-auto"
+               Style="width:fit-content">
+        View All Comics
+    </MudButton>
+}
+
+@code {
+    private PaginatedList<ComicDto>? _featured;
+    private PaginatedList<ComicDto>? _popular;
+    private PaginatedList<ComicDto>? _latest;
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _featured = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(PageSize: 4, IsFeatured: true));
+        _popular = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(PageSize: 8, IsPopular: true, SortBy: "views"));
+        _latest = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(PageSize: 12));
+        _loading = false;
+    }
+}

@@ -1,0 +1,140 @@
+@page "/admin/comics"
+@layout AdminLayout
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+@inject ISnackbar Snackbar
+@inject IDialogService DialogService
+
+<PageTitle>Manage Comics - Admin</PageTitle>
+
+<div class="d-flex justify-space-between align-center mb-6">
+    <MudText Typo="Typo.h5" Class="font-bold">Comics Management</MudText>
+    <MudButton Href="/admin/comics/create" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add">
+        Add New Comic
+    </MudButton>
+</div>
+
+<!-- Search & Filter -->
+<MudPaper Elevation="1" Class="pa-4 mb-4">
+    <MudGrid>
+        <MudItem xs="12" sm="8">
+            <MudTextField @bind-Value="_search" Label="Search comics..." Variant="Variant.Outlined"
+                          Margin="Margin.Dense" Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          OnKeyDown="@(async (e) => { if (e.Key == "Enter") await LoadComics(); })" />
+        </MudItem>
+        <MudItem xs="12" sm="4" Class="d-flex gap-2">
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="LoadComics" FullWidth="true">Search</MudButton>
+            <MudButton Variant="Variant.Outlined" OnClick="ClearFilter" FullWidth="true">Clear</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+}
+
+<MudTable Items="_comics?.Items" Hover="true" Elevation="2" Style="border-radius:12px;"
+          Loading="_loading" Dense="false">
+    <HeaderContent>
+        <MudTh>Cover</MudTh>
+        <MudTh>Title</MudTh>
+        <MudTh>Type</MudTh>
+        <MudTh>Status</MudTh>
+        <MudTh>Chapters</MudTh>
+        <MudTh>Rating</MudTh>
+        <MudTh>Featured</MudTh>
+        <MudTh>Actions</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd>
+            <MudAvatar Image="@context.CoverImageUrl" Size="Size.Medium" Variant="Variant.Rounded" />
+        </MudTd>
+        <MudTd>
+            <MudText Typo="Typo.body2" Class="font-medium">@context.Title</MudText>
+            <MudText Typo="Typo.caption" Style="opacity:0.6;">@context.Author</MudText>
+        </MudTd>
+        <MudTd><MudChip T="string" Size="Size.Small" Label="true">@context.Type</MudChip></MudTd>
+        <MudTd>
+            <MudChip T="string" Size="Size.Small" Label="true" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+        </MudTd>
+        <MudTd>
+            <MudLink Href="@($"/admin/chapters?comicId={context.Id}")">@context.ChapterCount ch.</MudLink>
+        </MudTd>
+        <MudTd>
+            <div class="d-flex align-center gap-1">
+                <MudIcon Icon="@Icons.Material.Filled.Star" Size="Size.Small" Color="Color.Warning" />
+                <MudText Typo="Typo.body2">@context.AverageRating.ToString("F1")</MudText>
+            </div>
+        </MudTd>
+        <MudTd>
+            @if (context.IsFeatured) { <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" /> }
+            else { <MudIcon Icon="@Icons.Material.Filled.RadioButtonUnchecked" Size="Size.Small" Style="opacity:0.3;" /> }
+        </MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
+                           Href="@($"/admin/comics/edit/{context.Id}")" Title="Edit" />
+            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                           Href="@($"/comic/{context.Slug}")" Title="View" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                           OnClick="@(() => ConfirmDelete(context))" Title="Delete" />
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent>
+        <MudText>No comics found.</MudText>
+    </NoRecordsContent>
+</MudTable>
+
+@if (_comics?.TotalPages > 1)
+{
+    <div class="d-flex justify-center mt-4">
+        <MudPagination Count="_comics.TotalPages" @bind-Selected="_page" SelectedChanged="OnPageChanged" Color="Color.Primary" />
+    </div>
+}
+
+@code {
+    private PaginatedList<ComicDto>? _comics;
+    private string _search = "";
+    private bool _loading = true;
+    private int _page = 1;
+
+    protected override async Task OnInitializedAsync() => await LoadComics();
+
+    private async Task LoadComics()
+    {
+        _loading = true;
+        _comics = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(
+            PageNumber: _page, PageSize: 20,
+            Search: string.IsNullOrWhiteSpace(_search) ? null : _search));
+        _loading = false;
+    }
+
+    private async Task OnPageChanged(int page) { _page = page; await LoadComics(); }
+
+    private void ClearFilter() { _search = ""; _page = 1; _ = LoadComics(); }
+
+    private async Task ConfirmDelete(ComicDto comic)
+    {
+        var result = await DialogService.ShowMessageBox("Delete Comic",
+            $"Are you sure you want to delete '{comic.Title}'? This will also delete all chapters.",
+            yesText: "Delete", cancelText: "Cancel");
+
+        if (result == true)
+        {
+            await Mediator.Send(new ComicBooks.Application.Features.Comics.Commands.DeleteComicCommand(comic.Id));
+            Snackbar.Add($"'{comic.Title}' deleted.", Severity.Success);
+            await LoadComics();
+        }
+    }
+
+    private Color GetStatusColor(ComicBooks.Domain.Enums.ComicStatus s) => s switch
+    {
+        ComicBooks.Domain.Enums.ComicStatus.Ongoing => Color.Success,
+        ComicBooks.Domain.Enums.ComicStatus.Completed => Color.Primary,
+        ComicBooks.Domain.Enums.ComicStatus.Hiatus => Color.Warning,
+        ComicBooks.Domain.Enums.ComicStatus.Cancelled => Color.Error,
+        _ => Color.Default
+    };
+}

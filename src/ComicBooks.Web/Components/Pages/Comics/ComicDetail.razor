@@ -1,0 +1,153 @@
+@page "/comic/{Slug}"
+@rendermode InteractiveServer
+@inject IMediator Mediator
+@inject NavigationManager Navigation
+
+<PageTitle>@(_comic?.Title ?? "Loading...") - ComicBooks</PageTitle>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else if (_comic is null)
+{
+    <MudAlert Severity="Severity.Error">Comic not found.</MudAlert>
+}
+else
+{
+    <!-- Banner -->
+    @if (!string.IsNullOrEmpty(_comic.BannerImageUrl))
+    {
+        <div style="width:100%; height:250px; overflow:hidden; border-radius:12px; margin-bottom:24px; position:relative;">
+            <MudImage Src="@_comic.BannerImageUrl" Alt="Banner" ObjectFit="ObjectFit.Cover" Width="100%" Height="100%" />
+            <div style="position:absolute;inset:0;background:linear-gradient(transparent 30%,var(--mud-palette-background));" />
+        </div>
+    }
+
+    <MudGrid>
+        <!-- Cover + Info -->
+        <MudItem xs="12" sm="4" md="3">
+            <MudCard Elevation="4" Style="border-radius:12px; overflow:hidden;">
+                <MudImage Src="@(_comic.CoverImageUrl ?? "https://placehold.co/300x420/1a1a2e/e94560?text=No+Cover")"
+                          Alt="@_comic.Title"
+                          ObjectFit="ObjectFit.Cover"
+                          Width="100%" />
+            </MudCard>
+
+            <MudPaper Elevation="1" Class="pa-3 mt-3">
+                <MudText Typo="Typo.subtitle2" Style="opacity:0.6;">INFO</MudText>
+                <MudDivider Class="my-2" />
+                <InfoRow Label="Status" Value="@_comic.Status.ToString()" />
+                <InfoRow Label="Type" Value="@_comic.Type.ToString()" />
+                @if (_comic.Author != null) { <InfoRow Label="Author" Value="@_comic.Author" /> }
+                @if (_comic.Artist != null) { <InfoRow Label="Artist" Value="@_comic.Artist" /> }
+                @if (_comic.ReleaseYear.HasValue) { <InfoRow Label="Year" Value="@_comic.ReleaseYear.ToString()!" /> }
+                <InfoRow Label="Chapters" Value="@_comic.ChapterCount.ToString()" />
+                <InfoRow Label="Views" Value="@FormatViews(_comic.ViewCount)" />
+            </MudPaper>
+        </MudItem>
+
+        <!-- Details -->
+        <MudItem xs="12" sm="8" md="9">
+            <MudText Typo="Typo.h4" Class="font-bold mb-2">@_comic.Title</MudText>
+
+            @if (!string.IsNullOrEmpty(_comic.AlternativeTitles))
+            {
+                <MudText Typo="Typo.body2" Style="opacity:0.6; font-style:italic;" Class="mb-2">@_comic.AlternativeTitles</MudText>
+            }
+
+            <!-- Rating -->
+            <div class="d-flex align-center gap-2 mb-3">
+                <MudRating ReadOnly="true" SelectedValue="@((int)Math.Round(_comic.AverageRating / 2))" MaxValue="5" />
+                <MudText Typo="Typo.body2">@_comic.AverageRating.ToString("F1") / 10</MudText>
+            </div>
+
+            <!-- Genres -->
+            <div class="d-flex flex-wrap gap-2 mb-4">
+                @foreach (var genre in _comic.Genres)
+                {
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Label="true"
+                             OnClick="@(() => Navigation.NavigateTo($"/comics?genre={genre}"))">
+                        @genre
+                    </MudChip>
+                }
+                @foreach (var tag in _comic.Tags)
+                {
+                    <MudChip T="string" Color="Color.Default" Size="Size.Small" Label="true">@tag</MudChip>
+                }
+            </div>
+
+            <!-- Description -->
+            @if (!string.IsNullOrEmpty(_comic.Description))
+            {
+                <MudPaper Elevation="0" Class="pa-4 mb-4" Style="border-radius:8px; border:1px solid var(--mud-palette-divider);">
+                    <MudText Typo="Typo.body1" Style="line-height:1.8;">@_comic.Description</MudText>
+                </MudPaper>
+            }
+
+            <!-- Start Reading -->
+            @if (_chapters.Any())
+            {
+                <div class="d-flex gap-3 mb-6">
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.PlayArrow"
+                               Href="@($"/chapter/{_chapters.Last().Id}")">
+                        Start Reading Ch.1
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined"
+                               Color="Color.Primary"
+                               Size="Size.Large"
+                               StartIcon="@Icons.Material.Filled.SkipNext"
+                               Href="@($"/chapter/{_chapters.First().Id}")">
+                        Latest Ch.@_chapters.First().ChapterNumber
+                    </MudButton>
+                </div>
+            }
+
+            <!-- Chapter List -->
+            <MudText Typo="Typo.h6" Class="mb-3 font-bold">Chapters (@_chapters.Count)</MudText>
+            <MudPaper Elevation="1" Style="max-height:500px; overflow-y:auto; border-radius:8px;">
+                <MudList T="ChapterDto" Dense="true">
+                    @foreach (var chapter in _chapters)
+                    {
+                        <MudListItem T="ChapterDto"
+                                     OnClick="@(() => Navigation.NavigateTo($"/chapter/{chapter.Id}"))"
+                                     Style="cursor:pointer; border-bottom:1px solid var(--mud-palette-divider);">
+                            <div class="d-flex justify-space-between align-center w-100">
+                                <div>
+                                    <MudText Typo="Typo.body2" Class="font-medium">
+                                        Chapter @chapter.ChapterNumber @(chapter.Title != null ? $"- {chapter.Title}" : "")
+                                    </MudText>
+                                    <MudText Typo="Typo.caption" Style="opacity:0.6;">
+                                        @chapter.PublishedAt?.ToString("MMM dd, yyyy") · @chapter.PageCount pages
+                                    </MudText>
+                                </div>
+                                <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Size="Size.Small" />
+                            </div>
+                        </MudListItem>
+                    }
+                </MudList>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+
+    private ComicDto? _comic;
+    private List<ChapterDto> _chapters = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _comic = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicBySlugQuery(Slug));
+        if (_comic != null)
+            _chapters = await Mediator.Send(new ComicBooks.Application.Features.Chapters.Queries.GetChaptersByComicQuery(_comic.Id));
+        _loading = false;
+    }
+
+    private string FormatViews(int views) => views >= 1000000 ? $"{views / 1000000.0:F1}M" : views >= 1000 ? $"{views / 1000.0:F0}K" : views.ToString();
+}
