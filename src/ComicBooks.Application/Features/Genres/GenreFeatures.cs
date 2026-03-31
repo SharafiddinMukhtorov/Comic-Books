@@ -30,9 +30,6 @@ public class GetAllGenresQueryHandler : IRequestHandler<GetAllGenresQuery, List<
             .ToListAsync(cancellationToken);
     }
 }
-
-namespace ComicBooks.Application.Features.Genres.Commands;
-
 public record CreateGenreCommand(string Name, string? Description) : IRequest<Guid>;
 
 public class CreateGenreCommandValidator : AbstractValidator<CreateGenreCommand>
@@ -77,8 +74,6 @@ public class DeleteGenreCommandHandler : IRequestHandler<DeleteGenreCommand, boo
     }
 }
 
-namespace ComicBooks.Application.Features.Tags.Queries;
-
 public record GetAllTagsQuery : IRequest<List<TagDto>>;
 
 public class GetAllTagsQueryHandler : IRequestHandler<GetAllTagsQuery, List<TagDto>>
@@ -101,8 +96,6 @@ public class GetAllTagsQueryHandler : IRequestHandler<GetAllTagsQuery, List<TagD
             .ToListAsync(cancellationToken);
     }
 }
-
-namespace ComicBooks.Application.Features.Tags.Commands;
 
 public record CreateTagCommand(string Name) : IRequest<Guid>;
 
