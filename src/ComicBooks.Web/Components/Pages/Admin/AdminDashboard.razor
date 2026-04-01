@@ -3,126 +3,120 @@
 @rendermode InteractiveServer
 @inject IMediator Mediator
 
-<PageTitle>Dashboard - Admin</PageTitle>
+<PageTitle>Boshqaruv paneli - Admin</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-6 font-bold">Dashboard</MudText>
+<MudText Typo="Typo.h4" Class="mb-6 font-bold">📊 Boshqaruv paneli</MudText>
 
 <MudGrid Class="mb-6">
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid var(--mud-palette-primary);">
+        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #7c3aed;">
             <div class="d-flex justify-space-between align-center">
                 <div>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6; text-transform:uppercase; letter-spacing:1px;">Total Comics</MudText>
+                    <MudText Typo="Typo.caption" Style="opacity:0.55; text-transform:uppercase; letter-spacing:1px;">Jami komiklar</MudText>
                     <MudText Typo="Typo.h4" Class="font-bold mt-1">@_totalComics</MudText>
                 </div>
-                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Primary" Style="font-size:40px; opacity:0.3;" />
+                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Primary" Style="font-size:44px; opacity:0.25;" />
             </div>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #4caf50;">
+        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #059669;">
             <div class="d-flex justify-space-between align-center">
                 <div>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6; text-transform:uppercase; letter-spacing:1px;">Total Chapters</MudText>
+                    <MudText Typo="Typo.caption" Style="opacity:0.55; text-transform:uppercase; letter-spacing:1px;">Jami boblar</MudText>
                     <MudText Typo="Typo.h4" Class="font-bold mt-1">@_totalChapters</MudText>
                 </div>
-                <MudIcon Icon="@Icons.Material.Filled.AutoStories" Style="color:#4caf50; font-size:40px; opacity:0.3;" />
+                <MudIcon Icon="@Icons.Material.Filled.AutoStories" Style="color:#059669; font-size:44px; opacity:0.25;" />
             </div>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #ff9800;">
+        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #f59e0b;">
             <div class="d-flex justify-space-between align-center">
                 <div>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6; text-transform:uppercase; letter-spacing:1px;">Genres</MudText>
+                    <MudText Typo="Typo.caption" Style="opacity:0.55; text-transform:uppercase; letter-spacing:1px;">Janrlar</MudText>
                     <MudText Typo="Typo.h4" Class="font-bold mt-1">@_totalGenres</MudText>
                 </div>
-                <MudIcon Icon="@Icons.Material.Filled.Label" Style="color:#ff9800; font-size:40px; opacity:0.3;" />
+                <MudIcon Icon="@Icons.Material.Filled.Label" Style="color:#f59e0b; font-size:44px; opacity:0.25;" />
             </div>
         </MudPaper>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
-        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #9c27b0;">
+        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #ec4899;">
             <div class="d-flex justify-space-between align-center">
                 <div>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6; text-transform:uppercase; letter-spacing:1px;">Tags</MudText>
+                    <MudText Typo="Typo.caption" Style="opacity:0.55; text-transform:uppercase; letter-spacing:1px;">Teglar</MudText>
                     <MudText Typo="Typo.h4" Class="font-bold mt-1">@_totalTags</MudText>
                 </div>
-                <MudIcon Icon="@Icons.Material.Filled.Tag" Style="color:#9c27b0; font-size:40px; opacity:0.3;" />
+                <MudIcon Icon="@Icons.Material.Filled.Tag" Style="color:#ec4899; font-size:44px; opacity:0.25;" />
             </div>
         </MudPaper>
     </MudItem>
 </MudGrid>
 
-<MudText Typo="Typo.h6" Class="mb-4 font-bold">Quick Actions</MudText>
+<MudText Typo="Typo.h6" Class="mb-4 font-bold">⚡ Tezkor amallar</MudText>
 <MudGrid Class="mb-6">
     <MudItem xs="12" sm="6" md="3">
         <MudButton Href="/admin/comics/create" Variant="Variant.Filled" Color="Color.Primary"
-                   FullWidth="true" Size="Size.Large"
-                   StartIcon="@Icons.Material.Filled.Add" Style="height:60px; border-radius:10px;">
-            Add Comic
+                   FullWidth="true" Size="Size.Large" StartIcon="@Icons.Material.Filled.Add"
+                   Style="height:58px; border-radius:10px; text-transform:none; font-weight:700;">
+            Komik qo'shish
         </MudButton>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
-        <MudButton Href="/admin/chapters/create" Variant="Variant.Outlined" Color="Color.Primary"
-                   FullWidth="true" Size="Size.Large"
-                   StartIcon="@Icons.Material.Filled.Add" Style="height:60px; border-radius:10px;">
-            Add Chapter
-        </MudButton>
-    </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <MudButton Href="/admin/genres" Variant="Variant.Outlined" Color="Color.Default"
-                   FullWidth="true" Size="Size.Large"
-                   StartIcon="@Icons.Material.Filled.Label" Style="height:60px; border-radius:10px;">
-            Manage Genres
+        <MudButton Href="/admin/chapters" Variant="Variant.Outlined" Color="Color.Primary"
+                   FullWidth="true" Size="Size.Large" StartIcon="@Icons.Material.Filled.Add"
+                   Style="height:58px; border-radius:10px; text-transform:none;">
+            Bob qo'shish
         </MudButton>
     </MudItem>
     <MudItem xs="12" sm="6" md="3">
         <MudButton Href="/admin/comics" Variant="Variant.Outlined" Color="Color.Default"
-                   FullWidth="true" Size="Size.Large"
-                   StartIcon="@Icons.Material.Filled.MenuBook" Style="height:60px; border-radius:10px;">
-            All Comics
+                   FullWidth="true" Size="Size.Large" StartIcon="@Icons.Material.Filled.MenuBook"
+                   Style="height:58px; border-radius:10px; text-transform:none;">
+            Komiklar
+        </MudButton>
+    </MudItem>
+    <MudItem xs="12" sm="6" md="3">
+        <MudButton Href="/admin/genres" Variant="Variant.Outlined" Color="Color.Default"
+                   FullWidth="true" Size="Size.Large" StartIcon="@Icons.Material.Filled.Label"
+                   Style="height:58px; border-radius:10px; text-transform:none;">
+            Janrlar & Teglar
         </MudButton>
     </MudItem>
 </MudGrid>
 
-<MudText Typo="Typo.h6" Class="mb-4 font-bold">Recent Comics</MudText>
-
-@if (_recentComics != null)
+<MudText Typo="Typo.h6" Class="mb-4 font-bold">🕒 So'nggi komiklar</MudText>
+@if (_recent != null)
 {
-    <MudTable Items="@_recentComics.Items" Hover="true" Elevation="2" Style="border-radius:12px;">
+    <MudTable Items="@_recent.Items" Hover="true" Elevation="2" Style="border-radius:12px;">
         <HeaderContent>
-            <MudTh>Title</MudTh>
-            <MudTh>Type</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Chapters</MudTh>
-            <MudTh>Views</MudTh>
-            <MudTh>Actions</MudTh>
+            <MudTh>Muqova</MudTh>
+            <MudTh>Nomi</MudTh>
+            <MudTh>Turi</MudTh>
+            <MudTh>Holati</MudTh>
+            <MudTh>Boblar</MudTh>
+            <MudTh>Ko'rildi</MudTh>
+            <MudTh>Amallar</MudTh>
         </HeaderContent>
         <RowTemplate>
+            <MudTd><MudAvatar Image="@context.CoverImageUrl" Size="Size.Medium" /></MudTd>
             <MudTd>
-                <div class="d-flex align-center gap-2">
-                    <MudAvatar Size="Size.Small" Image="@context.CoverImageUrl" />
-                    <MudText Typo="Typo.body2" Class="font-medium">@context.Title</MudText>
-                </div>
+                <MudText Typo="Typo.body2" Class="font-medium">@context.Title</MudText>
+                <MudText Typo="Typo.caption" Style="opacity:0.5;">@context.Author</MudText>
             </MudTd>
+            <MudTd><MudChip T="string" Size="Size.Small" Label="true">@context.Type</MudChip></MudTd>
             <MudTd>
-                <MudChip T="string" Size="Size.Small" Label="true">@context.Type</MudChip>
-            </MudTd>
-            <MudTd>
-                <MudChip T="string" Size="Size.Small" Label="true" Color="@GetStatusColor(context.Status)">
-                    @context.Status
+                <MudChip T="string" Size="Size.Small" Label="true" Color="@GetColor(context.Status)">
+                    @StatusText(context.Status)
                 </MudChip>
             </MudTd>
             <MudTd>@context.ChapterCount</MudTd>
             <MudTd>@context.ViewCount.ToString("N0")</MudTd>
             <MudTd>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                               Size="Size.Small"
-                               Color="Color.Primary"
+                <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary"
                                Href="@($"/admin/comics/edit/{context.Id}")" />
-                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                               Size="Size.Small"
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
                                Href="@($"/comic/{context.Slug}")" />
             </MudTd>
         </RowTemplate>
@@ -130,28 +124,33 @@
 }
 
 @code {
-    private PaginatedList<ComicDto>? _recentComics;
+    private PaginatedList<ComicDto>? _recent;
     private int _totalComics, _totalChapters, _totalGenres, _totalTags;
 
     protected override async Task OnInitializedAsync()
     {
-        _recentComics = await Mediator.Send(new GetComicsQuery(PageSize: 10));
-        _totalComics = _recentComics.TotalCount;
-        _totalChapters = _recentComics.Items.Sum(c => c.ChapterCount);
-
+        _recent = await Mediator.Send(new GetComicsQuery(PageSize: 10));
+        _totalComics = _recent.TotalCount;
+        _totalChapters = _recent.Items.Sum(c => c.ChapterCount);
         var genres = await Mediator.Send(new GetAllGenresQuery());
         _totalGenres = genres.Count;
-
         var tags = await Mediator.Send(new GetAllTagsQuery());
         _totalTags = tags.Count;
     }
 
-    private Color GetStatusColor(ComicStatus s) => s switch
+    private Color GetColor(ComicStatus s) => s switch
     {
-        ComicStatus.Ongoing => Color.Success,
+        ComicStatus.Ongoing   => Color.Success,
         ComicStatus.Completed => Color.Primary,
-        ComicStatus.Hiatus => Color.Warning,
-        ComicStatus.Cancelled => Color.Error,
-        _ => Color.Default
+        ComicStatus.Hiatus    => Color.Warning,
+        _                     => Color.Default
+    };
+
+    private string StatusText(ComicStatus s) => s switch
+    {
+        ComicStatus.Ongoing   => "Davom etmoqda",
+        ComicStatus.Completed => "Tugallangan",
+        ComicStatus.Hiatus    => "To'xtatilgan",
+        _                     => s.ToString()
     };
 }

@@ -1,47 +1,38 @@
 @page "/"
 @rendermode InteractiveServer
 @inject IMediator Mediator
+@inject NavigationManager Nav
 
-<PageTitle>AsuraComic - Read Manhwa, Manga, Manhua Online Free</PageTitle>
+<PageTitle>AsuraComic - Manhwa, Manga, Manhua o'qing</PageTitle>
 
 @if (_loading)
 {
-    <div style="padding:32px;">
+    <div style="padding:40px 16px;">
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+        <MudText Align="Align.Center" Class="mt-4" Style="opacity:0.5;">Yuklanmoqda...</MudText>
     </div>
 }
 else
 {
-    <!-- FEATURED HERO SCROLL -->
+    <!-- HERO FEATURED SCROLL -->
     @if (_featured?.Items.Any() == true)
     {
-        <div style="padding:0; margin-bottom:8px;">
-            <div class="hero-scroll" style="padding:16px 16px 8px;">
-                @foreach (var comic in _featured.Items)
+        <div style="background:var(--mud-palette-surface); padding-bottom:8px;">
+            <div style="overflow-x:auto; display:flex; gap:10px; padding:12px 16px 8px; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch;">
+                @foreach (var c in _featured.Items)
                 {
-                    <div class="hero-scroll-item" style="width:160px; cursor:pointer;"
-                         @onclick="@(() => Nav.NavigateTo($"/comic/{comic.Slug}"))">
-                        <div style="position:relative; border-radius:10px; overflow:hidden; aspect-ratio:2/3; box-shadow:0 8px 24px rgba(0,0,0,0.4);">
-                            <img src="@(comic.CoverImageUrl ?? $"https://picsum.photos/seed/{comic.Slug}/300/420")"
-                                 alt="@comic.Title"
+                    <div style="flex:0 0 auto; width:140px; cursor:pointer; scroll-snap-align:start;"
+                         @onclick="@(() => Nav.NavigateTo($"/comic/{c.Slug}"))">
+                        <div style="position:relative; border-radius:12px; overflow:hidden; aspect-ratio:2/3; box-shadow:0 8px 20px rgba(0,0,0,0.5);">
+                            <img src="@(string.IsNullOrEmpty(c.CoverImageUrl) ? $"https://picsum.photos/seed/{c.Slug}/280/420" : c.CoverImageUrl)"
                                  style="width:100%; height:100%; object-fit:cover; display:block;"
-                                 onerror="this.src='https://picsum.photos/seed/fallback/300/420'" />
-                            <div style="position:absolute; inset:0; background:linear-gradient(transparent 50%, rgba(0,0,0,0.9)); display:flex; align-items:flex-end; padding:8px;">
-                                <div>
-                                    <div style="font-size:10px; font-weight:700; color:#f59e0b; margin-bottom:2px;">
-                                        ★ @comic.AverageRating.ToString("F1")
-                                    </div>
-                                    <div style="font-size:11px; font-weight:600; color:#fff; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
-                                        @comic.Title
-                                    </div>
-                                </div>
+                                 loading="lazy"
+                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)b/280/420'" />
+                            <div style="position:absolute; inset:0; background:linear-gradient(transparent 45%, rgba(0,0,0,0.92)); padding:8px; display:flex; flex-direction:column; justify-content:flex-end;">
+                                <div style="font-size:10px; font-weight:700; color:#f59e0b; margin-bottom:2px;">★ @c.AverageRating.ToString("F1")</div>
+                                <div style="font-size:11px; font-weight:700; color:#fff; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">@c.Title</div>
                             </div>
-                            @if (comic.IsFeatured)
-                            {
-                                <div style="position:absolute; top:6px; left:6px; background:#7c3aed; color:#fff; font-size:9px; font-weight:700; padding:2px 6px; border-radius:8px;">
-                                    HOT
-                                </div>
-                            }
+                            <div style="position:absolute; top:6px; left:6px; background:#7c3aed; color:#fff; font-size:9px; font-weight:800; padding:2px 6px; border-radius:8px;">HOT</div>
                         </div>
                     </div>
                 }
@@ -49,134 +40,159 @@ else
         </div>
     }
 
-    <div style="max-width:1400px; margin:0 auto; padding:0 16px 32px;">
-        <!-- Trending Today -->
+    <div style="max-width:1400px; margin:0 auto; padding:16px 16px 48px;">
+
+        <!-- TRENDING TODAY -->
         @if (_trending?.Items.Any() == true)
         {
-            <div class="mb-6">
-                <div class="section-title">
-                    <span style="color:#7c3aed;">🔥</span>
-                    <span>Trending Today</span>
-                    <MudLink Href="/comics?sortBy=views" Underline="Underline.None" Style="font-size:13px; color:#7c3aed; font-weight:500; margin-left:auto;">View All →</MudLink>
+            <div style="margin-bottom:32px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                    <div style="font-size:1.15rem; font-weight:800; display:flex; align-items:center; gap:6px;">
+                        🔥 <span>Bugun trendda</span>
+                    </div>
+                    <a href="/comics?sortBy=views" style="font-size:13px; color:#7c3aed; font-weight:600; text-decoration:none;">Barchasini ko'rish →</a>
                 </div>
                 <MudGrid Spacing="2">
-                    @foreach (var comic in _trending.Items.Take(6))
+                    @foreach (var c in _trending.Items.Take(6))
                     {
                         <MudItem xs="6" sm="4" md="3" lg="2">
-                            <ComicCard Comic="comic" />
+                            <ComicCard Comic="c" />
                         </MudItem>
                     }
                 </MudGrid>
             </div>
         }
 
-        <!-- Two column: Latest + Popular -->
+        <!-- LATEST + POPULAR two-column -->
         <MudGrid Spacing="4">
             <!-- Latest Updates -->
             <MudItem xs="12" md="8">
-                <div class="section-title">
-                    <span>⏰</span>
-                    <span>Latest Updates</span>
-                    <MudLink Href="/comics" Underline="Underline.None" Style="font-size:13px; color:#7c3aed; font-weight:500; margin-left:auto;">View All →</MudLink>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                    <div style="font-size:1.15rem; font-weight:800; display:flex; align-items:center; gap:6px;">
+                        ⏰ <span>So'nggi yangilanishlar</span>
+                    </div>
+                    <a href="/comics" style="font-size:13px; color:#7c3aed; font-weight:600; text-decoration:none;">Barchasini ko'rish →</a>
                 </div>
-                <div>
-                    @foreach (var comic in _latest?.Items ?? new())
-                    {
-                        <div style="display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--mud-palette-divider); cursor:pointer;"
-                             @onclick="@(() => Nav.NavigateTo($"/comic/{comic.Slug}"))">
-                            <img src="@(comic.CoverImageUrl ?? $"https://picsum.photos/seed/{comic.Slug}/80/110")"
-                                 style="width:58px; height:80px; object-fit:cover; border-radius:6px; flex-shrink:0;"
-                                 onerror="this.src='https://picsum.photos/seed/fallback/80/110'" />
-                            <div style="flex:1; min-width:0;">
-                                <div style="font-weight:700; font-size:14px; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@comic.Title</div>
-                                <div style="font-size:12px; opacity:0.6; margin-bottom:4px;">@comic.Author</div>
-                                <div style="display:flex; gap:6px; flex-wrap:wrap;">
-                                    @foreach (var g in comic.Genres.Take(2))
-                                    {
-                                        <span style="font-size:10px; background:rgba(124,58,237,0.15); color:#7c3aed; padding:2px 8px; border-radius:10px; font-weight:600;">@g</span>
-                                    }
-                                </div>
-                                <div style="font-size:11px; opacity:0.5; margin-top:4px;">
-                                    Ch. @comic.LatestChapterNumber · @FormatViews(comic.ViewCount) views
-                                </div>
+
+                @foreach (var c in _latest?.Items ?? new())
+                {
+                    <div style="display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--mud-palette-divider); cursor:pointer;"
+                         @onclick="@(() => Nav.NavigateTo($"/comic/{c.Slug}"))">
+                        <img src="@(string.IsNullOrEmpty(c.CoverImageUrl) ? $"https://picsum.photos/seed/{c.Slug}/80/110" : c.CoverImageUrl)"
+                             style="width:56px; height:78px; object-fit:cover; border-radius:6px; flex-shrink:0;"
+                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)x/80/110'" />
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:700; font-size:14px; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@c.Title</div>
+                            <div style="font-size:12px; opacity:0.5; margin-bottom:5px;">@c.Author</div>
+                            <div style="display:flex; flex-wrap:wrap; gap:5px; margin-bottom:5px;">
+                                @foreach (var g in c.Genres.Take(2))
+                                {
+                                    <span style="font-size:10px; background:rgba(124,58,237,0.15); color:#7c3aed; padding:2px 8px; border-radius:10px; font-weight:600;">@g</span>
+                                }
                             </div>
-                            <div style="display:flex; flex-direction:column; align-items:flex-end; justify-content:space-between; padding-left:4px;">
-                                <span style="@GetStatusStyle(comic.Status) font-size:10px; font-weight:700; padding:2px 6px; border-radius:8px; white-space:nowrap;">
-                                    @comic.Status
-                                </span>
-                                <span style="font-size:11px; color:#f59e0b; font-weight:700;">★ @comic.AverageRating.ToString("F1")</span>
+                            <div style="font-size:11px; opacity:0.45;">
+                                @c.LatestChapterNumber-bob · @FormatViews(c.ViewCount) ko'rildi
                             </div>
                         </div>
-                    }
-                </div>
+                        <div style="display:flex; flex-direction:column; align-items:flex-end; gap:6px; flex-shrink:0;">
+                            <span style="@StatusStyle(c.Status) font-size:10px; font-weight:700; padding:2px 7px; border-radius:8px; white-space:nowrap;">@StatusText(c.Status)</span>
+                            <span style="font-size:12px; color:#f59e0b; font-weight:700;">★ @c.AverageRating.ToString("F1")</span>
+                        </div>
+                    </div>
+                }
             </MudItem>
 
             <!-- Popular Rankings -->
             <MudItem xs="12" md="4">
-                <div class="section-title">
-                    <span>⭐</span> Popular
-                    <div style="display:flex; gap:4px; margin-left:auto;">
-                        <button @onclick="@(() => _popularTab = 0)"
-                                style="@TabStyle(0) font-size:12px; padding:3px 10px; border-radius:12px; border:none; cursor:pointer; font-weight:600;">
-                            Weekly
-                        </button>
-                        <button @onclick="@(() => _popularTab = 1)"
-                                style="@TabStyle(1) font-size:12px; padding:3px 10px; border-radius:12px; border:none; cursor:pointer; font-weight:600;">
-                            All Time
-                        </button>
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
+                    <div style="font-size:1.15rem; font-weight:800; display:flex; align-items:center; gap:6px;">⭐ Mashhur</div>
+                    <div style="display:flex; gap:4px;">
+                        <button @onclick="@(() => _tab = 0)"
+                                style="@TabBtn(0)">Haftalik</button>
+                        <button @onclick="@(() => _tab = 1)"
+                                style="@TabBtn(1)">Barcha vaqt</button>
                     </div>
                 </div>
+
                 @for (int i = 0; i < Math.Min(10, GetPopularList().Count); i++)
                 {
-                    var comic = GetPopularList()[i];
+                    var c = GetPopularList()[i];
                     var rank = i + 1;
                     <div style="display:flex; gap:10px; align-items:center; padding:8px 0; border-bottom:1px solid var(--mud-palette-divider); cursor:pointer;"
-                         @onclick="@(() => Nav.NavigateTo($"/comic/{comic.Slug}"))">
-                        <span style="@RankStyle(rank) width:24px; height:24px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;">
+                         @onclick="@(() => Nav.NavigateTo($"/comic/{c.Slug}"))">
+                        <span style="@RankStyle(rank) width:26px; height:26px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; flex-shrink:0;">
                             @rank
                         </span>
-                        <img src="@(comic.CoverImageUrl ?? $"https://picsum.photos/seed/{comic.Slug}/50/70")"
+                        <img src="@(string.IsNullOrEmpty(c.CoverImageUrl) ? $"https://picsum.photos/seed/{c.Slug}/50/70" : c.CoverImageUrl)"
                              style="width:40px; height:56px; object-fit:cover; border-radius:4px; flex-shrink:0;"
-                             onerror="this.src='https://picsum.photos/seed/fallback/50/70'" />
+                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)r/50/70'" />
                         <div style="flex:1; min-width:0;">
-                            <div style="font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@comic.Title</div>
-                            <div style="font-size:11px; opacity:0.5;">@string.Join(", ", comic.Genres.Take(2))</div>
-                            <div style="font-size:11px; color:#f59e0b; font-weight:700; margin-top:2px;">★ @comic.AverageRating.ToString("F1")</div>
+                            <div style="font-size:13px; font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@c.Title</div>
+                            <div style="font-size:11px; opacity:0.45;">@string.Join(", ", c.Genres.Take(2))</div>
+                            <div style="font-size:11px; color:#f59e0b; font-weight:700; margin-top:2px;">★ @c.AverageRating.ToString("F1")</div>
                         </div>
                     </div>
                 }
             </MudItem>
         </MudGrid>
+
+        <!-- ALL COMICS GRID -->
+        <div style="margin-top:40px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+                <div style="font-size:1.15rem; font-weight:800;">📚 Barcha komiklar</div>
+                <a href="/comics" style="font-size:13px; color:#7c3aed; font-weight:600; text-decoration:none;">Ko'proq →</a>
+            </div>
+            <MudGrid Spacing="2">
+                @foreach (var c in _all?.Items ?? new())
+                {
+                    <MudItem xs="6" sm="4" md="3" lg="2">
+                        <ComicCard Comic="c" />
+                    </MudItem>
+                }
+            </MudGrid>
+        </div>
     </div>
 }
 
 @code {
-    [Inject] private NavigationManager Nav { get; set; } = default!;
-
     private PaginatedList<ComicDto>? _featured;
     private PaginatedList<ComicDto>? _trending;
     private PaginatedList<ComicDto>? _popular;
     private PaginatedList<ComicDto>? _latest;
+    private PaginatedList<ComicDto>? _all;
     private bool _loading = true;
-    private int _popularTab = 0;
+    private int _tab = 0;
 
     protected override async Task OnInitializedAsync()
     {
-        _featured = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsFeatured: true, SortBy: "rating"));
-        _trending = await Mediator.Send(new GetComicsQuery(PageSize: 6, SortBy: "views"));
-        _popular = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true, SortBy: "rating"));
-        _latest = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "createdAt"));
-        _loading = false;
+        _featured  = await Mediator.Send(new GetComicsQuery(PageSize: 12, IsFeatured: true, SortBy: "rating"));
+        _trending  = await Mediator.Send(new GetComicsQuery(PageSize: 6,  SortBy: "views"));
+        _popular   = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true, SortBy: "rating"));
+        _latest    = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "createdAt"));
+        _all       = await Mediator.Send(new GetComicsQuery(PageSize: 18, SortBy: "createdAt"));
+        _loading   = false;
     }
 
-    private string FormatViews(int v) => v >= 1000000 ? $"{v / 1000000.0:F1}M" : v >= 1000 ? $"{v / 1000}K" : v.ToString();
+    private List<ComicDto> GetPopularList() =>
+        _tab == 0 ? (_trending?.Items ?? new()) : (_popular?.Items ?? new());
 
-    private string GetStatusStyle(ComicStatus s) => s switch
+    private string FormatViews(int v) =>
+        v >= 1_000_000 ? $"{v / 1_000_000.0:F1}M" : v >= 1_000 ? $"{v / 1_000}K" : v.ToString();
+
+    private string StatusStyle(ComicStatus s) => s switch
     {
-        ComicStatus.Ongoing => "background:#059669; color:#fff;",
+        ComicStatus.Ongoing   => "background:#059669; color:#fff;",
         ComicStatus.Completed => "background:#7c3aed; color:#fff;",
-        ComicStatus.Hiatus => "background:#d97706; color:#fff;",
-        _ => "background:#6b7280; color:#fff;"
+        ComicStatus.Hiatus    => "background:#d97706; color:#fff;",
+        _                     => "background:#4b5563; color:#fff;"
+    };
+
+    private string StatusText(ComicStatus s) => s switch
+    {
+        ComicStatus.Ongoing   => "Davom etmoqda",
+        ComicStatus.Completed => "Tugallangan",
+        ComicStatus.Hiatus    => "To'xtatilgan",
+        _                     => s.ToString()
     };
 
     private string RankStyle(int r) => r switch
@@ -187,10 +203,7 @@ else
         _ => "background:rgba(124,58,237,0.15); color:#7c3aed;"
     };
 
-    private List<ComicDto> GetPopularList() =>
-        _popularTab == 0 ? (_trending?.Items ?? new()) : (_popular?.Items ?? new());
-
-    private string TabStyle(int tab) => _popularTab == tab
-        ? "background:#7c3aed; color:#fff;"
-        : "background:rgba(124,58,237,0.12); color:#7c3aed;";
+    private string TabBtn(int t) => _tab == t
+        ? "background:#7c3aed; color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; border:none; cursor:pointer;"
+        : "background:rgba(124,58,237,0.1); color:#7c3aed; font-size:11px; font-weight:600; padding:3px 10px; border-radius:12px; border:none; cursor:pointer;";
 }

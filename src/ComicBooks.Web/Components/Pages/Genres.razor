@@ -1,35 +1,36 @@
 @page "/genres"
 @rendermode InteractiveServer
 @inject IMediator Mediator
-@inject NavigationManager Navigation
+@inject NavigationManager Nav
 
-<PageTitle>Genres - ComicBooks</PageTitle>
+<PageTitle>Janrlar - AsuraComic</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-6 font-bold">Browse by Genre</MudText>
+<div style="max-width:1200px; margin:0 auto; padding:24px 16px 48px;">
+    <MudText Typo="Typo.h4" Class="font-bold mb-6">🏷️ Janrlar bo'yicha qidirish</MudText>
 
-@if (_loading)
-{
-    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-}
-else
-{
-    <MudGrid>
-        @foreach (var genre in _genres)
-        {
-            <MudItem xs="6" sm="4" md="3" lg="2">
-                <MudCard Elevation="2" Style="cursor:pointer; border-radius:12px; transition: transform 0.2s, box-shadow 0.2s;"
-                         Class="h-100"
-                         @onclick="@(() => Navigation.NavigateTo($"/comics?genreId={genre.Id}"))">
-                    <MudCardContent Class="text-center pa-4">
-                        <MudIcon Icon="@Icons.Material.Filled.Label" Color="Color.Primary" Style="font-size:36px;" />
-                        <MudText Typo="Typo.h6" Class="mt-2 font-bold">@genre.Name</MudText>
-                        <MudText Typo="Typo.caption" Style="opacity:0.6;">@genre.ComicCount comics</MudText>
-                    </MudCardContent>
-                </MudCard>
-            </MudItem>
-        }
-    </MudGrid>
-}
+    @if (_loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+    else
+    {
+        <MudGrid Spacing="2">
+            @foreach (var g in _genres)
+            {
+                <MudItem xs="6" sm="4" md="3" lg="2">
+                    <MudPaper Elevation="1" Style="border-radius:12px; cursor:pointer; transition:all 0.2s; overflow:hidden;"
+                              @onclick="@(() => Nav.NavigateTo($"/comics?search={g.Name}"))">
+                        <div style="background:linear-gradient(135deg, #7c3aed22, #5b21b611); padding:20px 16px; text-align:center;">
+                            <MudIcon Icon="@Icons.Material.Filled.LocalOffer" Color="Color.Primary" Style="font-size:32px; margin-bottom:8px;" />
+                            <MudText Typo="Typo.subtitle1" Class="font-bold">@g.Name</MudText>
+                            <MudText Typo="Typo.caption" Style="opacity:0.5;">@g.ComicCount ta komik</MudText>
+                        </div>
+                    </MudPaper>
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</div>
 
 @code {
     private List<GenreDto> _genres = new();
