@@ -11,7 +11,6 @@
 
 @if (_showForm)
 {
-    <!-- Create Chapter Form -->
     <div class="d-flex align-center gap-2 mb-6">
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" OnClick="@(() => _showForm = false)" />
         <MudText Typo="Typo.h5" Class="font-bold">Add New Chapter</MudText>
@@ -20,25 +19,50 @@
     <MudGrid>
         <MudItem xs="12" md="6">
             <MudPaper Elevation="2" Class="pa-6" Style="border-radius:12px;">
-                <MudSelect @bind-Value="_form.ComicId" Label="Comic *" Variant="Variant.Outlined" Class="mb-4" Required="true">
-                    @foreach (var comic in _comics?.Items ?? new())
+
+                <MudSelect T="Guid"
+                           @bind-Value="_formComicId"
+                           Label="Comic *"
+                           Variant="Variant.Outlined"
+                           Class="mb-4">
+                    @foreach (var comic in _allComics)
                     {
-                        <MudSelectItem Value="@comic.Id">@comic.Title</MudSelectItem>
+                        <MudSelectItem T="Guid" Value="@comic.Id">@comic.Title</MudSelectItem>
                     }
                 </MudSelect>
-                <MudNumericField @bind-Value="_form.ChapterNumber" Label="Chapter Number *"
-                                 Variant="Variant.Outlined" Class="mb-4" Min="0.1" Step="0.5" />
-                <MudTextField @bind-Value="_form.Title" Label="Chapter Title (optional)"
-                              Variant="Variant.Outlined" Class="mb-4" />
-                <MudSwitch @bind-Value="_form.IsLocked" Label="Locked (premium)" Color="Color.Warning" Class="mb-4" />
+
+                <MudNumericField T="double"
+                                 @bind-Value="_formChapterNumber"
+                                 Label="Chapter Number *"
+                                 Variant="Variant.Outlined"
+                                 Class="mb-4"
+                                 Min="0.1"
+                                 Step="0.5" />
+
+                <MudTextField @bind-Value="_formTitle"
+                              Label="Chapter Title (optional)"
+                              Variant="Variant.Outlined"
+                              Class="mb-4" />
+
+                <MudSwitch T="bool"
+                           @bind-Value="_formIsLocked"
+                           Label="Locked (premium)"
+                           Color="Color.Warning"
+                           Class="mb-4" />
 
                 <MudText Typo="Typo.subtitle2" Class="mb-2">Pages (Image URLs, one per line)</MudText>
-                <MudTextField @bind-Value="_pageUrlsRaw" Lines="10"
-                              Variant="Variant.Outlined" Class="mb-4"
-                              Placeholder="https://example.com/page1.jpg&#10;https://example.com/page2.jpg&#10;..." />
+                <MudTextField @bind-Value="_pageUrlsRaw"
+                              Lines="10"
+                              Variant="Variant.Outlined"
+                              Class="mb-4"
+                              Placeholder="https://example.com/page1.jpg" />
 
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
-                           Size="Size.Large" OnClick="CreateChapter" Disabled="_saving"
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           OnClick="@CreateChapter"
+                           Disabled="@_saving"
                            StartIcon="@Icons.Material.Filled.Save">
                     @(_saving ? "Creating..." : "Create Chapter")
                 </MudButton>
@@ -61,30 +85,36 @@ else
 {
     <div class="d-flex justify-space-between align-center mb-6">
         <MudText Typo="Typo.h5" Class="font-bold">Chapters Management</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+        <MudButton Variant="Variant.Filled"
+                   Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add"
                    OnClick="@(() => _showForm = true)">
             Add Chapter
         </MudButton>
     </div>
 
-    <!-- Comic filter -->
     <MudPaper Elevation="1" Class="pa-4 mb-4">
-        <MudSelect T="Guid?" Value="_filterComicId"
-                   ValueChanged="@(async (Guid? id) => await OnComicFilterChanged(id))"
+        <MudSelect T="Guid?"
+                   Value="@_filterComicId"
+                   ValueChanged="@OnComicFilterChanged"
                    Label="Filter by Comic"
-                   Variant="Variant.Outlined" Margin="Margin.Dense"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
                    Clearable="true">
-            @foreach (var comic in _comics?.Items ?? new())
+            @foreach (var comic in _allComics)
             {
-                <MudSelectItem Value="@((Guid?)comic.Id)">@comic.Title</MudSelectItem>
+                <MudSelectItem T="Guid?" Value="@((Guid?)comic.Id)">@comic.Title</MudSelectItem>
             }
         </MudSelect>
     </MudPaper>
 
     @if (_chapters.Any())
     {
-        <MudTable Items="_chapters" Hover="true" Elevation="2" Style="border-radius:12px;" Dense="false">
+        <MudTable Items="@_chapters"
+                  Hover="true"
+                  Elevation="2"
+                  Style="border-radius:12px;"
+                  Dense="false">
             <HeaderContent>
                 <MudTh>Comic</MudTh>
                 <MudTh>Chapter #</MudTh>
@@ -97,23 +127,38 @@ else
             </HeaderContent>
             <RowTemplate>
                 <MudTd>@context.ComicTitle</MudTd>
-                <MudTd><MudChip T="string" Label="true" Size="Size.Small" Color="Color.Primary">Ch. @context.ChapterNumber</MudChip></MudTd>
+                <MudTd>
+                    <MudChip T="string" Label="true" Size="Size.Small" Color="Color.Primary">
+                        Ch. @context.ChapterNumber
+                    </MudChip>
+                </MudTd>
                 <MudTd>@(context.Title ?? "-")</MudTd>
                 <MudTd>@context.PageCount</MudTd>
                 <MudTd>@context.ViewCount.ToString("N0")</MudTd>
                 <MudTd>
-                    @if (context.IsLocked) { <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Color="Color.Warning" /> }
-                    else { <MudIcon Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small" Style="opacity:0.3;" /> }
+                    @if (context.IsLocked)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Color="Color.Warning" />
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small" Style="opacity:0.3;" />
+                    }
                 </MudTd>
                 <MudTd>@context.PublishedAt?.ToString("MMM dd, yyyy")</MudTd>
                 <MudTd>
-                    <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                   Size="Size.Small"
                                    Href="@($"/chapter/{context.Id}")" />
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
                                    OnClick="@(() => DeleteChapter(context))" />
                 </MudTd>
             </RowTemplate>
-            <NoRecordsContent><MudText>No chapters found.</MudText></NoRecordsContent>
+            <NoRecordsContent>
+                <MudText>No chapters found.</MudText>
+            </NoRecordsContent>
         </MudTable>
     }
     else if (_filterComicId.HasValue)
@@ -127,18 +172,22 @@ else
 }
 
 @code {
-    private PaginatedList<ComicDto>? _comics;
+    private List<ComicDto> _allComics = new();
     private List<ChapterDto> _chapters = new();
     private Guid? _filterComicId;
     private bool _showForm;
     private bool _saving;
     private string _pageUrlsRaw = "";
 
-    private ChapterFormModel _form = new();
+    private Guid _formComicId;
+    private double _formChapterNumber = 1;
+    private string? _formTitle;
+    private bool _formIsLocked;
 
     protected override async Task OnInitializedAsync()
     {
-        _comics = await Mediator.Send(new GetComicsQuery(PageSize: 200));
+        var result = await Mediator.Send(new GetComicsQuery(PageSize: 200));
+        _allComics = result.Items;
         if (Navigation.Uri.Contains("/create")) _showForm = true;
     }
 
@@ -153,33 +202,64 @@ else
 
     private async Task CreateChapter()
     {
-        if (_form.ComicId == Guid.Empty) { Snackbar.Add("Please select a comic.", Severity.Error); return; }
-        if (_form.ChapterNumber <= 0) { Snackbar.Add("Chapter number must be greater than 0.", Severity.Error); return; }
+        if (_formComicId == Guid.Empty)
+        {
+            Snackbar.Add("Please select a comic.", Severity.Error);
+            return;
+        }
+        if (_formChapterNumber <= 0)
+        {
+            Snackbar.Add("Chapter number must be greater than 0.", Severity.Error);
+            return;
+        }
 
-        var urls = _pageUrlsRaw.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(u => !string.IsNullOrWhiteSpace(u)).ToList();
+        var urls = _pageUrlsRaw
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(u => !string.IsNullOrWhiteSpace(u))
+            .ToList();
 
-        if (!urls.Any()) { Snackbar.Add("Please add at least one page URL.", Severity.Error); return; }
+        if (!urls.Any())
+        {
+            Snackbar.Add("Please add at least one page URL.", Severity.Error);
+            return;
+        }
 
         _saving = true;
         try
         {
-            var pages = urls.Select((url, i) => new CreateChapterPageDto(i + 1, url, null, null)).ToList();
+            var pages = urls.Select((url, i) =>
+                new CreateChapterPageDto(i + 1, url, null, null)).ToList();
+
             await Mediator.Send(new CreateChapterCommand(
-                _form.ComicId, _form.ChapterNumber, _form.Title, null, _form.IsLocked, DateTime.UtcNow, pages));
+                _formComicId, _formChapterNumber, _formTitle,
+                null, _formIsLocked, DateTime.UtcNow, pages));
+
             Snackbar.Add("Chapter created successfully!", Severity.Success);
-            _form = new();
+            _formComicId = Guid.Empty;
+            _formChapterNumber = 1;
+            _formTitle = null;
+            _formIsLocked = false;
             _pageUrlsRaw = "";
             _showForm = false;
         }
-        catch (Exception ex) { Snackbar.Add($"Error: {ex.Message}", Severity.Error); }
-        finally { _saving = false; }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Error: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private async Task DeleteChapter(ChapterDto chapter)
     {
-        var result = await DialogService.ShowMessageBox("Delete Chapter",
-            $"Delete Chapter {chapter.ChapterNumber}?", yesText: "Delete", cancelText: "Cancel");
+        var result = await DialogService.ShowMessageBox(
+            "Delete Chapter",
+            $"Delete Chapter {chapter.ChapterNumber}?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
         if (result == true)
         {
             await Mediator.Send(new DeleteChapterCommand(chapter.Id));
@@ -187,13 +267,5 @@ else
             if (_filterComicId.HasValue)
                 _chapters = await Mediator.Send(new GetChaptersByComicQuery(_filterComicId.Value));
         }
-    }
-
-    private class ChapterFormModel
-    {
-        public Guid ComicId { get; set; }
-        public double ChapterNumber { get; set; } = 1;
-        public string? Title { get; set; }
-        public bool IsLocked { get; set; }
     }
 }

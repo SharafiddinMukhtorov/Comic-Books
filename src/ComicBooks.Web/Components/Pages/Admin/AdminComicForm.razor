@@ -6,11 +6,13 @@
 @inject NavigationManager Navigation
 @inject ISnackbar Snackbar
 
-<PageTitle>@(Id == Guid.Empty ? "Create Comic" : "Edit Comic") - Admin</PageTitle>
+<PageTitle>@(_isEdit ? "Edit Comic" : "Create Comic") - Admin</PageTitle>
 
 <div class="d-flex align-center gap-2 mb-6">
     <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Href="/admin/comics" />
-    <MudText Typo="Typo.h5" Class="font-bold">@(Id == Guid.Empty ? "Create New Comic" : "Edit Comic")</MudText>
+    <MudText Typo="Typo.h5" Class="font-bold">
+        @(_isEdit ? "Edit Comic" : "Create New Comic")
+    </MudText>
 </div>
 
 @if (_loading)
@@ -24,94 +26,158 @@ else
             <MudPaper Elevation="2" Class="pa-6" Style="border-radius:12px;">
                 <MudText Typo="Typo.h6" Class="mb-4">Basic Information</MudText>
 
-                <MudTextField @bind-Value="_model.Title" Label="Title *" Variant="Variant.Outlined"
-                              Class="mb-4" Required="true" />
-                <MudTextField @bind-Value="_model.AlternativeTitles" Label="Alternative Titles"
-                              Variant="Variant.Outlined" Class="mb-4"
+                <MudTextField @bind-Value="_title"
+                              Label="Title *"
+                              Variant="Variant.Outlined"
+                              Class="mb-4"
+                              Required="true" />
+
+                <MudTextField @bind-Value="_alternativeTitles"
+                              Label="Alternative Titles"
+                              Variant="Variant.Outlined"
+                              Class="mb-4"
                               HelperText="Separate with semicolons" />
-                <MudTextField @bind-Value="_model.Description" Label="Description" Lines="6"
-                              Variant="Variant.Outlined" Class="mb-4" />
+
+                <MudTextField @bind-Value="_description"
+                              Label="Description"
+                              Lines="6"
+                              Variant="Variant.Outlined"
+                              Class="mb-4" />
+
                 <MudGrid>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_model.Author" Label="Author" Variant="Variant.Outlined" Class="mb-4" />
+                        <MudTextField @bind-Value="_author"
+                                      Label="Author"
+                                      Variant="Variant.Outlined"
+                                      Class="mb-4" />
                     </MudItem>
                     <MudItem xs="12" sm="6">
-                        <MudTextField @bind-Value="_model.Artist" Label="Artist" Variant="Variant.Outlined" Class="mb-4" />
+                        <MudTextField @bind-Value="_artist"
+                                      Label="Artist"
+                                      Variant="Variant.Outlined"
+                                      Class="mb-4" />
                     </MudItem>
                 </MudGrid>
-                <MudTextField @bind-Value="_model.CoverImageUrl" Label="Cover Image URL"
-                              Variant="Variant.Outlined" Class="mb-4"
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Image" />
-                <MudTextField @bind-Value="_model.BannerImageUrl" Label="Banner Image URL"
-                              Variant="Variant.Outlined" Class="mb-4"
-                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Wallpaper" />
+
+                <MudTextField @bind-Value="_coverImageUrl"
+                              Label="Cover Image URL"
+                              Variant="Variant.Outlined"
+                              Class="mb-4"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Image" />
+
+                <MudTextField @bind-Value="_bannerImageUrl"
+                              Label="Banner Image URL"
+                              Variant="Variant.Outlined"
+                              Class="mb-4"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Wallpaper" />
             </MudPaper>
 
-            <!-- Genres & Tags -->
             <MudPaper Elevation="2" Class="pa-6 mt-4" Style="border-radius:12px;">
-                <MudText Typo="Typo.h6" Class="mb-4">Genres & Tags</MudText>
-                <MudSelect T="Guid" @bind-SelectedValues="_selectedGenreIds"
-                           Label="Genres" MultiSelection="true"
-                           Variant="Variant.Outlined" Class="mb-4">
+                <MudText Typo="Typo.h6" Class="mb-4">Genres &amp; Tags</MudText>
+
+                <MudSelect T="Guid"
+                           @bind-SelectedValues="_selectedGenreIds"
+                           Label="Genres"
+                           MultiSelection="true"
+                           Variant="Variant.Outlined"
+                           Class="mb-4">
                     @foreach (var genre in _genres)
                     {
-                        <MudSelectItem Value="@genre.Id">@genre.Name</MudSelectItem>
+                        <MudSelectItem T="Guid" Value="@genre.Id">@genre.Name</MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect T="Guid" @bind-SelectedValues="_selectedTagIds"
-                           Label="Tags" MultiSelection="true"
+
+                <MudSelect T="Guid"
+                           @bind-SelectedValues="_selectedTagIds"
+                           Label="Tags"
+                           MultiSelection="true"
                            Variant="Variant.Outlined">
                     @foreach (var tag in _tags)
                     {
-                        <MudSelectItem Value="@tag.Id">@tag.Name</MudSelectItem>
+                        <MudSelectItem T="Guid" Value="@tag.Id">@tag.Name</MudSelectItem>
                     }
                 </MudSelect>
             </MudPaper>
         </MudItem>
 
         <MudItem xs="12" md="4">
-            <!-- Cover Preview -->
-            @if (!string.IsNullOrEmpty(_model.CoverImageUrl))
+            @if (!string.IsNullOrEmpty(_coverImageUrl))
             {
                 <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius:12px;">
                     <MudText Typo="Typo.subtitle2" Class="mb-2">Cover Preview</MudText>
-                    <MudImage Src="@_model.CoverImageUrl" Alt="Cover" ObjectFit="ObjectFit.Cover"
-                              Style="width:100%; border-radius:8px; max-height:320px; display:block;" />
+                    <img src="@_coverImageUrl"
+                         alt="Cover Preview"
+                         style="width:100%; border-radius:8px; max-height:320px; object-fit:cover; display:block;" />
                 </MudPaper>
             }
 
             <MudPaper Elevation="2" Class="pa-6" Style="border-radius:12px;">
                 <MudText Typo="Typo.h6" Class="mb-4">Settings</MudText>
 
-                <MudSelect T="ComicStatus" @bind-Value="_model.Status" Label="Status" Variant="Variant.Outlined" Class="mb-4">
+                <MudSelect T="ComicStatus"
+                           @bind-Value="_status"
+                           Label="Status"
+                           Variant="Variant.Outlined"
+                           Class="mb-4">
                     @foreach (ComicStatus s in Enum.GetValues<ComicStatus>())
                     {
                         <MudSelectItem T="ComicStatus" Value="@s">@s</MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect T="ComicType" @bind-Value="_model.Type" Label="Type" Variant="Variant.Outlined" Class="mb-4">
+
+                <MudSelect T="ComicType"
+                           @bind-Value="_type"
+                           Label="Type"
+                           Variant="Variant.Outlined"
+                           Class="mb-4">
                     @foreach (ComicType t in Enum.GetValues<ComicType>())
                     {
                         <MudSelectItem T="ComicType" Value="@t">@t</MudSelectItem>
                     }
                 </MudSelect>
-                <MudSelect T="ContentRating" @bind-Value="_model.Rating" Label="Content Rating" Variant="Variant.Outlined" Class="mb-4">
+
+                <MudSelect T="ContentRating"
+                           @bind-Value="_rating"
+                           Label="Content Rating"
+                           Variant="Variant.Outlined"
+                           Class="mb-4">
                     @foreach (ContentRating r in Enum.GetValues<ContentRating>())
                     {
                         <MudSelectItem T="ContentRating" Value="@r">@r</MudSelectItem>
                     }
                 </MudSelect>
-                <MudNumericField T="int?" @bind-Value="_model.ReleaseYear" Label="Release Year"
-                                 Variant="Variant.Outlined" Class="mb-4"
-                                 Min="1900" Max="2030" />
 
-                <MudSwitch @bind-Value="_model.IsFeatured" Label="Featured" Color="Color.Primary" Class="mb-2" />
-                <MudSwitch @bind-Value="_model.IsPopular" Label="Popular" Color="Color.Primary" Class="mb-4" />
+                <MudNumericField T="int?"
+                                 @bind-Value="_releaseYear"
+                                 Label="Release Year"
+                                 Variant="Variant.Outlined"
+                                 Class="mb-4"
+                                 Min="1900"
+                                 Max="2030" />
 
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
-                           Size="Size.Large" OnClick="Submit" Disabled="_saving"
-                           StartIcon="@Icons.Material.Filled.Save" Style="border-radius:8px;">
-                    @(_saving ? "Saving..." : (Id == Guid.Empty ? "Create Comic" : "Save Changes"))
+                <MudSwitch T="bool"
+                           @bind-Value="_isFeatured"
+                           Label="Featured"
+                           Color="Color.Primary"
+                           Class="mb-2" />
+
+                <MudSwitch T="bool"
+                           @bind-Value="_isPopular"
+                           Label="Popular"
+                           Color="Color.Primary"
+                           Class="mb-4" />
+
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           FullWidth="true"
+                           Size="Size.Large"
+                           OnClick="@Submit"
+                           Disabled="@_saving"
+                           StartIcon="@Icons.Material.Filled.Save"
+                           Style="border-radius:8px;">
+                    @(_saving ? "Saving..." : (_isEdit ? "Save Changes" : "Create Comic"))
                 </MudButton>
             </MudPaper>
         </MudItem>
@@ -121,13 +187,28 @@ else
 @code {
     [Parameter] public Guid Id { get; set; }
 
-    private ComicFormModel _model = new();
+    private bool _isEdit => Id != Guid.Empty;
+
+    private string _title = "";
+    private string? _alternativeTitles;
+    private string? _description;
+    private string? _coverImageUrl;
+    private string? _bannerImageUrl;
+    private ComicStatus _status = ComicStatus.Ongoing;
+    private ComicType _type = ComicType.Manhwa;
+    private ContentRating _rating = ContentRating.Teen;
+    private string? _author;
+    private string? _artist;
+    private int? _releaseYear;
+    private bool _isFeatured;
+    private bool _isPopular;
+
     private List<GenreDto> _genres = new();
     private List<TagDto> _tags = new();
     private IEnumerable<Guid> _selectedGenreIds = new HashSet<Guid>();
     private IEnumerable<Guid> _selectedTagIds = new HashSet<Guid>();
     private bool _loading = true;
-    private bool _saving = false;
+    private bool _saving;
 
     protected override async Task OnInitializedAsync()
     {
@@ -138,30 +219,37 @@ else
 
     private async Task Submit()
     {
-        if (string.IsNullOrWhiteSpace(_model.Title)) { Snackbar.Add("Title is required.", Severity.Error); return; }
+        if (string.IsNullOrWhiteSpace(_title))
+        {
+            Snackbar.Add("Title is required.", Severity.Error);
+            return;
+        }
+
         _saving = true;
         try
         {
-            if (Id == Guid.Empty)
+            if (!_isEdit)
             {
-                var newId = await Mediator.Send(new CreateComicCommand(
-                    _model.Title, _model.AlternativeTitles, _model.Description,
-                    _model.CoverImageUrl, _model.BannerImageUrl,
-                    _model.Status, _model.Type, _model.Rating,
-                    _model.Author, _model.Artist, _model.ReleaseYear,
-                    _model.IsFeatured, _model.IsPopular,
-                    _selectedGenreIds.ToList(), _selectedTagIds.ToList()));
+                await Mediator.Send(new CreateComicCommand(
+                    _title, _alternativeTitles, _description,
+                    _coverImageUrl, _bannerImageUrl,
+                    _status, _type, _rating,
+                    _author, _artist, _releaseYear,
+                    _isFeatured, _isPopular,
+                    _selectedGenreIds.ToList(),
+                    _selectedTagIds.ToList()));
                 Snackbar.Add("Comic created successfully!", Severity.Success);
             }
             else
             {
                 await Mediator.Send(new UpdateComicCommand(
-                    Id, _model.Title, _model.AlternativeTitles, _model.Description,
-                    _model.CoverImageUrl, _model.BannerImageUrl,
-                    _model.Status, _model.Type, _model.Rating,
-                    _model.Author, _model.Artist, _model.ReleaseYear,
-                    _model.IsFeatured, _model.IsPopular,
-                    _selectedGenreIds.ToList(), _selectedTagIds.ToList()));
+                    Id, _title, _alternativeTitles, _description,
+                    _coverImageUrl, _bannerImageUrl,
+                    _status, _type, _rating,
+                    _author, _artist, _releaseYear,
+                    _isFeatured, _isPopular,
+                    _selectedGenreIds.ToList(),
+                    _selectedTagIds.ToList()));
                 Snackbar.Add("Comic updated successfully!", Severity.Success);
             }
             Navigation.NavigateTo("/admin/comics");
@@ -170,23 +258,9 @@ else
         {
             Snackbar.Add($"Error: {ex.Message}", Severity.Error);
         }
-        finally { _saving = false; }
-    }
-
-    private class ComicFormModel
-    {
-        public string Title { get; set; } = "";
-        public string? AlternativeTitles { get; set; }
-        public string? Description { get; set; }
-        public string? CoverImageUrl { get; set; }
-        public string? BannerImageUrl { get; set; }
-        public ComicStatus Status { get; set; } = ComicStatus.Ongoing;
-        public ComicType Type { get; set; } = ComicType.Manhwa;
-        public ContentRating Rating { get; set; } = ContentRating.Teen;
-        public string? Author { get; set; }
-        public string? Artist { get; set; }
-        public int? ReleaseYear { get; set; }
-        public bool IsFeatured { get; set; }
-        public bool IsPopular { get; set; }
+        finally
+        {
+            _saving = false;
+        }
     }
 }

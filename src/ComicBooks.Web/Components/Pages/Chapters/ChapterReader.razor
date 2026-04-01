@@ -20,7 +20,7 @@ else
 
         <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
                        Size="Size.Small"
-                       Href="@($"/comic/{_chapter.ComicTitle?.ToLower().Replace(" ", "-")}")"
+                       Href="@GetComicUrl()"
                        Title="Back to comic" />
 
         <MudText Typo="Typo.body2" Class="font-medium"
@@ -35,31 +35,38 @@ else
         <MudSpacer />
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudSelect T="string" Value="@_readerWidth" ValueChanged="OnWidthChanged"
-                       Label="Width" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:110px;">
-                <MudSelectItem T="string" Value="@("600px")">Narrow</MudSelectItem>
-                <MudSelectItem T="string" Value="@("800px")">Medium</MudSelectItem>
-                <MudSelectItem T="string" Value="@("1000px")">Wide</MudSelectItem>
-                <MudSelectItem T="string" Value="@("100%")">Full</MudSelectItem>
+            <MudSelect T="string"
+                       Value="@_readerWidth"
+                       ValueChanged="@OnWidthChanged"
+                       Label="Width"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Style="width:120px;">
+                <MudSelectItem T="string" Value="@_w600">Narrow</MudSelectItem>
+                <MudSelectItem T="string" Value="@_w800">Medium</MudSelectItem>
+                <MudSelectItem T="string" Value="@_w1000">Wide</MudSelectItem>
+                <MudSelectItem T="string" Value="@_wFull">Full</MudSelectItem>
             </MudSelect>
         </MudHidden>
 
         <MudText Typo="Typo.caption" Style="opacity:0.6;">@_pages.Count pages</MudText>
 
         <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
-                   Disabled="_prevChapterId == Guid.Empty"
-                   OnClick="@(() => Navigation.NavigateTo($"/chapter/{_prevChapterId}"))">
-            <MudIcon Icon="@Icons.Material.Filled.SkipPrevious" Size="Size.Small" /> Prev
+                   Disabled="@(_prevChapterId == Guid.Empty)"
+                   OnClick="@GoPrev">
+            <MudIcon Icon="@Icons.Material.Filled.SkipPrevious" Size="Size.Small" />
+            Prev
         </MudButton>
 
         <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary"
-                   Disabled="_nextChapterId == Guid.Empty"
-                   OnClick="@(() => Navigation.NavigateTo($"/chapter/{_nextChapterId}"))">
-            Next <MudIcon Icon="@Icons.Material.Filled.SkipNext" Size="Size.Small" />
+                   Disabled="@(_nextChapterId == Guid.Empty)"
+                   OnClick="@GoNext">
+            Next
+            <MudIcon Icon="@Icons.Material.Filled.SkipNext" Size="Size.Small" />
         </MudButton>
     </MudPaper>
 
-    <div class="mx-auto" style="max-width:@_readerWidth; transition: max-width 0.3s;">
+    <div class="mx-auto reader-content">
         @foreach (var page in _pages.OrderBy(p => p.PageNumber))
         {
             <div class="mb-1" style="line-height:0;">
@@ -73,20 +80,34 @@ else
 
     <div class="d-flex justify-center gap-4 mt-8 mb-8">
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large"
-                   Disabled="_prevChapterId == Guid.Empty"
-                   OnClick="@(() => Navigation.NavigateTo($"/chapter/{_prevChapterId}"))">
-            <MudIcon Icon="@Icons.Material.Filled.SkipPrevious" Class="mr-2" /> Previous Chapter
+                   Disabled="@(_prevChapterId == Guid.Empty)"
+                   OnClick="@GoPrev">
+            <MudIcon Icon="@Icons.Material.Filled.SkipPrevious" Class="mr-2" />
+            Previous Chapter
         </MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-                   Disabled="_nextChapterId == Guid.Empty"
-                   OnClick="@(() => Navigation.NavigateTo($"/chapter/{_nextChapterId}"))">
-            Next Chapter <MudIcon Icon="@Icons.Material.Filled.SkipNext" Class="ml-2" />
+                   Disabled="@(_nextChapterId == Guid.Empty)"
+                   OnClick="@GoNext">
+            Next Chapter
+            <MudIcon Icon="@Icons.Material.Filled.SkipNext" Class="ml-2" />
         </MudButton>
     </div>
 }
 
+<style>
+    .reader-content {
+        max-width: @_readerWidth;
+        transition: max-width 0.3s;
+    }
+</style>
+
 @code {
     [Parameter] public Guid ChapterId { get; set; }
+
+    private readonly string _w600 = "600px";
+    private readonly string _w800 = "800px";
+    private readonly string _w1000 = "1000px";
+    private readonly string _wFull = "100%";
 
     private ChapterDto? _chapter;
     private List<ChapterPageDto> _pages = new();
@@ -99,7 +120,14 @@ else
     private string GetTitle() =>
         _chapter != null ? $"Ch.{_chapter.ChapterNumber} - {_chapter.ComicTitle}" : "Reading...";
 
-    private void OnWidthChanged(string value) => _readerWidth = value;
+    private string GetComicUrl() =>
+        _chapter?.ComicTitle != null
+            ? $"/comic/{_chapter.ComicTitle.ToLower().Replace(" ", "-")}"
+            : "/";
+
+    private void OnWidthChanged(string val) { _readerWidth = val; StateHasChanged(); }
+    private void GoPrev() => Navigation.NavigateTo($"/chapter/{_prevChapterId}");
+    private void GoNext() => Navigation.NavigateTo($"/chapter/{_nextChapterId}");
 
     protected override async Task OnInitializedAsync() => await LoadChapter();
 
@@ -113,15 +141,13 @@ else
         _loading = true;
         StateHasChanged();
 
-        var result = await Mediator.Send(
-            new GetChapterWithPagesQuery(ChapterId));
+        var result = await Mediator.Send(new GetChapterWithPagesQuery(ChapterId));
         _chapter = result.Chapter;
         _pages = result.Pages;
 
         if (_chapter != null)
         {
-            _allChapters = await Mediator.Send(
-                new GetChaptersByComicQuery(_chapter.ComicId));
+            _allChapters = await Mediator.Send(new GetChaptersByComicQuery(_chapter.ComicId));
             var ordered = _allChapters.OrderBy(c => c.ChapterNumber).ToList();
             var idx = ordered.FindIndex(c => c.Id == ChapterId);
             _prevChapterId = idx > 0 ? ordered[idx - 1].Id : Guid.Empty;

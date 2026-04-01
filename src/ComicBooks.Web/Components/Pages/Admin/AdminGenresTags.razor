@@ -1,14 +1,14 @@
 @page "/admin/genres"
+@page "/admin/tags"
 @layout AdminLayout
 @rendermode InteractiveServer
 @inject IMediator Mediator
 @inject ISnackbar Snackbar
 @inject IDialogService DialogService
 
-<PageTitle>Genres - Admin</PageTitle>
+<PageTitle>Genres &amp; Tags - Admin</PageTitle>
 
 <MudGrid>
-    <!-- Genres -->
     <MudItem xs="12" md="6">
         <div class="d-flex justify-space-between align-center mb-4">
             <MudText Typo="Typo.h5" Class="font-bold">Genres</MudText>
@@ -18,19 +18,33 @@
             <MudText Typo="Typo.subtitle2" Class="mb-3">Add New Genre</MudText>
             <MudGrid>
                 <MudItem xs="12" sm="7">
-                    <MudTextField @bind-Value="_newGenreName" Label="Genre Name" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" Placeholder="e.g. Action" />
+                    <MudTextField @bind-Value="_newGenreName"
+                                  Label="Genre Name"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Placeholder="e.g. Action" />
                 </MudItem>
                 <MudItem xs="12" sm="5">
-                    <MudTextField @bind-Value="_newGenreDesc" Label="Description" Variant="Variant.Outlined"
+                    <MudTextField @bind-Value="_newGenreDesc"
+                                  Label="Description"
+                                  Variant="Variant.Outlined"
                                   Margin="Margin.Dense" />
                 </MudItem>
             </MudGrid>
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddGenre"
-                       StartIcon="@Icons.Material.Filled.Add" Class="mt-3">Add Genre</MudButton>
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@AddGenre"
+                       StartIcon="@Icons.Material.Filled.Add"
+                       Class="mt-3">
+                Add Genre
+            </MudButton>
         </MudPaper>
 
-        <MudTable Items="_genres" Hover="true" Elevation="2" Dense="true" Style="border-radius:12px;">
+        <MudTable Items="@_genres"
+                  Hover="true"
+                  Elevation="2"
+                  Dense="true"
+                  Style="border-radius:12px;">
             <HeaderContent>
                 <MudTh>Name</MudTh>
                 <MudTh>Comics</MudTh>
@@ -41,16 +55,19 @@
                     <MudText Typo="Typo.body2" Class="font-medium">@context.Name</MudText>
                     <MudText Typo="Typo.caption" Style="opacity:0.6;">/@context.Slug</MudText>
                 </MudTd>
-                <MudTd><MudChip T="string" Size="Size.Small" Label="true">@context.ComicCount</MudChip></MudTd>
                 <MudTd>
-                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error"
+                    <MudChip T="string" Size="Size.Small" Label="true">@context.ComicCount</MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
                                    OnClick="@(() => DeleteGenre(context))" />
                 </MudTd>
             </RowTemplate>
         </MudTable>
     </MudItem>
 
-    <!-- Tags -->
     <MudItem xs="12" md="6">
         <div class="d-flex justify-space-between align-center mb-4">
             <MudText Typo="Typo.h5" Class="font-bold">Tags</MudText>
@@ -60,32 +77,51 @@
             <MudText Typo="Typo.subtitle2" Class="mb-3">Add New Tag</MudText>
             <MudGrid>
                 <MudItem xs="12" sm="8">
-                    <MudTextField @bind-Value="_newTagName" Label="Tag Name" Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" Placeholder="e.g. Strong MC" />
+                    <MudTextField @bind-Value="_newTagName"
+                                  Label="Tag Name"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Placeholder="e.g. Strong MC" />
                 </MudItem>
                 <MudItem xs="12" sm="4">
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="AddTag"
-                               StartIcon="@Icons.Material.Filled.Add" FullWidth="true" Style="height:40px;">
-                        Add Tag
+                    <MudButton Variant="Variant.Filled"
+                               Color="Color.Primary"
+                               OnClick="@AddTag"
+                               StartIcon="@Icons.Material.Filled.Add"
+                               FullWidth="true"
+                               Style="height:40px;">
+                        Add
                     </MudButton>
                 </MudItem>
             </MudGrid>
         </MudPaper>
 
-        <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
-            <div class="d-flex flex-wrap gap-2">
-                @foreach (var tag in _tags)
-                {
-                    <MudChip T="string" Text="@($"{tag.Name} ({tag.ComicCount})")"
-                             Color="Color.Default" Size="Size.Medium"
-                             OnClose="@(async (MudChip<string> _) => await DeleteTag(tag))" />
-                }
-            </div>
-            @if (!_tags.Any())
-            {
-                <MudText Typo="Typo.body2" Style="opacity:0.5;">No tags yet.</MudText>
-            }
-        </MudPaper>
+        <MudTable Items="@_tags"
+                  Hover="true"
+                  Elevation="2"
+                  Dense="true"
+                  Style="border-radius:12px;">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh>Comics</MudTh>
+                <MudTh>Actions</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudText Typo="Typo.body2" Class="font-medium">@context.Name</MudText>
+                    <MudText Typo="Typo.caption" Style="opacity:0.6;">/@context.Slug</MudText>
+                </MudTd>
+                <MudTd>
+                    <MudChip T="string" Size="Size.Small" Label="true">@context.ComicCount</MudChip>
+                </MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="@(() => DeleteTag(context))" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
     </MudItem>
 </MudGrid>
 
@@ -109,13 +145,19 @@
         if (string.IsNullOrWhiteSpace(_newGenreName)) return;
         await Mediator.Send(new CreateGenreCommand(_newGenreName, _newGenreDesc));
         Snackbar.Add($"Genre '{_newGenreName}' added.", Severity.Success);
-        _newGenreName = ""; _newGenreDesc = "";
+        _newGenreName = "";
+        _newGenreDesc = "";
         await LoadAll();
     }
 
     private async Task DeleteGenre(GenreDto genre)
     {
-        var result = await DialogService.ShowMessageBox("Delete Genre", $"Delete '{genre.Name}'?", yesText: "Delete", cancelText: "Cancel");
+        var result = await DialogService.ShowMessageBox(
+            "Delete Genre",
+            $"Delete '{genre.Name}'?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
         if (result == true)
         {
             await Mediator.Send(new DeleteGenreCommand(genre.Id));
@@ -135,7 +177,12 @@
 
     private async Task DeleteTag(TagDto tag)
     {
-        var result = await DialogService.ShowMessageBox("Delete Tag", $"Delete '{tag.Name}'?", yesText: "Delete", cancelText: "Cancel");
+        var result = await DialogService.ShowMessageBox(
+            "Delete Tag",
+            $"Delete '{tag.Name}'?",
+            yesText: "Delete",
+            cancelText: "Cancel");
+
         if (result == true)
         {
             await Mediator.Send(new DeleteTagCommand(tag.Id));
