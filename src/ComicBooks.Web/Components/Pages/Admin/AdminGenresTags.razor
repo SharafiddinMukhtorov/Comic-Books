@@ -137,13 +137,13 @@
     private async Task LoadAll()
     {
         _genres = await Mediator.Send(new GetAllGenresQuery());
-        _tags = await Mediator.Send(new GetAllTagsQuery());
+        _tags = await Mediator.Send(new ComicBooks.Application.Features.Tags.Queries.GetAllTagsQuery());
     }
 
     private async Task AddGenre()
     {
         if (string.IsNullOrWhiteSpace(_newGenreName)) return;
-        await Mediator.Send(new CreateGenreCommand(_newGenreName, _newGenreDesc));
+        await Mediator.Send(new ComicBooks.Application.Features.Genres.Commands.CreateGenreCommand(_newGenreName, _newGenreDesc));
         Snackbar.Add($"Genre '{_newGenreName}' added.", Severity.Success);
         _newGenreName = "";
         _newGenreDesc = "";
@@ -160,7 +160,7 @@
 
         if (result == true)
         {
-            await Mediator.Send(new DeleteGenreCommand(genre.Id));
+            await Mediator.Send(new ComicBooks.Application.Features.Genres.Commands.DeleteGenreCommand(genre.Id));
             Snackbar.Add($"Genre '{genre.Name}' deleted.", Severity.Success);
             await LoadAll();
         }
@@ -169,7 +169,7 @@
     private async Task AddTag()
     {
         if (string.IsNullOrWhiteSpace(_newTagName)) return;
-        await Mediator.Send(new CreateTagCommand(_newTagName));
+        await Mediator.Send(new ComicBooks.Application.Features.Tags.Commands.CreateTagCommand(_newTagName));
         Snackbar.Add($"Tag '{_newTagName}' added.", Severity.Success);
         _newTagName = "";
         await LoadAll();
