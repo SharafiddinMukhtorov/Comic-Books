@@ -66,7 +66,7 @@ else
         </MudButton>
     </MudPaper>
 
-    <div class="mx-auto reader-content">
+    <div class="mx-auto" style="@GetReaderStyle()">
         @foreach (var page in _pages.OrderBy(p => p.PageNumber))
         {
             <div class="mb-1" style="line-height:0;">
@@ -94,13 +94,6 @@ else
     </div>
 }
 
-<style>
-    .reader-content {
-        max-width: @_readerWidth;
-        transition: max-width 0.3s;
-    }
-</style>
-
 @code {
     [Parameter] public Guid ChapterId { get; set; }
 
@@ -124,6 +117,9 @@ else
         _chapter?.ComicTitle != null
             ? $"/comic/{_chapter.ComicTitle.ToLower().Replace(" ", "-")}"
             : "/";
+
+    private string GetReaderStyle() =>
+        $"max-width:{_readerWidth}; margin-left:auto; margin-right:auto; transition:max-width 0.3s;";
 
     private void OnWidthChanged(string val) { _readerWidth = val; StateHasChanged(); }
     private void GoPrev() => Navigation.NavigateTo($"/chapter/{_prevChapterId}");

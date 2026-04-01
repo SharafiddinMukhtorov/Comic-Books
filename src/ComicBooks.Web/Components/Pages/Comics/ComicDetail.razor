@@ -41,7 +41,7 @@ else
                 <InfoRow Label="Type" Value="@_comic.Type.ToString()" />
                 @if (_comic.Author != null) { <InfoRow Label="Author" Value="@_comic.Author" /> }
                 @if (_comic.Artist != null) { <InfoRow Label="Artist" Value="@_comic.Artist" /> }
-                @if (_comic.ReleaseYear.HasValue) { <InfoRow Label="Year" Value="@_comic.ReleaseYear.ToString()!" /> }
+                @if (_comic.ReleaseYear.HasValue) { <InfoRow Label="Year" Value="@(_comic.ReleaseYear.Value.ToString())" /> }
                 <InfoRow Label="Chapters" Value="@_comic.ChapterCount.ToString()" />
                 <InfoRow Label="Views" Value="@FormatViews(_comic.ViewCount)" />
             </MudPaper>
