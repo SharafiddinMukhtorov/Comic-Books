@@ -70,10 +70,10 @@ else
         @foreach (var page in _pages.OrderBy(p => p.PageNumber))
         {
             <div class="mb-1" style="line-height:0;">
-                <img src="@page.ImageUrl"
-                     alt="Page @page.PageNumber"
-                     style="width:100%; display:block; border-radius:2px;"
-                     loading="lazy" />
+                <img src="@($"Page {page.ImageUrl}")"
+                 alt="@($"Page {page.PageNumber}")"
+                 style="width:100%; display:block; border-radius:2px;"
+                 loading="lazy" />
             </div>
         }
     </div>
