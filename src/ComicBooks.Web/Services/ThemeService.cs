@@ -37,14 +37,6 @@ public class ThemeService
             TextPrimary = "#e0e0e0",
             TextSecondary = "#a0a0a0",
             ActionDefault = "#e94560",
-        },
-        Typography = new Typography
-        {
-            Default = new DefaultTypography { FontFamily = ["'Inter'", "sans-serif"] },
-            H1 = new H1Typography { FontSize = "2.5rem", FontWeight = "700" },
-            H2 = new H2Typography { FontSize = "2rem", FontWeight = "700" },
-            H5 = new H5Typography { FontSize = "1.25rem", FontWeight = "600" },
-            H6 = new H6Typography { FontSize = "1rem", FontWeight = "600" },
         }
     };
 

@@ -79,9 +79,9 @@
 
     protected override async Task OnInitializedAsync()
     {
-        _featured = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(PageSize: 4, IsFeatured: true));
-        _popular = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(PageSize: 8, IsPopular: true, SortBy: "views"));
-        _latest = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(PageSize: 12));
+        _featured = await Mediator.Send(new GetComicsQuery(PageSize: 4, IsFeatured: true));
+        _popular = await Mediator.Send(new GetComicsQuery(PageSize: 8, IsPopular: true, SortBy: "views"));
+        _latest = await Mediator.Send(new GetComicsQuery(PageSize: 12));
         _loading = false;
     }
 }

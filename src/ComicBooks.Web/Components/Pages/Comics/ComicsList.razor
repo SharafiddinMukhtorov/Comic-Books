@@ -19,38 +19,38 @@
                           OnKeyDown="@OnSearchKeyDown" />
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect @bind-Value="_statusFilter"
+            <MudSelect T="ComicStatus?" @bind-Value="_statusFilter"
                        Label="Status"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true">
                 @foreach (ComicStatus s in Enum.GetValues<ComicStatus>())
                 {
-                    <MudSelectItem Value="@((ComicStatus?)s)">@s</MudSelectItem>
+                    <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)s)">@s</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect @bind-Value="_typeFilter"
+            <MudSelect T="ComicType?" @bind-Value="_typeFilter"
                        Label="Type"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense"
                        Clearable="true">
                 @foreach (ComicType t in Enum.GetValues<ComicType>())
                 {
-                    <MudSelectItem Value="@((ComicType?)t)">@t</MudSelectItem>
+                    <MudSelectItem T="ComicType?" Value="@((ComicType?)t)">@t</MudSelectItem>
                 }
             </MudSelect>
         </MudItem>
         <MudItem xs="6" sm="3" md="2">
-            <MudSelect @bind-Value="_sortBy"
+            <MudSelect T="string" @bind-Value="_sortBy"
                        Label="Sort By"
                        Variant="Variant.Outlined"
                        Margin="Margin.Dense">
-                <MudSelectItem Value="@("createdAt")">Newest</MudSelectItem>
-                <MudSelectItem Value="@("views")">Most Viewed</MudSelectItem>
-                <MudSelectItem Value="@("rating")">Top Rated</MudSelectItem>
-                <MudSelectItem Value="@("title")">A-Z</MudSelectItem>
+                <MudSelectItem T="string" Value="@("createdAt")">Newest</MudSelectItem>
+                <MudSelectItem T="string" Value="@("views")">Most Viewed</MudSelectItem>
+                <MudSelectItem T="string" Value="@("rating")">Top Rated</MudSelectItem>
+                <MudSelectItem T="string" Value="@("title")">A-Z</MudSelectItem>
             </MudSelect>
         </MudItem>
         <MudItem xs="6" sm="3" md="2" Class="d-flex align-end">
@@ -97,7 +97,7 @@ else if (_comics?.Items.Any() == true)
     {
         <div class="d-flex justify-center mt-8">
             <MudPagination Count="_comics.TotalPages"
-                           @bind-Selected="_page"
+                           Selected="_page"
                            SelectedChanged="OnPageChanged"
                            Color="Color.Primary"
                            ShowFirstButton="true"
@@ -136,7 +136,7 @@ else
     {
         _loading = true;
         StateHasChanged();
-        _comics = await Mediator.Send(new ComicBooks.Application.Features.Comics.Queries.GetComicsQuery(
+        _comics = await Mediator.Send(new GetComicsQuery(
             PageNumber: _page,
             PageSize: PageSize,
             Search: string.IsNullOrWhiteSpace(_search) ? null : _search,
