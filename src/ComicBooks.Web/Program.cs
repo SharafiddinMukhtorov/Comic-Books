@@ -3,33 +3,24 @@ using ComicBooks.Infrastructure;
 using ComicBooks.Infrastructure.Data;
 using ComicBooks.Web.Components;
 using ComicBooks.Web.Services;
-using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Clean Architecture layers
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
-
-// MudBlazor
 builder.Services.AddMudServices();
-
-// Blazor
-builder.Services.AddRazorComponents()
-    .AddInteractiveServerComponents();
-
-// Theme service for dark/light mode
+builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddScoped<ThemeService>();
+builder.Services.AddScoped<BookmarkService>();
 
 var app = builder.Build();
 
-// Seed database
 using (var scope = app.Services.CreateScope())
 {
-    var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
-    await ApplicationDbContextSeed.SeedAsync(context, logger);
+    var ctx = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var log = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+    await ApplicationDbContextSeed.SeedAsync(ctx, log);
 }
 
 if (!app.Environment.IsDevelopment())
@@ -41,9 +32,6 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
-
 app.MapStaticAssets();
-app.MapRazorComponents<App>()
-    .AddInteractiveServerRenderMode();
-
+app.MapRazorComponents<App>().AddInteractiveServerRenderMode();
 app.Run();

@@ -2,118 +2,104 @@
 @rendermode InteractiveServer
 @inject IMediator Mediator
 
-<PageTitle>All Comics - ComicBooks</PageTitle>
+<PageTitle>Browse Comics - AsuraComic</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-6 font-bold">All Comics</MudText>
+<div style="max-width:1400px; margin:0 auto; padding:24px 16px;">
+    <MudText Typo="Typo.h4" Class="font-bold mb-6">Browse Comics</MudText>
 
-<!-- Filters -->
-<MudPaper Elevation="1" Class="pa-4 mb-6">
-    <MudGrid>
-        <MudItem xs="12" sm="6" md="4">
-            <MudTextField @bind-Value="_search"
-                          Label="Search"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          OnKeyDown="@OnSearchKeyDown" />
-        </MudItem>
-        <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="ComicStatus?" @bind-Value="_statusFilter"
-                       Label="Status"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Clearable="true">
-                @foreach (ComicStatus s in Enum.GetValues<ComicStatus>())
-                {
-                    <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)s)">@s</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="ComicType?" @bind-Value="_typeFilter"
-                       Label="Type"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Clearable="true">
-                @foreach (ComicType t in Enum.GetValues<ComicType>())
-                {
-                    <MudSelectItem T="ComicType?" Value="@((ComicType?)t)">@t</MudSelectItem>
-                }
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="6" sm="3" md="2">
-            <MudSelect T="string" @bind-Value="_sortBy"
-                       Label="Sort By"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense">
-                <MudSelectItem T="string" Value="@("createdAt")">Newest</MudSelectItem>
-                <MudSelectItem T="string" Value="@("views")">Most Viewed</MudSelectItem>
-                <MudSelectItem T="string" Value="@("rating")">Top Rated</MudSelectItem>
-                <MudSelectItem T="string" Value="@("title")">A-Z</MudSelectItem>
-            </MudSelect>
-        </MudItem>
-        <MudItem xs="6" sm="3" md="2" Class="d-flex align-end">
-            <MudButton Variant="Variant.Filled"
-                       Color="Color.Primary"
-                       OnClick="LoadComics"
-                       FullWidth="true">
-                Filter
-            </MudButton>
-        </MudItem>
-    </MudGrid>
-</MudPaper>
-
-@if (_loading)
-{
-    <MudGrid>
-        @for (int i = 0; i < 12; i++)
-        {
-            <MudItem xs="6" sm="4" md="3" lg="2">
-                <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="280px" />
-                <MudSkeleton Class="mt-1" />
-                <MudSkeleton Width="60%" />
+    <!-- Filters -->
+    <MudPaper Elevation="1" Class="pa-4 mb-6" Style="border-radius:14px;">
+        <MudGrid Spacing="2">
+            <MudItem xs="12" sm="5" md="4">
+                <MudTextField @bind-Value="_search"
+                              Label="Search"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Adornment="Adornment.Start"
+                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              OnKeyDown="@HandleSearchKey" />
             </MudItem>
-        }
-    </MudGrid>
-}
-else if (_comics?.Items.Any() == true)
-{
-    <MudText Typo="Typo.body2" Class="mb-4" Style="opacity:0.7;">
-        @_comics.TotalCount results found
-    </MudText>
-
-    <MudGrid>
-        @foreach (var comic in _comics.Items)
-        {
-            <MudItem xs="6" sm="4" md="3" lg="2">
-                <ComicCard Comic="comic" />
+            <MudItem xs="6" sm="3" md="2">
+                <MudSelect T="ComicStatus?" @bind-Value="_statusFilter" Label="Status"
+                           Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                    @foreach (ComicStatus s in Enum.GetValues<ComicStatus>())
+                    {
+                        <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)s)">@s</MudSelectItem>
+                    }
+                </MudSelect>
             </MudItem>
-        }
-    </MudGrid>
+            <MudItem xs="6" sm="3" md="2">
+                <MudSelect T="ComicType?" @bind-Value="_typeFilter" Label="Type"
+                           Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+                    @foreach (ComicType t in Enum.GetValues<ComicType>())
+                    {
+                        <MudSelectItem T="ComicType?" Value="@((ComicType?)t)">@t</MudSelectItem>
+                    }
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6" sm="3" md="2">
+                <MudSelect T="string" @bind-Value="_sortBy" Label="Sort By"
+                           Variant="Variant.Outlined" Margin="Margin.Dense">
+                    <MudSelectItem T="string" Value="@("createdAt")">Newest</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("views")">Most Viewed</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("rating")">Top Rated</MudSelectItem>
+                    <MudSelectItem T="string" Value="@("title")">A-Z</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+            <MudItem xs="6" sm="3" md="2">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           OnClick="@LoadComics" FullWidth="true" Style="height:40px; border-radius:8px;">
+                    Filter
+                </MudButton>
+            </MudItem>
+        </MudGrid>
+    </MudPaper>
 
-    <!-- Pagination -->
-    @if (_comics.TotalPages > 1)
+    @if (_loading)
     {
-        <div class="d-flex justify-center mt-8">
-            <MudPagination Count="_comics.TotalPages"
-                           Selected="_page"
-                           SelectedChanged="OnPageChanged"
-                           Color="Color.Primary"
-                           ShowFirstButton="true"
-                           ShowLastButton="true" />
-        </div>
+        <MudGrid Spacing="2">
+            @for (int i = 0; i < 12; i++)
+            {
+                <MudItem xs="6" sm="4" md="3" lg="2">
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="260px" Style="border-radius:10px;" />
+                    <MudSkeleton Class="mt-1" />
+                </MudItem>
+            }
+        </MudGrid>
     }
-}
-else
-{
-    <MudAlert Severity="Severity.Info">No comics found matching your criteria.</MudAlert>
-}
+    else if (_comics?.Items.Any() == true)
+    {
+        <MudText Typo="Typo.body2" Style="opacity:0.6;" Class="mb-4">@_comics.TotalCount results</MudText>
+        <MudGrid Spacing="2">
+            @foreach (var comic in _comics.Items)
+            {
+                <MudItem xs="6" sm="4" md="3" lg="2">
+                    <ComicCard Comic="comic" />
+                </MudItem>
+            }
+        </MudGrid>
+
+        @if (_comics.TotalPages > 1)
+        {
+            <div class="d-flex justify-center mt-8">
+                <MudPagination Count="@_comics.TotalPages"
+                               Selected="@_page"
+                               SelectedChanged="@OnPageChanged"
+                               Color="Color.Primary"
+                               ShowFirstButton="true"
+                               ShowLastButton="true" />
+            </div>
+        }
+    }
+    else
+    {
+        <MudAlert Severity="Severity.Info" Style="border-radius:12px;">No comics found.</MudAlert>
+    }
+</div>
 
 @code {
     [SupplyParameterFromQuery] public string? search { get; set; }
-    [SupplyParameterFromQuery] public string? status { get; set; }
-    [SupplyParameterFromQuery] public string? type { get; set; }
+    [SupplyParameterFromQuery] public string? sortBy { get; set; }
 
     private PaginatedList<ComicDto>? _comics;
     private bool _loading = true;
@@ -122,13 +108,11 @@ else
     private ComicType? _typeFilter;
     private string _sortBy = "createdAt";
     private int _page = 1;
-    private const int PageSize = 24;
 
     protected override async Task OnInitializedAsync()
     {
         _search = search ?? "";
-        if (Enum.TryParse<ComicStatus>(status, out var s)) _statusFilter = s;
-        if (Enum.TryParse<ComicType>(type, out var t)) _typeFilter = t;
+        _sortBy = sortBy ?? "createdAt";
         await LoadComics();
     }
 
@@ -137,23 +121,15 @@ else
         _loading = true;
         StateHasChanged();
         _comics = await Mediator.Send(new GetComicsQuery(
-            PageNumber: _page,
-            PageSize: PageSize,
+            PageNumber: _page, PageSize: 24,
             Search: string.IsNullOrWhiteSpace(_search) ? null : _search,
-            Status: _statusFilter,
-            Type: _typeFilter,
-            SortBy: _sortBy
-        ));
+            Status: _statusFilter, Type: _typeFilter, SortBy: _sortBy));
         _loading = false;
     }
 
-    private async Task OnPageChanged(int page)
-    {
-        _page = page;
-        await LoadComics();
-    }
+    private async Task OnPageChanged(int p) { _page = p; await LoadComics(); }
 
-    private async Task OnSearchKeyDown(KeyboardEventArgs e)
+    private async Task HandleSearchKey(KeyboardEventArgs e)
     {
         if (e.Key == "Enter") await LoadComics();
     }

@@ -1,0 +1,69 @@
+@page "/bookmarks"
+@rendermode InteractiveServer
+@inject BookmarkService BookmarkSvc
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@implements IDisposable
+
+<PageTitle>My Bookmarks - AsuraComic</PageTitle>
+
+<div style="max-width:1400px; margin:0 auto; padding:24px 16px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
+        <MudIcon Icon="@Icons.Material.Filled.Bookmark" Color="Color.Primary" Style="font-size:32px;" />
+        <MudText Typo="Typo.h4" Class="font-bold">My Bookmarks</MudText>
+    </div>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (!_bookmarked.Any())
+    {
+        <MudPaper Elevation="1" Class="pa-12 text-center" Style="border-radius:16px;">
+            <MudIcon Icon="@Icons.Material.Outlined.BookmarkBorder" Style="font-size:64px; opacity:0.3;" />
+            <MudText Typo="Typo.h6" Class="mt-4" Style="opacity:0.6;">No bookmarks yet</MudText>
+            <MudText Typo="Typo.body2" Style="opacity:0.4;" Class="mt-2">Browse comics and click the bookmark icon to save them here.</MudText>
+            <MudButton Href="/comics" Variant="Variant.Filled" Color="Color.Primary" Class="mt-6" Style="border-radius:20px;">
+                Browse Comics
+            </MudButton>
+        </MudPaper>
+    }
+    else
+    {
+        <MudText Typo="Typo.body2" Style="opacity:0.6;" Class="mb-4">@_bookmarked.Count bookmarked</MudText>
+        <MudGrid Spacing="2">
+            @foreach (var comic in _bookmarked)
+            {
+                <MudItem xs="6" sm="4" md="3" lg="2">
+                    <ComicCard Comic="comic" />
+                </MudItem>
+            }
+        </MudGrid>
+    }
+</div>
+
+@code {
+    private List<ComicDto> _bookmarked = new();
+    private bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        BookmarkSvc.OnChanged += OnBookmarkChanged;
+        await LoadBookmarks();
+    }
+
+    private async Task LoadBookmarks()
+    {
+        _loading = true;
+        var ids = BookmarkSvc.GetAll();
+        if (!ids.Any()) { _loading = false; return; }
+
+        var all = await Mediator.Send(new GetComicsQuery(PageSize: 200));
+        _bookmarked = all.Items.Where(c => ids.Contains(c.Id)).ToList();
+        _loading = false;
+    }
+
+    private void OnBookmarkChanged() => InvokeAsync(async () => await LoadBookmarks());
+
+    public void Dispose() => BookmarkSvc.OnChanged -= OnBookmarkChanged;
+}
