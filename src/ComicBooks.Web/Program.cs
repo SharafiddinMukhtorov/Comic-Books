@@ -12,9 +12,8 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddMudServices();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 
-// Singleton so all circuits share theme state
-builder.Services.AddSingleton<ThemeService>();
-// Scoped per user session
+// SCOPED - per user circuit (NOT singleton - that breaks Blazor Server)
+builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<BookmarkService>();
 
 var app = builder.Build();

@@ -1,55 +1,81 @@
 @page "/comics"
 @rendermode InteractiveServer
 @inject IMediator Mediator
-@inject NavigationManager Nav
 
 <PageTitle>Komiklar - AsuraComic</PageTitle>
 
-<div style="max-width:1400px; margin:0 auto; padding:24px 16px 48px;">
-    <div style="display:flex; align-items:center; gap:8px; margin-bottom:20px;">
-        <MudButton Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack"
-                   OnClick="@(() => Nav.NavigateTo("/"))"
-                   Style="text-transform:none;">Orqaga</MudButton>
-        <MudText Typo="Typo.h4" Class="font-bold">Barcha komiklar</MudText>
+<div style="max-width:1400px;margin:0 auto;padding:20px 16px 48px;">
+
+    <!-- Back -->
+    <div style="margin-bottom:16px;">
+        <MudButton Href="/" Variant="Variant.Text"
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   Style="text-transform:none;">Bosh sahifaga qaytish</MudButton>
     </div>
 
+    <MudText Typo="Typo.h4" Class="font-bold mb-5">Barcha komiklar</MudText>
+
+    <!-- Filters -->
     <MudPaper Elevation="1" Class="pa-4 mb-5" Style="border-radius:14px;">
         <MudGrid Spacing="2">
-            <MudItem xs="12" sm="5" md="4">
-                <MudTextField @bind-Value="_search" Label="Qidirish..." Variant="Variant.Outlined"
-                              Margin="Margin.Dense" Adornment="Adornment.Start"
+            <MudItem xs="12" sm="6" md="4">
+                <MudTextField @bind-Value="_search"
+                              Label="Qidirish..."
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Search"
+                              Immediate="false"
                               OnKeyDown="@HandleKey" />
             </MudItem>
-            <MudItem xs="6" sm="2" md="2">
-                <MudSelect T="ComicStatus?" @bind-Value="_status" Label="Holat"
-                           Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+
+            <MudItem xs="6" sm="3" md="2">
+                <MudSelect T="ComicStatus?"
+                           Value="@_status"
+                           ValueChanged="@StatusChanged"
+                           Label="Holat"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true">
                     <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)ComicStatus.Ongoing)">Davom etmoqda</MudSelectItem>
                     <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)ComicStatus.Completed)">Tugallangan</MudSelectItem>
                     <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)ComicStatus.Hiatus)">To'xtatilgan</MudSelectItem>
                 </MudSelect>
             </MudItem>
-            <MudItem xs="6" sm="2" md="2">
-                <MudSelect T="ComicType?" @bind-Value="_type" Label="Turi"
-                           Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
+
+            <MudItem xs="6" sm="3" md="2">
+                <MudSelect T="ComicType?"
+                           Value="@_type"
+                           ValueChanged="@TypeChanged"
+                           Label="Turi"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense"
+                           Clearable="true">
                     <MudSelectItem T="ComicType?" Value="@((ComicType?)ComicType.Manhwa)">Manhwa</MudSelectItem>
                     <MudSelectItem T="ComicType?" Value="@((ComicType?)ComicType.Manga)">Manga</MudSelectItem>
                     <MudSelectItem T="ComicType?" Value="@((ComicType?)ComicType.Manhua)">Manhua</MudSelectItem>
                 </MudSelect>
             </MudItem>
-            <MudItem xs="6" sm="2" md="2">
-                <MudSelect T="string" @bind-Value="_sort" Label="Saralash"
-                           Variant="Variant.Outlined" Margin="Margin.Dense">
+
+            <MudItem xs="6" sm="3" md="2">
+                <MudSelect T="string"
+                           Value="@_sort"
+                           ValueChanged="@SortChanged"
+                           Label="Saralash"
+                           Variant="Variant.Outlined"
+                           Margin="Margin.Dense">
                     <MudSelectItem T="string" Value="@("createdAt")">Yangi</MudSelectItem>
                     <MudSelectItem T="string" Value="@("views")">Ko'p ko'rilgan</MudSelectItem>
                     <MudSelectItem T="string" Value="@("rating")">Reyting</MudSelectItem>
                     <MudSelectItem T="string" Value="@("title")">A-Z</MudSelectItem>
                 </MudSelect>
             </MudItem>
-            <MudItem xs="6" sm="1" md="2">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Load"
-                           FullWidth="true" Style="height:40px; border-radius:8px; text-transform:none; font-weight:700;">
-                    Filtrlash
+
+            <MudItem xs="6" sm="3" md="2" Class="d-flex align-end">
+                <MudButton Variant="Variant.Outlined" Color="Color.Default"
+                           OnClick="@ResetFilters" FullWidth="true"
+                           Style="height:40px;text-transform:none;">
+                    Tozalash
                 </MudButton>
             </MudItem>
         </MudGrid>
@@ -70,7 +96,7 @@
     else if (_result?.Items.Any() == true)
     {
         <MudText Typo="Typo.body2" Style="opacity:0.5;" Class="mb-4">
-            @_result.TotalCount ta komik topildi
+            @_result.TotalCount ta komik
         </MudText>
         <MudGrid Spacing="2">
             @foreach (var c in _result.Items)
@@ -83,16 +109,19 @@
         @if (_result.TotalPages > 1)
         {
             <div class="d-flex justify-center mt-8">
-                <MudPagination Count="@_result.TotalPages" Selected="@_page"
-                               SelectedChanged="@OnPage" Color="Color.Primary"
-                               ShowFirstButton="true" ShowLastButton="true" />
+                <MudPagination Count="@_result.TotalPages"
+                               Selected="@_page"
+                               SelectedChanged="@OnPageChanged"
+                               Color="Color.Primary"
+                               ShowFirstButton="true"
+                               ShowLastButton="true" />
             </div>
         }
     }
     else
     {
         <MudAlert Severity="Severity.Info" Style="border-radius:12px;">
-            Hech narsa topilmadi. Boshqa so'z bilan qidirib ko'ring.
+            Hech narsa topilmadi.
         </MudAlert>
     }
 </div>
@@ -101,13 +130,14 @@
     [SupplyParameterFromQuery] public string? search { get; set; }
     [SupplyParameterFromQuery] public string? sortBy { get; set; }
 
-    private PaginatedList<ComicDto>? _result;
-    private bool _loading = true;
-    private string _search = "";
-    private ComicStatus? _status;
-    private ComicType? _type;
-    private string _sort = "createdAt";
-    private int _page = 1;
+    PaginatedList<ComicDto>? _result;
+    bool _loading = true;
+    int _page = 1;
+
+    string _search = "";
+    ComicStatus? _status;
+    ComicType? _type;
+    string _sort = "createdAt";
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,12 +151,31 @@
         _loading = true;
         StateHasChanged();
         _result = await Mediator.Send(new GetComicsQuery(
-            PageNumber: _page, PageSize: 24,
-            Search: string.IsNullOrWhiteSpace(_search) ? null : _search,
-            Status: _status, Type: _type, SortBy: _sort));
+            PageNumber: _page,
+            PageSize:   24,
+            Search:     string.IsNullOrWhiteSpace(_search) ? null : _search,
+            Status:     _status,
+            Type:       _type,
+            SortBy:     _sort));
         _loading = false;
     }
 
-    async Task OnPage(int p) { _page = p; await Load(); }
-    async Task HandleKey(KeyboardEventArgs e) { if (e.Key == "Enter") await Load(); }
+    // Dropdown handlers — each triggers a new query
+    async Task StatusChanged(ComicStatus? v) { _status = v; _page = 1; await Load(); }
+    async Task TypeChanged(ComicType? v)     { _type   = v; _page = 1; await Load(); }
+    async Task SortChanged(string v)         { _sort   = v; _page = 1; await Load(); }
+
+    async Task OnPageChanged(int p) { _page = p; await Load(); }
+
+    async Task HandleKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") { _page = 1; await Load(); }
+    }
+
+    async Task ResetFilters()
+    {
+        _search = ""; _status = null; _type = null;
+        _sort = "createdAt"; _page = 1;
+        await Load();
+    }
 }

@@ -1,10 +1,10 @@
 @inherits LayoutComponentBase
-@inject ThemeService ThemeSvc
+@inject ThemeService Theme
 @implements IDisposable
 
-<MudThemeProvider Theme="@ThemeSvc.Theme" IsDarkMode="@_dark" />
+<MudThemeProvider Theme="@_mudTheme" IsDarkMode="@Theme.IsDark" />
 <MudPopoverProvider />
-<MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" />
+<MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
@@ -14,25 +14,23 @@
         <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Warning" Class="mr-2" />
         <MudText Typo="Typo.h6" Style="font-weight:800;">Admin panel</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit" OnClick="@ToggleTheme"
-                       Title="@(_dark ? "Yorug' rejim" : "Tungi rejim")" />
+        <MudIconButton Icon="@(Theme.IsDark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit" OnClick="@DoToggle" />
         <MudButton Href="/" Variant="Variant.Text" Color="Color.Inherit"
                    StartIcon="@Icons.Material.Filled.ArrowBack"
                    Style="text-transform:none;">Saytga qaytish</MudButton>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_open" Elevation="2"
-               Variant="@DrawerVariant.Responsive"
-               ClipMode="DrawerClipMode.Always">
+               Variant="@DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
         <MudDrawerHeader>
-            <MudText Style="color:#7c3aed; font-weight:900; font-size:1rem;">⚙️ Admin panel</MudText>
+            <span style="color:#7c3aed;font-weight:900;font-size:1rem;">⚙️ Admin panel</span>
         </MudDrawerHeader>
         <MudNavMenu>
             <MudNavLink Href="/admin"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Dashboard">Boshqaruv paneli</MudNavLink>
             <MudNavLink Href="/admin/comics"   Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook">Komiklar</MudNavLink>
             <MudNavLink Href="/admin/chapters" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AutoStories">Boblar</MudNavLink>
-            <MudNavLink Href="/admin/genres"   Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label">Janrlar & Teglar</MudNavLink>
+            <MudNavLink Href="/admin/genres"   Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label">Janrlar &amp; Teglar</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
@@ -44,16 +42,18 @@
 </MudLayout>
 
 @code {
-    private bool _open = true;
-    private bool _dark = true;
+    bool _open = true;
 
-    protected override void OnInitialized()
+    readonly MudTheme _mudTheme = new()
     {
-        _dark = ThemeSvc.IsDarkMode;
-        ThemeSvc.ThemeChanged += OnThemeChanged;
-    }
+        PaletteLight = new PaletteLight { Primary = "#7c3aed", Secondary = "#5b21b6", Background = "#f3f4f6", Surface = "#ffffff", AppbarBackground = "#ffffff", AppbarText = "#111827", DrawerBackground = "#f9f9fb", DrawerText = "#111827", TextPrimary = "#111827" },
+        PaletteDark  = new PaletteDark  { Primary = "#7c3aed", Secondary = "#5b21b6", Background = "#0f0f1a", Surface = "#1a1a2e", AppbarBackground = "#16213e", AppbarText = "#e5e7eb", DrawerBackground = "#16213e", DrawerText = "#e5e7eb", TextPrimary = "#f9fafb", TextSecondary = "#9ca3af" }
+    };
 
-    private void ToggleTheme() => ThemeSvc.Toggle();
-    private void OnThemeChanged(bool isDark) { _dark = isDark; InvokeAsync(StateHasChanged); }
-    public void Dispose() => ThemeSvc.ThemeChanged -= OnThemeChanged;
+    protected override void OnInitialized() => Theme.OnChange += Refresh;
+
+    void DoToggle() => Theme.Toggle();
+    void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Theme.OnChange -= Refresh;
 }

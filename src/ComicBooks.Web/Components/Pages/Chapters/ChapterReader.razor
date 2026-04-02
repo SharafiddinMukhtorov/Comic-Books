@@ -11,121 +11,123 @@
 }
 else if (_chapter is null)
 {
-    <div style="text-align:center; padding:80px;">
+    <div style="text-align:center;padding:80px 16px;">
         <MudText Typo="Typo.h5" Class="mb-4">Bob topilmadi</MudText>
-        <MudButton OnClick="@(() => Nav.NavigateTo("/"))"
-                   Variant="Variant.Filled" Color="Color.Primary"
-                   Style="border-radius:20px; text-transform:none;">Bosh sahifa</MudButton>
+        <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary"
+                   Style="border-radius:20px;text-transform:none;">Bosh sahifa</MudButton>
     </div>
 }
 else
 {
     <!-- Sticky toolbar -->
-    <div style="position:sticky; top:64px; z-index:100;
-                    background:var(--mud-palette-appbar-background);
-                    border-bottom:1px solid rgba(128,128,128,0.15);
-                    padding:8px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+    <div style="position:sticky;top:64px;z-index:100;
+                background:var(--mud-palette-appbar-background);
+                border-bottom:1px solid rgba(128,128,128,0.15);
+                padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 
-        <MudButton Variant="Variant.Text" Size="Size.Small"
+        <!-- Back: use Href to comic page -->
+        <MudButton Href="@($"/comic/{ComicSlug()}")"
+                   Variant="Variant.Text"
+                   Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.ArrowBack"
-                   OnClick="@GoBack"
-                   Style="text-transform:none; flex-shrink:0;">Orqaga</MudButton>
+                   Style="text-transform:none;flex-shrink:0;">Orqaga</MudButton>
 
-        <div style="flex:1; min-width:0; font-size:13px; font-weight:600;
-                        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-            @_chapter.ComicTitle &nbsp;›&nbsp; @_chapter.ChapterNumber-bob
-            @if (!string.IsNullOrEmpty(_chapter.Title))
-            {
-                <text> – @_chapter.Title</text>
-            }
+        <div style="flex:1;min-width:0;font-size:13px;font-weight:600;
+                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+            @_chapter.ComicTitle › @_chapter.ChapterNumber-bob
+            @if (!string.IsNullOrEmpty(_chapter.Title)) { <text> – @_chapter.Title</text> }
         </div>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudSelect T="string" Value="@_width" ValueChanged="@(v => _width = v)"
-                       Label="Kenglik" Variant="Variant.Outlined" Margin="Margin.Dense"
-                       Style="width:120px; flex-shrink:0;">
-                <MudSelectItem T="string" Value="@_w600">Tor</MudSelectItem>
-                <MudSelectItem T="string" Value="@_w800">O'rta</MudSelectItem>
-                <MudSelectItem T="string" Value="@_w1000">Keng</MudSelectItem>
-                <MudSelectItem T="string" Value="@_wFull">To'liq</MudSelectItem>
+            <MudSelect T="string"
+                       Value="@_width"
+                       ValueChanged="@(v => _width = v)"
+                       Label="Kenglik"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Style="width:120px;flex-shrink:0;">
+                <MudSelectItem T="string" Value="@W600">Tor</MudSelectItem>
+                <MudSelectItem T="string" Value="@W800">O'rta</MudSelectItem>
+                <MudSelectItem T="string" Value="@W1000">Keng</MudSelectItem>
+                <MudSelectItem T="string" Value="@WFull">To'liq</MudSelectItem>
             </MudSelect>
         </MudHidden>
 
-        <span style="font-size:12px; opacity:0.4; flex-shrink:0;">@_pages.Count bet</span>
+        <span style="font-size:12px;opacity:0.4;flex-shrink:0;">@_pages.Count bet</span>
 
-        <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
-                   Disabled="@(_prevId == Guid.Empty)" OnClick="@GoPrev"
-                   Style="border-radius:20px; text-transform:none; flex-shrink:0;">
-            ← Oldingi
-        </MudButton>
-        <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary"
-                   Disabled="@(_nextId == Guid.Empty)" OnClick="@GoNext"
-                   Style="border-radius:20px; text-transform:none; flex-shrink:0;">
-            Keyingi →
-        </MudButton>
+        @if (_prevId != Guid.Empty)
+        {
+            <MudButton Href="@($"/chapter/{_prevId}")"
+                       Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
+                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">← Oldingi</MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="true"
+                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">← Oldingi</MudButton>
+        }
+
+        @if (_nextId != Guid.Empty)
+        {
+            <MudButton Href="@($"/chapter/{_nextId}")"
+                       Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary"
+                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">Keyingi →</MudButton>
+        }
+        else
+        {
+            <MudButton Variant="Variant.Filled" Size="Size.Small" Disabled="true"
+                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">Keyingi →</MudButton>
+        }
     </div>
 
     <!-- Pages -->
-    <div style="@ReaderStyle()">
+    <div style="max-width:@_width;margin:0 auto;padding:8px 0;">
         @foreach (var p in _pages.OrderBy(x => x.PageNumber))
         {
             <img src="@p.ImageUrl"
                  alt="@p.PageNumber-bet"
-                 style="width:100%; display:block; margin-bottom:3px;"
+                 style="width:100%;display:block;margin-bottom:3px;"
                  loading="lazy"
                  onerror="this.onerror=null;this.src='https://picsum.photos/seed/pg@(p.PageNumber)/800/1200'" />
         }
     </div>
 
     <!-- Bottom nav -->
-    <div style="display:flex; justify-content:center; gap:16px; padding:32px 16px; flex-wrap:wrap;">
-        <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large"
-                   Disabled="@(_prevId == Guid.Empty)" OnClick="@GoPrev"
-                   Style="border-radius:22px; text-transform:none; font-weight:700;">
-            ← Oldingi bob
-        </MudButton>
-        <MudButton Variant="Variant.Text" Color="Color.Default" Size="Size.Large"
-                   OnClick="@GoBack"
-                   Style="border-radius:22px; text-transform:none;">
-            Komikga qaytish
-        </MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-                   Disabled="@(_nextId == Guid.Empty)" OnClick="@GoNext"
-                   Style="border-radius:22px; text-transform:none; font-weight:700;">
-            Keyingi bob →
-        </MudButton>
+    <div style="display:flex;justify-content:center;gap:12px;padding:32px 16px;flex-wrap:wrap;">
+        @if (_prevId != Guid.Empty)
+        {
+            <MudButton Href="@($"/chapter/{_prevId}")"
+                       Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large"
+                       Style="border-radius:22px;text-transform:none;font-weight:700;">← Oldingi bob</MudButton>
+        }
+        <MudButton Href="@($"/comic/{ComicSlug()}")"
+                   Variant="Variant.Text" Color="Color.Default" Size="Size.Large"
+                   Style="border-radius:22px;text-transform:none;">Komikga qaytish</MudButton>
+        @if (_nextId != Guid.Empty)
+        {
+            <MudButton Href="@($"/chapter/{_nextId}")"
+                       Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
+                       Style="border-radius:22px;text-transform:none;font-weight:700;">Keyingi bob →</MudButton>
+        }
     </div>
 }
 
 @code {
     [Parameter] public Guid ChapterId { get; set; }
 
-    readonly string _w600 = "600px", _w800 = "800px", _w1000 = "1000px", _wFull = "100%";
+    const string W600 = "600px", W800 = "800px", W1000 = "1000px", WFull = "100%";
 
-    private ChapterDto? _chapter;
-    private List<ChapterPageDto> _pages = new();
-    private Guid _prevId, _nextId;
-    private string _width = "800px";
-    private bool _loading = true;
+    ChapterDto? _chapter;
+    List<ChapterPageDto> _pages = new();
+    Guid _prevId, _nextId;
+    string _width = W800;
+    bool _loading = true;
 
     string GetTitle() => _chapter != null ? $"{_chapter.ChapterNumber}-bob — {_chapter.ComicTitle}" : "O'qilmoqda...";
-    string ReaderStyle() => $"max-width:{_width}; margin:0 auto; padding:8px 0;";
-    void GoPrev() => Nav.NavigateTo($"/chapter/{_prevId}");
-    void GoNext() => Nav.NavigateTo($"/chapter/{_nextId}");
-    void GoBack()
-    {
-        if (_chapter?.ComicTitle != null)
-        {
-            var slug = _chapter.ComicTitle
-            .ToLower()
-            .Replace(" ", "-")
-            .Replace("'", "");
 
-            Nav.NavigateTo($"/comic/{slug}");
-        }
-        else
-            Nav.NavigateTo("/");
-    }
+    string ComicSlug() => _chapter?.ComicTitle != null
+        ? System.Text.RegularExpressions.Regex.Replace(_chapter.ComicTitle.ToLower(), @"[^a-z0-9\-]", "-")
+        : "";
 
     protected override async Task OnInitializedAsync() => await Load();
     protected override async Task OnParametersSetAsync() { if (!_loading) await Load(); }
@@ -137,26 +139,22 @@ else
 
         var r = await Mediator.Send(new GetChapterWithPagesQuery(ChapterId));
         _chapter = r.Chapter;
-        _pages = r.Pages;
+        _pages   = r.Pages;
 
-        // Generate mock pages if none exist
+        // Auto mock pages if none stored
         if (_chapter != null && !_pages.Any())
-        {
             _pages = Enumerable.Range(1, 22).Select(i => new ChapterPageDto
             {
-                Id = Guid.NewGuid(),
-                ChapterId = ChapterId,
-                PageNumber = i,
+                Id = Guid.NewGuid(), ChapterId = ChapterId, PageNumber = i,
                 ImageUrl = $"https://picsum.photos/seed/{_chapter.ComicId}-{(int)_chapter.ChapterNumber}-{i}/800/1200"
             }).ToList();
-        }
 
         if (_chapter != null)
         {
             var all = (await Mediator.Send(new GetChaptersByComicQuery(_chapter.ComicId)))
-                .OrderBy(c => c.ChapterNumber).ToList();
+                        .OrderBy(c => c.ChapterNumber).ToList();
             var idx = all.FindIndex(c => c.Id == ChapterId);
-            _prevId = idx > 0 ? all[idx - 1].Id : Guid.Empty;
+            _prevId = idx > 0              ? all[idx - 1].Id : Guid.Empty;
             _nextId = idx < all.Count - 1 ? all[idx + 1].Id : Guid.Empty;
         }
 
