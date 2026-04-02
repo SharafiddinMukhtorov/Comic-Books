@@ -1,34 +1,38 @@
 @inherits LayoutComponentBase
-@inject ThemeService ThemeService
+@inject ThemeService ThemeSvc
 @implements IDisposable
 
-<MudThemeProvider Theme="ThemeService.ComicTheme" IsDarkMode="ThemeService.IsDarkMode" />
+<MudThemeProvider Theme="@ThemeSvc.Theme" IsDarkMode="@_dark" />
 <MudPopoverProvider />
-<MudDialogProvider />
+<MudDialogProvider FullWidth="true" MaxWidth="MaxWidth.Small" />
 <MudSnackbarProvider />
 
 <MudLayout>
     <MudAppBar Elevation="1" Fixed="true">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start"
-                       OnClick="@(() => _open = !_open)" />
+        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
+                       Edge="Edge.Start" OnClick="@(() => _open = !_open)" />
         <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Warning" Class="mr-2" />
-        <MudText Typo="Typo.h6" Class="font-bold">Admin Panel</MudText>
+        <MudText Typo="Typo.h6" Style="font-weight:800;">Admin panel</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@(ThemeService.IsDarkMode ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit" OnClick="ThemeService.ToggleTheme" />
+        <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit" OnClick="@ToggleTheme"
+                       Title="@(_dark ? "Yorug' rejim" : "Tungi rejim")" />
         <MudButton Href="/" Variant="Variant.Text" Color="Color.Inherit"
-                   StartIcon="@Icons.Material.Filled.Home">Site</MudButton>
+                   StartIcon="@Icons.Material.Filled.ArrowBack"
+                   Style="text-transform:none;">Saytga qaytish</MudButton>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_open" Elevation="2" Variant="@DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
+    <MudDrawer @bind-Open="_open" Elevation="2"
+               Variant="@DrawerVariant.Responsive"
+               ClipMode="DrawerClipMode.Always">
         <MudDrawerHeader>
-            <MudText Typo="Typo.subtitle1" Style="color:#7c3aed; font-weight:800;">⚙️ Admin</MudText>
+            <MudText Style="color:#7c3aed; font-weight:900; font-size:1rem;">⚙️ Admin panel</MudText>
         </MudDrawerHeader>
         <MudNavMenu>
-            <MudNavLink Href="/admin" Match="NavLinkMatch.All" Icon="@Icons.Material.Filled.Dashboard">Dashboard</MudNavLink>
-            <MudNavLink Href="/admin/comics" Icon="@Icons.Material.Filled.MenuBook">Comics</MudNavLink>
-            <MudNavLink Href="/admin/chapters" Icon="@Icons.Material.Filled.AutoStories">Chapters</MudNavLink>
-            <MudNavLink Href="/admin/genres" Icon="@Icons.Material.Filled.Label">Genres &amp; Tags</MudNavLink>
+            <MudNavLink Href="/admin"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Dashboard">Boshqaruv paneli</MudNavLink>
+            <MudNavLink Href="/admin/comics"   Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook">Komiklar</MudNavLink>
+            <MudNavLink Href="/admin/chapters" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AutoStories">Boblar</MudNavLink>
+            <MudNavLink Href="/admin/genres"   Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label">Janrlar & Teglar</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
@@ -41,6 +45,15 @@
 
 @code {
     private bool _open = true;
-    protected override void OnInitialized() => ThemeService.OnThemeChanged += StateHasChanged;
-    public void Dispose() => ThemeService.OnThemeChanged -= StateHasChanged;
+    private bool _dark = true;
+
+    protected override void OnInitialized()
+    {
+        _dark = ThemeSvc.IsDarkMode;
+        ThemeSvc.ThemeChanged += OnThemeChanged;
+    }
+
+    private void ToggleTheme() => ThemeSvc.Toggle();
+    private void OnThemeChanged(bool isDark) { _dark = isDark; InvokeAsync(StateHasChanged); }
+    public void Dispose() => ThemeSvc.ThemeChanged -= OnThemeChanged;
 }
