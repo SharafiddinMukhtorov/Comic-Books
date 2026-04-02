@@ -22,9 +22,9 @@ else
 {
     <!-- Sticky toolbar -->
     <div style="position:sticky; top:64px; z-index:100;
-                background:var(--mud-palette-appbar-background);
-                border-bottom:1px solid rgba(128,128,128,0.15);
-                padding:8px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    background:var(--mud-palette-appbar-background);
+                    border-bottom:1px solid rgba(128,128,128,0.15);
+                    padding:8px 12px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
 
         <MudButton Variant="Variant.Text" Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.ArrowBack"
@@ -32,9 +32,12 @@ else
                    Style="text-transform:none; flex-shrink:0;">Orqaga</MudButton>
 
         <div style="flex:1; min-width:0; font-size:13px; font-weight:600;
-                    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
             @_chapter.ComicTitle &nbsp;›&nbsp; @_chapter.ChapterNumber-bob
-            @if (!string.IsNullOrEmpty(_chapter.Title)) { <text> – @_chapter.Title</text> }
+            @if (!string.IsNullOrEmpty(_chapter.Title))
+            {
+                <text> – @_chapter.Title</text>
+            }
         </div>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
@@ -112,7 +115,14 @@ else
     void GoBack()
     {
         if (_chapter?.ComicTitle != null)
-            Nav.NavigateTo($"/comic/{_chapter.ComicTitle.ToLower().Replace(" ", "-").Replace("'", "")}");
+        {
+            var slug = _chapter.ComicTitle
+            .ToLower()
+            .Replace(" ", "-")
+            .Replace("'", "");
+
+            Nav.NavigateTo($"/comic/{slug}");
+        }
         else
             Nav.NavigateTo("/");
     }
@@ -127,14 +137,16 @@ else
 
         var r = await Mediator.Send(new GetChapterWithPagesQuery(ChapterId));
         _chapter = r.Chapter;
-        _pages   = r.Pages;
+        _pages = r.Pages;
 
         // Generate mock pages if none exist
         if (_chapter != null && !_pages.Any())
         {
             _pages = Enumerable.Range(1, 22).Select(i => new ChapterPageDto
             {
-                Id = Guid.NewGuid(), ChapterId = ChapterId, PageNumber = i,
+                Id = Guid.NewGuid(),
+                ChapterId = ChapterId,
+                PageNumber = i,
                 ImageUrl = $"https://picsum.photos/seed/{_chapter.ComicId}-{(int)_chapter.ChapterNumber}-{i}/800/1200"
             }).ToList();
         }
@@ -144,7 +156,7 @@ else
             var all = (await Mediator.Send(new GetChaptersByComicQuery(_chapter.ComicId)))
                 .OrderBy(c => c.ChapterNumber).ToList();
             var idx = all.FindIndex(c => c.Id == ChapterId);
-            _prevId = idx > 0              ? all[idx - 1].Id : Guid.Empty;
+            _prevId = idx > 0 ? all[idx - 1].Id : Guid.Empty;
             _nextId = idx < all.Count - 1 ? all[idx + 1].Id : Guid.Empty;
         }
 
