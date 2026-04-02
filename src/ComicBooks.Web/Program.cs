@@ -11,7 +11,10 @@ builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddMudServices();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
-builder.Services.AddScoped<ThemeService>();
+
+// Singleton so all circuits share theme state
+builder.Services.AddSingleton<ThemeService>();
+// Scoped per user session
 builder.Services.AddScoped<BookmarkService>();
 
 var app = builder.Build();

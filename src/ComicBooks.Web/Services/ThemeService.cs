@@ -6,19 +6,21 @@ public class ThemeService
 {
     private bool _isDarkMode = true;
     public bool IsDarkMode => _isDarkMode;
-    public event Action? OnThemeChanged;
 
-    public MudTheme ComicTheme => new()
+    // Use Action<bool> so subscribers get new value
+    public event Action<bool>? ThemeChanged;
+
+    public MudTheme Theme { get; } = new()
     {
         PaletteLight = new PaletteLight
         {
             Primary = "#7c3aed",
             Secondary = "#5b21b6",
-            Background = "#f3f4f6",
+            Background = "#f1f0f5",
             Surface = "#ffffff",
             AppbarBackground = "#ffffff",
             AppbarText = "#111827",
-            DrawerBackground = "#ffffff",
+            DrawerBackground = "#f9f9fb",
             DrawerText = "#111827",
             TextPrimary = "#111827",
             TextSecondary = "#6b7280",
@@ -38,9 +40,9 @@ public class ThemeService
         }
     };
 
-    public void ToggleTheme()
+    public void Toggle()
     {
         _isDarkMode = !_isDarkMode;
-        OnThemeChanged?.Invoke();
+        ThemeChanged?.Invoke(_isDarkMode);
     }
 }
