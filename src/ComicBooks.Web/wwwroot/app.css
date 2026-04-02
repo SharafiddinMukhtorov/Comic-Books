@@ -1,73 +1,124 @@
-/* Google Fonts */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
-* {
-    box-sizing: border-box;
-}
+*, *::before, *::after { box-sizing: border-box; }
 
 html, body {
     font-family: 'Inter', sans-serif;
     scroll-behavior: smooth;
+    margin: 0;
+    padding: 0;
 }
 
-/* Comic Card hover effect */
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #6d28d9; }
+
+/* ===== NAVBAR ===== */
+.nav-link-btn {
+    font-weight: 500 !important;
+    font-size: 0.95rem !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    opacity: 0.85;
+    transition: opacity 0.2s;
+}
+.nav-link-btn:hover { opacity: 1 !important; color: #7c3aed !important; }
+
+/* ===== COMIC CARD ===== */
+.comic-card {
+    border-radius: 10px !important;
+    overflow: hidden;
+    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+    cursor: pointer;
+}
 .comic-card:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 12px 30px rgba(233, 69, 96, 0.2) !important;
+    transform: translateY(-6px) scale(1.02) !important;
+    box-shadow: 0 16px 40px rgba(124, 58, 237, 0.3) !important;
+}
+.comic-card:hover .comic-cover-img {
+    transform: scale(1.08);
+}
+.comic-cover-img {
+    transition: transform 0.3s ease;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
-.comic-card:hover img {
-    transform: scale(1.05);
+/* ===== HERO SCROLL ===== */
+.hero-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 8px 0 16px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+}
+.hero-scroll::-webkit-scrollbar { height: 4px; }
+.hero-scroll-item {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+/* ===== SECTION TITLE ===== */
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    margin: 0 0 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #e94560;
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: #c73652;
-}
-
-/* Font utilities */
+/* ===== UTILITIES ===== */
 .font-bold { font-weight: 700 !important; }
 .font-medium { font-weight: 500 !important; }
 
-/* Reader page body background */
-.reader-page {
-    background: #0a0a0a;
+/* ===== DARK/LIGHT transitions ===== */
+.mud-main-content, .mud-appbar, .mud-drawer, .mud-paper {
+    transition: background-color 0.2s ease, color 0.2s ease !important;
 }
 
-/* MudBlazor overrides */
-.mud-nav-link.active {
-    color: #e94560 !important;
-    background: rgba(233, 69, 96, 0.1) !important;
+/* ===== HOME PAGE FEATURED BANNER ===== */
+.featured-banner {
+    position: relative;
+    width: 100%;
+    height: 380px;
+    overflow: hidden;
+    border-radius: 16px;
+    margin-bottom: 32px;
+}
+.featured-banner img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.featured-banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to right, rgba(0,0,0,0.85) 30%, transparent 70%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 32px;
 }
 
-.mud-appbar {
-    backdrop-filter: blur(10px);
-}
-
-/* Responsive grid gap */
 @media (max-width: 600px) {
-    .mud-container {
-        padding-left: 12px !important;
-        padding-right: 12px !important;
-    }
+    .featured-banner { height: 220px; }
+    .featured-banner-overlay { padding: 16px; }
 }
 
-/* Loading skeleton animation */
-@keyframes shimmer {
-    0% { background-position: -200px 0; }
-    100% { background-position: calc(200px + 100%) 0; }
+/* ===== CHAPTER READER ===== */
+.reader-page-img {
+    width: 100%;
+    display: block;
+    margin-bottom: 4px;
 }
+
+/* ===== BOOKMARKS ===== */
+.bookmark-icon-active { color: #7c3aed !important; }
+.bookmark-icon { color: #9ca3af; }
+.bookmark-icon:hover { color: #7c3aed; }

@@ -1,79 +1,77 @@
-@using ComicBooks.Application.Common.Mappings
-@using ComicBooks.Domain.Enums
+@inject NavigationManager Nav
+@inject BookmarkService BookmarkSvc
 
-<MudCard Class="comic-card h-100" Elevation="2" Style="cursor:pointer; transition: transform 0.2s, box-shadow 0.2s;"
-         @onclick="@(() => Navigation.NavigateTo($"/comic/{Comic.Slug}"))">
-    <div style="position:relative; overflow:hidden; aspect-ratio:2/3;">
-        <MudImage Src="@(Comic.CoverImageUrl ?? "https://placehold.co/300x420/1a1a2e/e94560?text=No+Cover")"
-                  Alt="@Comic.Title"
-                  ObjectFit="ObjectFit.Cover"
-                  Style="width:100%; height:100%; transition: transform 0.3s;" />
+<div class="comic-card" style="position:relative;" @onclick="@GoToComic">
+    <div style="position:relative; overflow:hidden; aspect-ratio:2/3; border-radius:10px 10px 0 0;">
+        <img class="comic-cover-img"
+             src="@(Comic.CoverImageUrl ?? $"https://picsum.photos/seed/{Comic.Slug}/300/420")"
+             alt="@Comic.Title"
+             loading="lazy"
+             onerror="this.src='https://picsum.photos/seed/fallback/300/420'" />
 
         <!-- Status badge -->
-        <MudChip T="string"
-                 Label="true"
-                 Size="Size.Small"
-                 Color="@GetStatusColor(Comic.Status)"
-                 Style="position:absolute; top:6px; left:6px; font-size:10px; height:20px;">
-            @Comic.Status.ToString()
-        </MudChip>
+        <div style="position:absolute; top:6px; left:6px; z-index:2;">
+            <span style="@StatusStyle() font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; text-transform:uppercase; letter-spacing:0.5px;">
+                @Comic.Status
+            </span>
+        </div>
 
         <!-- Type badge -->
-        <MudChip T="string"
-                 Label="true"
-                 Size="Size.Small"
-                 Color="Color.Dark"
-                 Style="position:absolute; top:6px; right:6px; font-size:10px; height:20px; opacity:0.9;">
-            @Comic.Type.ToString()
-        </MudChip>
+        <div style="position:absolute; top:6px; right:32px; z-index:2;">
+            <span style="background:rgba(0,0,0,0.7); color:#fff; font-size:10px; font-weight:600; padding:2px 7px; border-radius:10px;">
+                @Comic.Type
+            </span>
+        </div>
 
-        <!-- Chapter overlay -->
+        <!-- Bookmark button -->
+        <div style="position:absolute; top:4px; right:4px; z-index:3;" @onclick:stopPropagation="true">
+            <MudIconButton Size="Size.Small"
+                           Icon="@(IsBookmarked ? Icons.Material.Filled.Bookmark : Icons.Material.Outlined.BookmarkBorder)"
+                           Style="@(IsBookmarked ? "color:#7c3aed;" : "color:rgba(255,255,255,0.8);")"
+                           OnClick="@ToggleBookmark" />
+        </div>
+
+        <!-- Latest chapter overlay -->
         @if (Comic.LatestChapterNumber.HasValue)
         {
-            <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent,rgba(0,0,0,0.85)); padding:8px 6px 6px;">
-                <MudText Typo="Typo.caption" Style="color:#e94560; font-weight:600;">
-                    Ch. @Comic.LatestChapterNumber
-                </MudText>
+            <div style="position:absolute; bottom:0; left:0; right:0; background:linear-gradient(transparent, rgba(0,0,0,0.85)); padding:20px 8px 6px; z-index:1;">
+                <span style="color:#a78bfa; font-size:11px; font-weight:600;">Ch. @Comic.LatestChapterNumber</span>
             </div>
         }
     </div>
 
-    <MudCardContent Style="padding:8px;">
-        <MudText Typo="Typo.body2"
-                 Style="font-weight:600; line-height:1.3; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;">
+    <div style="padding:8px 4px 4px;">
+        <div style="font-size:12px; font-weight:600; line-height:1.4; overflow:hidden; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; margin-bottom:3px;">
             @Comic.Title
-        </MudText>
-
+        </div>
         @if (Comic.AverageRating > 0)
         {
-            <div class="d-flex align-center mt-1">
-                <MudIcon Icon="@Icons.Material.Filled.Star" Color="Color.Warning" Size="Size.Small" Style="font-size:14px;" />
-                <MudText Typo="Typo.caption" Class="ml-1">@Comic.AverageRating.ToString("F1")</MudText>
-                <MudText Typo="Typo.caption" Class="ml-2" Style="opacity:0.6;">
-                    @FormatViews(Comic.ViewCount)
-                </MudText>
+            <div style="display:flex; align-items:center; gap:3px;">
+                <MudIcon Icon="@Icons.Material.Filled.Star" Style="font-size:12px; color:#f59e0b;" />
+                <span style="font-size:11px; opacity:0.8;">@Comic.AverageRating.ToString("F1")</span>
+                <span style="font-size:10px; opacity:0.5; margin-left:4px;">@FormatViews(Comic.ViewCount)</span>
             </div>
         }
-    </MudCardContent>
-</MudCard>
+    </div>
+</div>
 
 @code {
     [Parameter, EditorRequired] public ComicDto Comic { get; set; } = default!;
-    [Inject] private NavigationManager Navigation { get; set; } = default!;
 
-    private Color GetStatusColor(ComicStatus status) => status switch
+    private bool IsBookmarked => BookmarkSvc.IsBookmarked(Comic.Id);
+
+    private void GoToComic() => Nav.NavigateTo($"/comic/{Comic.Slug}");
+
+    private void ToggleBookmark() => BookmarkSvc.Toggle(Comic.Id);
+
+    private string StatusStyle() => Comic.Status switch
     {
-        ComicStatus.Ongoing => Color.Success,
-        ComicStatus.Completed => Color.Primary,
-        ComicStatus.Hiatus => Color.Warning,
-        ComicStatus.Cancelled => Color.Error,
-        _ => Color.Default
+        ComicStatus.Ongoing => "background:#059669; color:#fff;",
+        ComicStatus.Completed => "background:#7c3aed; color:#fff;",
+        ComicStatus.Hiatus => "background:#d97706; color:#fff;",
+        ComicStatus.Cancelled => "background:#dc2626; color:#fff;",
+        _ => "background:#6b7280; color:#fff;"
     };
 
-    private string FormatViews(int views) => views switch
-    {
-        >= 1000000 => $"{views / 1000000.0:F1}M",
-        >= 1000 => $"{views / 1000.0:F0}K",
-        _ => views.ToString()
-    };
+    private string FormatViews(int v) => v >= 1000000 ? $"{v / 1000000.0:F1}M" : v >= 1000 ? $"{v / 1000}K" : v.ToString();
 }

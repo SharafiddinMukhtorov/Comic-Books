@@ -1,9 +1,9 @@
 @page "/chapter/{ChapterId:guid}"
 @rendermode InteractiveServer
 @inject IMediator Mediator
-@inject NavigationManager Navigation
+@inject NavigationManager Nav
 
-<PageTitle>@GetTitle() - ComicBooks</PageTitle>
+<PageTitle>@GetTitle() - AsuraComic</PageTitle>
 
 @if (_loading)
 {
@@ -11,85 +11,68 @@
 }
 else if (_chapter is null)
 {
-    <MudAlert Severity="Severity.Error">Chapter not found.</MudAlert>
+    <div style="padding:64px; text-align:center;">
+        <MudText Typo="Typo.h5">Chapter not found</MudText>
+    </div>
 }
 else
 {
-    <MudPaper Elevation="2" Class="pa-3 mb-4 d-flex align-center gap-3 flex-wrap"
-              Style="position:sticky; top:64px; z-index:10; border-radius:8px;">
+    <!-- Sticky toolbar -->
+    <div style="position:sticky; top:64px; z-index:100; background:var(--mud-palette-appbar-background); border-bottom:1px solid var(--mud-palette-divider); padding:8px 16px; display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack" Size="Size.Small"
+                       OnClick="@(() => Nav.NavigateTo($"/comic/{_chapter.ComicTitle?.ToLower().Replace(" ","-")}"))" />
 
-        <MudIconButton Icon="@Icons.Material.Filled.ArrowBack"
-                       Size="Size.Small"
-                       Href="@GetComicUrl()"
-                       Title="Back to comic" />
-
-        <MudText Typo="Typo.body2" Class="font-medium"
-                 Style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-            @_chapter.ComicTitle - Chapter @_chapter.ChapterNumber
-            @if (!string.IsNullOrEmpty(_chapter.Title))
-            {
-                <text> - @_chapter.Title</text>
-            }
-        </MudText>
-
-        <MudSpacer />
+        <div style="flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-size:13px; font-weight:600;">
+            @_chapter.ComicTitle &nbsp;›&nbsp; Chapter @_chapter.ChapterNumber
+            @if (!string.IsNullOrEmpty(_chapter.Title)) { <text> – @_chapter.Title</text> }
+        </div>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudSelect T="string"
-                       Value="@_readerWidth"
-                       ValueChanged="@OnWidthChanged"
-                       Label="Width"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Style="width:120px;">
-                <MudSelectItem T="string" Value="@_w600">Narrow</MudSelectItem>
-                <MudSelectItem T="string" Value="@_w800">Medium</MudSelectItem>
-                <MudSelectItem T="string" Value="@_w1000">Wide</MudSelectItem>
-                <MudSelectItem T="string" Value="@_wFull">Full</MudSelectItem>
+            <MudSelect T="string" Value="@_width" ValueChanged="@(v => _width = v)"
+                       Label="Width" Variant="Variant.Outlined" Margin="Margin.Dense"
+                       Style="width:110px;">
+                <MudSelectItem T="string" Value="@_n">Narrow</MudSelectItem>
+                <MudSelectItem T="string" Value="@_m">Medium</MudSelectItem>
+                <MudSelectItem T="string" Value="@_w">Wide</MudSelectItem>
+                <MudSelectItem T="string" Value="@_f">Full</MudSelectItem>
             </MudSelect>
         </MudHidden>
 
-        <MudText Typo="Typo.caption" Style="opacity:0.6;">@_pages.Count pages</MudText>
+        <span style="font-size:12px; opacity:0.5;">@_pages.Count pages</span>
 
         <MudButton Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
-                   Disabled="@(_prevChapterId == Guid.Empty)"
-                   OnClick="@GoPrev">
-            <MudIcon Icon="@Icons.Material.Filled.SkipPrevious" Size="Size.Small" />
-            Prev
+                   Disabled="@(_prevId == Guid.Empty)" OnClick="@GoPrev"
+                   Style="border-radius:20px;">
+            ← Prev
         </MudButton>
-
         <MudButton Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary"
-                   Disabled="@(_nextChapterId == Guid.Empty)"
-                   OnClick="@GoNext">
-            Next
-            <MudIcon Icon="@Icons.Material.Filled.SkipNext" Size="Size.Small" />
+                   Disabled="@(_nextId == Guid.Empty)" OnClick="@GoNext"
+                   Style="border-radius:20px;">
+            Next →
         </MudButton>
-    </MudPaper>
+    </div>
 
-    <div class="mx-auto" style="@GetReaderStyle()">
-        @foreach (var page in _pages.OrderBy(p => p.PageNumber))
+    <!-- Pages -->
+    <div style="@ReaderStyle()">
+        @foreach (var p in _pages.OrderBy(x => x.PageNumber))
         {
-            <div class="mb-1" style="line-height:0;">
-                <img src="@($"Page {page.ImageUrl}")"
-                 alt="@($"Page {page.PageNumber}")"
-                 style="width:100%; display:block; border-radius:2px;"
-                 loading="lazy" />
-            </div>
+            <img src="@p.ImageUrl"
+                 alt="Page @p.PageNumber"
+                 class="reader-page-img"
+                 loading="lazy"
+                 onerror="this.src='https://picsum.photos/seed/page@(p.PageNumber)/800/1200'" />
         }
     </div>
 
-    <div class="d-flex justify-center gap-4 mt-8 mb-8">
+    <!-- Bottom nav -->
+    <div style="display:flex; justify-content:center; gap:16px; padding:32px 16px;">
         <MudButton Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large"
-                   Disabled="@(_prevChapterId == Guid.Empty)"
-                   OnClick="@GoPrev">
-            <MudIcon Icon="@Icons.Material.Filled.SkipPrevious" Class="mr-2" />
-            Previous Chapter
+                   Disabled="@(_prevId == Guid.Empty)" OnClick="@GoPrev" Style="border-radius:20px;">
+            ← Previous Chapter
         </MudButton>
         <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-                   Disabled="@(_nextChapterId == Guid.Empty)"
-                   OnClick="@GoNext">
-            Next Chapter
-            <MudIcon Icon="@Icons.Material.Filled.SkipNext" Class="ml-2" />
+                   Disabled="@(_nextId == Guid.Empty)" OnClick="@GoNext" Style="border-radius:20px;">
+            Next Chapter →
         </MudButton>
     </div>
 }
@@ -97,57 +80,53 @@ else
 @code {
     [Parameter] public Guid ChapterId { get; set; }
 
-    private readonly string _w600 = "600px";
-    private readonly string _w800 = "800px";
-    private readonly string _w1000 = "1000px";
-    private readonly string _wFull = "100%";
+    private readonly string _n = "600px";
+    private readonly string _m = "800px";
+    private readonly string _w = "1000px";
+    private readonly string _f = "100%";
 
     private ChapterDto? _chapter;
     private List<ChapterPageDto> _pages = new();
-    private List<ChapterDto> _allChapters = new();
-    private Guid _prevChapterId = Guid.Empty;
-    private Guid _nextChapterId = Guid.Empty;
-    private string _readerWidth = "800px";
+    private Guid _prevId, _nextId;
+    private string _width = "800px";
     private bool _loading = true;
 
-    private string GetTitle() =>
-        _chapter != null ? $"Ch.{_chapter.ChapterNumber} - {_chapter.ComicTitle}" : "Reading...";
+    private string GetTitle() => _chapter != null ? $"Ch.{_chapter.ChapterNumber} - {_chapter.ComicTitle}" : "Reading...";
+    private string ReaderStyle() => $"max-width:{_width}; margin:0 auto; padding:8px 0;";
+    private void GoPrev() => Nav.NavigateTo($"/chapter/{_prevId}");
+    private void GoNext() => Nav.NavigateTo($"/chapter/{_nextId}");
 
-    private string GetComicUrl() =>
-        _chapter?.ComicTitle != null
-            ? $"/comic/{_chapter.ComicTitle.ToLower().Replace(" ", "-")}"
-            : "/";
+    protected override async Task OnInitializedAsync() => await Load();
+    protected override async Task OnParametersSetAsync() { if (!_loading) await Load(); }
 
-    private string GetReaderStyle() =>
-        $"max-width:{_readerWidth}; margin-left:auto; margin-right:auto; transition:max-width 0.3s;";
-
-    private void OnWidthChanged(string val) { _readerWidth = val; StateHasChanged(); }
-    private void GoPrev() => Navigation.NavigateTo($"/chapter/{_prevChapterId}");
-    private void GoNext() => Navigation.NavigateTo($"/chapter/{_nextChapterId}");
-
-    protected override async Task OnInitializedAsync() => await LoadChapter();
-
-    protected override async Task OnParametersSetAsync()
-    {
-        if (!_loading) await LoadChapter();
-    }
-
-    private async Task LoadChapter()
+    private async Task Load()
     {
         _loading = true;
         StateHasChanged();
 
-        var result = await Mediator.Send(new GetChapterWithPagesQuery(ChapterId));
-        _chapter = result.Chapter;
-        _pages = result.Pages;
+        var r = await Mediator.Send(new GetChapterWithPagesQuery(ChapterId));
+        _chapter = r.Chapter;
+        _pages = r.Pages;
+
+        if (_chapter != null && !_pages.Any())
+        {
+            // Generate mock pages if none exist
+            _pages = Enumerable.Range(1, 20).Select(i => new ChapterPageDto
+            {
+                Id = Guid.NewGuid(),
+                ChapterId = ChapterId,
+                PageNumber = i,
+                ImageUrl = $"https://picsum.photos/seed/{_chapter.ComicId}-{_chapter.ChapterNumber}-{i}/800/1200"
+            }).ToList();
+        }
 
         if (_chapter != null)
         {
-            _allChapters = await Mediator.Send(new GetChaptersByComicQuery(_chapter.ComicId));
-            var ordered = _allChapters.OrderBy(c => c.ChapterNumber).ToList();
+            var all = await Mediator.Send(new GetChaptersByComicQuery(_chapter.ComicId));
+            var ordered = all.OrderBy(c => c.ChapterNumber).ToList();
             var idx = ordered.FindIndex(c => c.Id == ChapterId);
-            _prevChapterId = idx > 0 ? ordered[idx - 1].Id : Guid.Empty;
-            _nextChapterId = idx < ordered.Count - 1 ? ordered[idx + 1].Id : Guid.Empty;
+            _prevId = idx > 0 ? ordered[idx - 1].Id : Guid.Empty;
+            _nextId = idx < ordered.Count - 1 ? ordered[idx + 1].Id : Guid.Empty;
         }
 
         _loading = false;
