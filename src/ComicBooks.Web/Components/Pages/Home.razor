@@ -113,7 +113,7 @@ else
                 @foreach (var c in _latest?.Items ?? new())
                 {
                     <MudLink Href="@($"/comic/{c.Slug}")" Underline="Underline.None" Color="Color.Default">
-                        <div style="display:flex;gap:12px;padding:10px 8px;border-radius:10px;
+                        @* <div style="display:flex;gap:12px;padding:10px 8px;border-radius:10px;
                                     border-bottom:1px solid rgba(128,128,128,0.12);cursor:pointer;
                                     transition:background 0.15s;"
                              @onmouseover="@(e => _latestHover = c.Id)"
@@ -149,7 +149,7 @@ else
                                     ★ @c.AverageRating.ToString("F1")
                                 </span>
                             </div>
-                        </div>
+                        </div> *@
                     </MudLink>
                 }
             </MudItem>
