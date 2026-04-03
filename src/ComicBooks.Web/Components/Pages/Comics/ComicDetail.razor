@@ -138,12 +138,9 @@ else
                 @foreach (var ch in SortedChapters())
                 {
                     <MudLink Href="@($"/chapter/{ch.Id}")" Underline="Underline.None" Color="Color.Default">
-                        <div style="display:flex;justify-content:space-between;align-items:center;
-                                    padding:11px 12px;border-radius:8px;cursor:pointer;
-                                    transition:background 0.15s;"
+                        <div style="@GetChapterStyle(ch.Id)"
                              @onmouseover="@(_ => _hover = ch.Id)"
-                             @onmouseout="@(_ => _hover = Guid.Empty)"
-                             style="@(_hover == ch.Id ? "background:rgba(124,58,237,0.1);" : "")">
+                             @onmouseout="@(_ => _hover = Guid.Empty)">
                             <div>
                                 <span style="color:#7c3aed;font-weight:800;margin-right:6px;">@ch.ChapterNumber-bob</span>
                                 @if (!string.IsNullOrEmpty(ch.Title))
@@ -151,10 +148,12 @@ else
                                     <span style="font-size:13px;opacity:0.7;">@ch.Title</span>
                                 }
                             </div>
+
                             <div style="display:flex;gap:12px;font-size:12px;opacity:0.4;flex-shrink:0;">
                                 <span>@ch.PageCount bet</span>
                                 <span>@ch.PublishedAt?.ToString("dd.MM.yyyy")</span>
                             </div>
+
                         </div>
                     </MudLink>
                 }
@@ -178,6 +177,18 @@ else
     List<ChapterDto> SortedChapters() => _desc
         ? _chapters.OrderByDescending(c => c.ChapterNumber).ToList()
         : _chapters.OrderBy(c => c.ChapterNumber).ToList();
+
+    private string GetChapterStyle(Guid chapterId)
+    {
+        var baseStyle = "display:flex;justify-content:space-between;align-items:center;padding:11px 12px;border-radius:8px;cursor:pointer;transition:background 0.15s;";
+
+        if (_hover == chapterId)
+        {
+            baseStyle += "background:rgba(124,58,237,0.1);";
+        }
+
+        return baseStyle;
+    }
 
     protected override async Task OnInitializedAsync()
     {
