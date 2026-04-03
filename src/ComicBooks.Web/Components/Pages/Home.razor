@@ -7,159 +7,210 @@
 
 @if (_loading)
 {
-    <div style="display:flex; justify-content:center; align-items:center; height:60vh; flex-direction:column; gap:16px;">
+    <div style="display:flex;justify-content:center;align-items:center;height:60vh;flex-direction:column;gap:16px;">
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
         <MudText Style="opacity:0.5;">Yuklanmoqda...</MudText>
     </div>
 }
 else
 {
-    <!-- Hero horizontal scroll -->
-    @if (_featured?.Items.Any() == true)
-    {
-        <div style="padding:12px 0 4px; overflow:hidden;">
-            <div style="display:flex; gap:10px; overflow-x:auto; padding:4px 16px 12px;
-                        scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:thin;">
-                @foreach (var c in _featured.Items)
+    <!-- ===================== HERO BANNER SCROLL ===================== -->
+    <div style="background:var(--mud-palette-surface);border-bottom:1px solid rgba(128,128,128,0.1);">
+        <div style="max-width:1400px;margin:0 auto;padding:16px 16px 12px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                <span style="font-size:1rem;font-weight:800;color:#7c3aed;">🔥</span>
+                <span style="font-size:1rem;font-weight:800;">Tanlangan komiklar</span>
+            </div>
+            <!-- Horizontal scroll -->
+            <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;
+                        scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;scrollbar-width:thin;
+                        scrollbar-color:#7c3aed transparent;">
+                @foreach (var c in _featured?.Items ?? new())
                 {
-                    <div style="flex:0 0 auto; width:130px; scroll-snap-align:start; cursor:pointer;"
+                    <div style="flex:0 0 auto;width:150px;scroll-snap-align:start;cursor:pointer;"
                          @onclick="@(() => Nav.NavigateTo($"/comic/{c.Slug}"))">
-                        <div style="position:relative; border-radius:12px; overflow:hidden; aspect-ratio:2/3;
-                                    box-shadow:0 6px 20px rgba(0,0,0,0.45);">
-                            <img src="@Cover(c)" alt="@c.Title"
-                                 style="width:100%; height:100%; object-fit:cover; display:block;"
+                        <div style="position:relative;border-radius:12px;overflow:hidden;
+                                    aspect-ratio:2/3;box-shadow:0 8px 24px rgba(0,0,0,0.4);
+                                    transition:transform 0.2s;"
+                             @onmouseover="@(e => _heroHover = c.Id)"
+                             @onmouseout="@(e => _heroHover = Guid.Empty)">
+                            <img src="@Cover(c)"
+                                 style="width:100%;height:100%;object-fit:cover;display:block;
+                                        transition:transform 0.3s;
+                                        @(_heroHover == c.Id ? "transform:scale(1.06);" : "")"
                                  loading="lazy"
-                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)h/260/390'" />
-                            <div style="position:absolute; inset:0;
-                                        background:linear-gradient(transparent 40%, rgba(0,0,0,0.92));
-                                        padding:8px; display:flex; flex-direction:column; justify-content:flex-end;">
-                                <div style="font-size:10px; font-weight:700; color:#f59e0b; margin-bottom:2px;">
-                                    ★ @c.AverageRating.ToString("F1")
+                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)h/300/420'" />
+                            <div style="position:absolute;inset:0;
+                                        background:linear-gradient(transparent 35%,rgba(0,0,0,0.92));
+                                        display:flex;flex-direction:column;
+                                        justify-content:flex-end;padding:10px;">
+                                <div style="font-size:10px;font-weight:700;color:#fbbf24;margin-bottom:2px;">
+                                    ★ @c.AverageRating.ToString("F1") &nbsp;·&nbsp; @c.LatestChapterNumber-bob
                                 </div>
-                                <div style="font-size:11px; font-weight:700; color:#fff; line-height:1.3;
-                                            overflow:hidden; display:-webkit-box; -webkit-line-clamp:2;
-                                            -webkit-box-orient:vertical;">@c.Title</div>
+                                <div style="font-size:12px;font-weight:800;color:#fff;line-height:1.3;
+                                            overflow:hidden;display:-webkit-box;
+                                            -webkit-line-clamp:2;-webkit-box-orient:vertical;">
+                                    @c.Title
+                                </div>
+                                <div style="font-size:10px;opacity:0.5;margin-top:2px;">
+                                    @c.Author
+                                </div>
                             </div>
-                            <div style="position:absolute; top:6px; left:6px;
-                                        background:#7c3aed; color:#fff;
-                                        font-size:9px; font-weight:800; padding:2px 6px; border-radius:8px;">
+                            <div style="position:absolute;top:6px;left:6px;
+                                        background:#7c3aed;color:#fff;
+                                        font-size:9px;font-weight:800;
+                                        padding:2px 7px;border-radius:8px;">
                                 HOT
+                            </div>
+                            <div style="position:absolute;top:6px;right:6px;
+                                        background:rgba(0,0,0,0.65);color:#fff;
+                                        font-size:9px;font-weight:600;
+                                        padding:2px 6px;border-radius:8px;">
+                                @c.Type
                             </div>
                         </div>
                     </div>
                 }
             </div>
         </div>
-    }
+    </div>
 
-    <div style="max-width:1400px; margin:0 auto; padding:8px 16px 48px;">
+    <!-- ===================== MAIN CONTENT ===================== -->
+    <div style="max-width:1400px;margin:0 auto;padding:20px 16px 48px;">
 
-        <!-- Trending -->
-        @if (_trending?.Items.Any() == true)
-        {
-            <div style="margin-bottom:28px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <span style="font-size:1.1rem; font-weight:800;">🔥 Bugun trendda</span>
-                    <a href="/comics?sortBy=views" style="font-size:13px; color:#7c3aed; font-weight:600; text-decoration:none; cursor:pointer;"
-                       @onclick:preventDefault="true" @onclick="@(() => Nav.NavigateTo("/comics?sortBy=views"))">Barchasini ko'rish →</a>
-                </div>
-                <MudGrid Spacing="2">
-                    @foreach (var c in _trending.Items)
-                    {
-                        <MudItem xs="6" sm="4" md="3" lg="2">
-                            <ComicCard Comic="c" />
-                        </MudItem>
-                    }
-                </MudGrid>
+        <!-- Trending Today -->
+        <div style="margin-bottom:32px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <span style="font-size:1.15rem;font-weight:800;display:flex;align-items:center;gap:6px;">
+                    🔥 <span>Bugun trendda</span>
+                </span>
+                <MudLink Href="/comics?sortBy=views" Underline="Underline.None"
+                         Style="font-size:13px;color:#7c3aed;font-weight:600;">
+                    Barchasini ko'rish →
+                </MudLink>
             </div>
-        }
+            <MudGrid Spacing="2">
+                @foreach (var c in _trending?.Items ?? new())
+                {
+                    <MudItem xs="6" sm="4" md="3" lg="2">
+                        <ComicCard Comic="c" />
+                    </MudItem>
+                }
+            </MudGrid>
+        </div>
 
-        <!-- Latest + Popular -->
-        <MudGrid Spacing="3">
-            <!-- Latest -->
+        <!-- Latest + Popular Rankings -->
+        <MudGrid Spacing="4">
+
+            <!-- Left: Latest Updates -->
             <MudItem xs="12" md="8">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <span style="font-size:1.1rem; font-weight:800;">⏰ So'nggi yangilanishlar</span>
-                    <span style="font-size:13px; color:#7c3aed; font-weight:600; cursor:pointer;"
-                          @onclick="@(() => Nav.NavigateTo("/comics"))">Barchasini ko'rish →</span>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                    <span style="font-size:1.1rem;font-weight:800;">⏰ So'nggi yangilanishlar</span>
+                    <MudLink Href="/comics" Underline="Underline.None" Style="font-size:13px;color:#7c3aed;font-weight:600;">
+                        Barchasini ko'rish →
+                    </MudLink>
                 </div>
                 @foreach (var c in _latest?.Items ?? new())
                 {
-                    <div style="display:flex; gap:12px; padding:10px 0;
-                                border-bottom:1px solid rgba(128,128,128,0.15);
-                                cursor:pointer;"
-                         @onclick="@(() => Nav.NavigateTo($"/comic/{c.Slug}"))">
-                        <img src="@Cover(c)"
-                             style="width:54px; height:76px; object-fit:cover; border-radius:6px; flex-shrink:0;"
-                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)l/80/110'" />
-                        <div style="flex:1; min-width:0;">
-                            <div style="font-weight:700; font-size:14px; margin-bottom:3px;
-                                        overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">@c.Title</div>
-                            <div style="font-size:12px; opacity:0.45; margin-bottom:5px;">@c.Author</div>
-                            <div style="display:flex; flex-wrap:wrap; gap:4px;">
-                                @foreach (var g in c.Genres.Take(2))
-                                {
-                                    <span style="font-size:10px; background:rgba(124,58,237,0.14);
-                                                 color:#7c3aed; padding:2px 7px; border-radius:10px; font-weight:600;">@g</span>
-                                }
+                    <MudLink Href="@($"/comic/{c.Slug}")" Underline="Underline.None" Color="Color.Default">
+                        <div style="display:flex;gap:12px;padding:10px 8px;border-radius:10px;
+                                    border-bottom:1px solid rgba(128,128,128,0.12);cursor:pointer;
+                                    transition:background 0.15s;"
+                             @onmouseover="@(e => _latestHover = c.Id)"
+                             @onmouseout="@(e => _latestHover = Guid.Empty)"
+                             style="@(_latestHover == c.Id ? "background:rgba(124,58,237,0.05);" : "")">
+                            <img src="@Cover(c)"
+                                 style="width:56px;height:78px;object-fit:cover;border-radius:8px;flex-shrink:0;"
+                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)l/80/110'" />
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:700;font-size:14px;margin-bottom:3px;
+                                            overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
+                                <div style="font-size:12px;opacity:0.45;margin-bottom:5px;">
+                                    @c.Author @(c.ReleaseYear.HasValue ? $"({c.ReleaseYear})" : "")
+                                </div>
+                                <div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">
+                                    @foreach (var g in c.Genres.Take(3))
+                                    {
+                                        <span style="font-size:10px;background:rgba(124,58,237,0.12);
+                                                     color:#7c3aed;padding:2px 7px;border-radius:10px;font-weight:600;">@g</span>
+                                    }
+                                </div>
+                                <div style="font-size:11px;opacity:0.4;">
+                                    @c.LatestChapterNumber-bob · @FormatViews(c.ViewCount) ko'rildi
+                                </div>
+                            </div>
+                            <div style="display:flex;flex-direction:column;align-items:flex-end;
+                                        gap:5px;flex-shrink:0;padding-left:4px;">
+                                <span style="@StatBadge(c.Status);font-size:10px;font-weight:700;
+                                             padding:2px 7px;border-radius:8px;white-space:nowrap;">
+                                    @StatusUz(c.Status)
+                                </span>
+                                <span style="font-size:11px;color:#f59e0b;font-weight:700;">
+                                    ★ @c.AverageRating.ToString("F1")
+                                </span>
                             </div>
                         </div>
-                        <div style="display:flex; flex-direction:column; align-items:flex-end;
-                                    gap:4px; flex-shrink:0; padding-left:4px;">
-                            <span style="@StatBadge(c.Status) font-size:10px; font-weight:700;
-                                         padding:2px 7px; border-radius:8px; white-space:nowrap;">
-                                @StatusUz(c.Status)
-                            </span>
-                            <span style="font-size:11px; color:#f59e0b; font-weight:700;">
-                                ★ @c.AverageRating.ToString("F1")
-                            </span>
-                            <span style="font-size:10px; opacity:0.4;">@c.LatestChapterNumber-bob</span>
-                        </div>
-                    </div>
+                    </MudLink>
                 }
             </MudItem>
 
-            <!-- Popular -->
+            <!-- Right: Popular Rankings -->
             <MudItem xs="12" md="4">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <span style="font-size:1.1rem; font-weight:800;">⭐ Mashhur</span>
-                    <div style="display:flex; gap:4px;">
-                        <button @onclick="@(() => _tab = 0)" style="@TabBtn(0)">Haftalik</button>
-                        <button @onclick="@(() => _tab = 1)" style="@TabBtn(1)">Barcha vaqt</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                    <span style="font-size:1.1rem;font-weight:800;">⭐ Mashhur</span>
+                    <div style="display:flex;gap:4px;">
+                        <MudChip T="string"
+                                 Color="@(_tab==0 ? Color.Primary : Color.Default)"
+                                 Size="Size.Small"
+                                 Label="true"
+                                 OnClick="@(() => _tab = 0)"
+                                 Style="cursor:pointer;">
+                            Haftalik
+                        </MudChip>
+                        <MudChip T="string"
+                                 Color="@(_tab==1 ? Color.Primary : Color.Default)"
+                                 Size="Size.Small"
+                                 Label="true"
+                                 OnClick="@(() => _tab = 1)"
+                                 Style="cursor:pointer;">
+                            Barcha vaqt
+                        </MudChip>
                     </div>
                 </div>
                 @for (int i = 0; i < Math.Min(10, PopList().Count); i++)
                 {
                     var c = PopList()[i];
                     var r = i + 1;
-                    <div style="display:flex; gap:10px; align-items:center; padding:7px 0;
-                                border-bottom:1px solid rgba(128,128,128,0.12); cursor:pointer;"
-                         @onclick="@(() => Nav.NavigateTo($"/comic/{c.Slug}"))">
-                        <span style="@RankStyle(r) width:25px; height:25px; border-radius:6px;
-                                     display:flex; align-items:center; justify-content:center;
-                                     font-size:12px; font-weight:800; flex-shrink:0;">@r</span>
-                        <img src="@Cover(c)"
-                             style="width:38px; height:54px; object-fit:cover; border-radius:4px; flex-shrink:0;"
-                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)r/50/70'" />
-                        <div style="flex:1; min-width:0;">
-                            <div style="font-size:13px; font-weight:700; overflow:hidden;
-                                        text-overflow:ellipsis; white-space:nowrap;">@c.Title</div>
-                            <div style="font-size:10px; opacity:0.4;">@string.Join(", ", c.Genres.Take(2))</div>
-                            <div style="font-size:11px; color:#f59e0b; font-weight:700; margin-top:1px;">
-                                ★ @c.AverageRating.ToString("F1")
+                    <MudLink Href="@($"/comic/{c.Slug}")" Underline="Underline.None" Color="Color.Default">
+                        <div style="display:flex;gap:10px;align-items:center;padding:8px 4px;
+                                    border-bottom:1px solid rgba(128,128,128,0.1);cursor:pointer;">
+                            <span style="@RankStyle(r);width:26px;height:26px;border-radius:6px;
+                                         display:flex;align-items:center;justify-content:center;
+                                         font-size:12px;font-weight:900;flex-shrink:0;">@r</span>
+                            <img src="@Cover(c)"
+                                 style="width:40px;height:56px;object-fit:cover;border-radius:5px;flex-shrink:0;"
+                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)r/50/70'" />
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;font-weight:700;overflow:hidden;
+                                            text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
+                                <div style="font-size:10px;opacity:0.4;">@string.Join(", ", c.Genres.Take(2))</div>
+                                <div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:2px;">
+                                    ★ @c.AverageRating.ToString("F1") &nbsp;·&nbsp; @FormatViews(c.ViewCount)
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    </MudLink>
                 }
             </MudItem>
         </MudGrid>
 
-        <!-- All comics -->
+        <!-- New Releases Grid -->
         <div style="margin-top:36px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                <span style="font-size:1.1rem; font-weight:800;">📚 Barcha komiklar</span>
-                <span style="font-size:13px; color:#7c3aed; font-weight:600; cursor:pointer;"
-                      @onclick="@(() => Nav.NavigateTo("/comics"))">Ko'proq →</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <span style="font-size:1.1rem;font-weight:800;">🆕 Yangi komiklar</span>
+                <MudLink Href="/comics" Underline="Underline.None" Style="font-size:13px;color:#7c3aed;font-weight:600;">
+                    Ko'proq →
+                </MudLink>
             </div>
             <MudGrid Spacing="2">
                 @foreach (var c in _all?.Items ?? new())
@@ -170,35 +221,75 @@ else
                 }
             </MudGrid>
         </div>
+
+        <!-- Manhwa section -->
+        @if (_manhwa?.Items.Any() == true)
+        {
+            <div style="margin-top:36px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                    <span style="font-size:1.1rem;font-weight:800;">🇰🇷 Manhwa (Korean)</span>
+                    <MudLink Href="/comics?sortBy=views" Underline="Underline.None" Style="font-size:13px;color:#7c3aed;font-weight:600;">Ko'proq →</MudLink>
+                </div>
+                <MudGrid Spacing="2">
+                    @foreach (var c in _manhwa.Items)
+                    {
+                        <MudItem xs="6" sm="4" md="3" lg="2">
+                            <ComicCard Comic="c" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        }
+
+        <!-- Completed section -->
+        @if (_completed?.Items.Any() == true)
+        {
+            <div style="margin-top:36px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                    <span style="font-size:1.1rem;font-weight:800;">✅ Tugallangan komiklar</span>
+                    <MudLink Href="/comics" Underline="Underline.None" Style="font-size:13px;color:#7c3aed;font-weight:600;">Ko'proq →</MudLink>
+                </div>
+                <MudGrid Spacing="2">
+                    @foreach (var c in _completed.Items)
+                    {
+                        <MudItem xs="6" sm="4" md="3" lg="2">
+                            <ComicCard Comic="c" />
+                        </MudItem>
+                    }
+                </MudGrid>
+            </div>
+        }
     </div>
 }
 
 @code {
-    private PaginatedList<ComicDto>? _featured, _trending, _popular, _latest, _all;
-    private bool _loading = true;
-    private int _tab = 0;
+    PaginatedList<ComicDto>? _featured, _trending, _popular, _latest, _all, _manhwa, _completed;
+    bool _loading = true;
+    int _tab = 0;
+    Guid _heroHover, _latestHover;
 
     protected override async Task OnInitializedAsync()
     {
-        _featured = await Mediator.Send(new GetComicsQuery(PageSize: 12, IsFeatured: true, SortBy: "rating"));
-        _trending = await Mediator.Send(new GetComicsQuery(PageSize: 6,  SortBy: "views"));
-        _popular  = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true, SortBy: "rating"));
-        _latest   = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "createdAt"));
-        _all      = await Mediator.Send(new GetComicsQuery(PageSize: 18, SortBy: "createdAt"));
-        _loading  = false;
+        _featured  = await Mediator.Send(new GetComicsQuery(PageSize:12, IsFeatured:true, SortBy:"rating"));
+        _trending  = await Mediator.Send(new GetComicsQuery(PageSize:6,  SortBy:"views"));
+        _popular   = await Mediator.Send(new GetComicsQuery(PageSize:10, IsPopular:true, SortBy:"rating"));
+        _latest    = await Mediator.Send(new GetComicsQuery(PageSize:10, SortBy:"createdAt"));
+        _all       = await Mediator.Send(new GetComicsQuery(PageSize:18, SortBy:"createdAt"));
+        _manhwa    = await Mediator.Send(new GetComicsQuery(PageSize:6,  Type:ComicType.Manhwa, SortBy:"rating"));
+        _completed = await Mediator.Send(new GetComicsQuery(PageSize:6,  Status:ComicStatus.Completed, SortBy:"rating"));
+        _loading   = false;
     }
 
     List<ComicDto> PopList() => _tab == 0 ? (_trending?.Items ?? new()) : (_popular?.Items ?? new());
-
-    string Cover(ComicDto c) => !string.IsNullOrEmpty(c.CoverImageUrl) ? c.CoverImageUrl
-                                : $"https://picsum.photos/seed/{c.Slug}/300/420";
+    string Cover(ComicDto c) => !string.IsNullOrEmpty(c.CoverImageUrl) ? c.CoverImageUrl : $"https://picsum.photos/seed/{c.Slug}/300/420";
+    string FormatViews(int v) => v >= 1_000_000 ? $"{v/1_000_000.0:F1}M" : v >= 1_000 ? $"{v/1_000}K" : v.ToString();
 
     string StatBadge(ComicStatus s) => s switch
     {
-        ComicStatus.Ongoing   => "background:#059669; color:#fff;",
-        ComicStatus.Completed => "background:#7c3aed; color:#fff;",
-        ComicStatus.Hiatus    => "background:#d97706; color:#fff;",
-        _                     => "background:#4b5563; color:#fff;"
+        ComicStatus.Ongoing   => "background:#059669;color:#fff",
+        ComicStatus.Completed => "background:#7c3aed;color:#fff",
+        ComicStatus.Hiatus    => "background:#d97706;color:#fff",
+        _                     => "background:#4b5563;color:#fff"
     };
 
     string StatusUz(ComicStatus s) => s switch
@@ -211,13 +302,9 @@ else
 
     string RankStyle(int r) => r switch
     {
-        1 => "background:#fbbf24; color:#000;",
-        2 => "background:#9ca3af; color:#000;",
-        3 => "background:#b45309; color:#fff;",
-        _ => "background:rgba(124,58,237,0.15); color:#7c3aed;"
+        1 => "background:#fbbf24;color:#000",
+        2 => "background:#9ca3af;color:#000",
+        3 => "background:#b45309;color:#fff",
+        _ => "background:rgba(124,58,237,0.15);color:#7c3aed"
     };
-
-    string TabBtn(int t) => _tab == t
-        ? "background:#7c3aed; color:#fff; font-size:11px; font-weight:700; padding:3px 10px; border-radius:12px; border:none; cursor:pointer;"
-        : "background:rgba(124,58,237,0.1); color:#7c3aed; font-size:11px; font-weight:600; padding:3px 10px; border-radius:12px; border:none; cursor:pointer;";
 }
