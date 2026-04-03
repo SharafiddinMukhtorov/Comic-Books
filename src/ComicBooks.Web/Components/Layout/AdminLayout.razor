@@ -1,8 +1,8 @@
 @inherits LayoutComponentBase
-@inject ThemeService Theme
+@inject ThemeService ThemeSvc
 @implements IDisposable
 
-<MudThemeProvider Theme="@_mudTheme" IsDarkMode="@Theme.IsDark" />
+<MudThemeProvider @ref="@_provider" Theme="@_theme" IsDarkMode="@_dark" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -14,15 +14,18 @@
         <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Color="Color.Warning" Class="mr-2" />
         <MudText Typo="Typo.h6" Style="font-weight:800;">Admin panel</MudText>
         <MudSpacer />
-        <MudIconButton Icon="@(Theme.IsDark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit" OnClick="@DoToggle" />
+        <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                       Color="Color.Inherit"
+                       OnClick="@ToggleTheme"
+                       Title="@(_dark ? "Yorug' rejim" : "Tungi rejim")" />
         <MudButton Href="/" Variant="Variant.Text" Color="Color.Inherit"
                    StartIcon="@Icons.Material.Filled.ArrowBack"
                    Style="text-transform:none;">Saytga qaytish</MudButton>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_open" Elevation="2"
-               Variant="@DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always">
+               Variant="@DrawerVariant.Responsive"
+               ClipMode="DrawerClipMode.Always">
         <MudDrawerHeader>
             <span style="color:#7c3aed;font-weight:900;font-size:1rem;">⚙️ Admin panel</span>
         </MudDrawerHeader>
@@ -42,18 +45,29 @@
 </MudLayout>
 
 @code {
-    bool _open = true;
+    private MudThemeProvider _provider = null!;
+    private bool _open = true;
+    private bool _dark = true;
 
-    readonly MudTheme _mudTheme = new()
+    private readonly MudTheme _theme = new()
     {
-        PaletteLight = new PaletteLight { Primary = "#7c3aed", Secondary = "#5b21b6", Background = "#f3f4f6", Surface = "#ffffff", AppbarBackground = "#ffffff", AppbarText = "#111827", DrawerBackground = "#f9f9fb", DrawerText = "#111827", TextPrimary = "#111827" },
-        PaletteDark  = new PaletteDark  { Primary = "#7c3aed", Secondary = "#5b21b6", Background = "#0f0f1a", Surface = "#1a1a2e", AppbarBackground = "#16213e", AppbarText = "#e5e7eb", DrawerBackground = "#16213e", DrawerText = "#e5e7eb", TextPrimary = "#f9fafb", TextSecondary = "#9ca3af" }
+        PaletteLight = new PaletteLight { Primary="#7c3aed", Background="#f3f4f6", Surface="#ffffff", AppbarBackground="#ffffff", AppbarText="#111827", DrawerBackground="#f9f9fb", DrawerText="#111827", TextPrimary="#111827" },
+        PaletteDark  = new PaletteDark  { Primary="#7c3aed", Background="#0f0f1a", Surface="#1a1a2e", AppbarBackground="#16213e", AppbarText="#e5e7eb", DrawerBackground="#16213e", DrawerText="#e5e7eb", TextPrimary="#f9fafb", TextSecondary="#9ca3af" }
     };
 
-    protected override void OnInitialized() => Theme.OnChange += Refresh;
+    protected override void OnInitialized()
+    {
+        _dark = ThemeSvc.IsDark;
+        ThemeSvc.OnChange += OnThemeChanged;
+    }
 
-    void DoToggle() => Theme.Toggle();
-    void Refresh() => InvokeAsync(StateHasChanged);
+    private async void ToggleTheme() => ThemeSvc.Toggle();
 
-    public void Dispose() => Theme.OnChange -= Refresh;
+    private void OnThemeChanged()
+    {
+        _dark = ThemeSvc.IsDark;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => ThemeSvc.OnChange -= OnThemeChanged;
 }
