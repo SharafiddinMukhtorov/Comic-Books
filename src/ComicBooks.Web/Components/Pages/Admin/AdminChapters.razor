@@ -7,7 +7,7 @@
 
 <PageTitle>Boblar - Admin</PageTitle>
 
-<MudBreadcrumbs Items="_crumbs" Class="mb-4 pa-0" />
+<MudBreadcrumbs Items="@_crumbs" Class="mb-2 pa-0" />
 
 @if (_showForm)
 {
@@ -17,47 +17,53 @@
         <MudItem xs="12" md="7">
             <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px;">
 
-                <MudSelect T="Guid"
-                           @bind-Value="_comicId"
-                           Label="Komik tanlang *"
-                           Variant="Variant.Outlined"
-                           AnchorOrigin="Origin.BottomLeft"
-                           Class="mb-4">
-                    @foreach (var c in _allComics)
-                    {
-                        <MudSelectItem T="Guid" Value="@c.Id">@c.Title</MudSelectItem>
-                    }
-                </MudSelect>
+                <MudAutocomplete T="ComicDto"
+                                 Label="Komik tanlang *"
+                                 @bind-Value="_selectedComic"
+                                 SearchFunc="@SearchComics"
+                                 ToStringFunc="@(c => c?.Title ?? "")"
+                                 Variant="Variant.Outlined"
+                                 Class="mb-4"
+                                 MinCharacters="0"
+                                 ResetValueOnEmptyText="false"
+                                 CoerceText="true"
+                                 AdornmentIcon="@Icons.Material.Filled.MenuBook"
+                                 Adornment="Adornment.Start"
+                                 Placeholder="Komik nomini kiriting yoki tanlang..."
+                                 HelperText="@(_selectedComic != null ? $"✅ {_selectedComic.Title} tanlandi" : "Komik tanlang")" />
 
                 <MudNumericField T="double"
-                                 @bind-Value="_chapNum"
+                                 Value="@_chapNum"
+                                 ValueChanged="@((double v) => _chapNum = v)"
                                  Label="Bob raqami *"
                                  Variant="Variant.Outlined"
                                  Class="mb-4"
                                  Min="0.1"
-                                 Step="0.5"
-                                 HideSpinButtons="false" />
+                                 Step="0.5" />
 
-                <MudTextField @bind-Value="_chapTitle"
+                <MudTextField Value="@_chapTitle"
+                              ValueChanged="@((string? v) => _chapTitle = v)"
                               Label="Sarlavha (ixtiyoriy)"
                               Variant="Variant.Outlined"
                               Class="mb-4" />
 
                 <MudSwitch T="bool"
-                           @bind-Value="_locked"
+                           Checked="@_locked"
+                           CheckedChanged="@((bool v) => _locked = v)"
                            Label="Qulflangan (premium)"
                            Color="Color.Warning"
-                           Class="mb-4" />
+                           Class="mb-3" />
 
                 <MudText Typo="Typo.subtitle2" Class="mb-2" Style="font-weight:600;">
-                    📄 Sahifalar — har bir qatorda bitta URL
+                    📄 Sahifalar — har qatorda bitta URL
                 </MudText>
-                <MudTextField @bind-Value="_pageUrls"
+                <MudTextField Value="@_pageUrls"
+                              ValueChanged="@((string v) => _pageUrls = v)"
                               Lines="10"
                               Variant="Variant.Outlined"
                               Class="mb-4"
-                              Placeholder="https://cdn.example.com/page1.jpg&#10;https://cdn.example.com/page2.jpg&#10;..."
-                              HelperText="Bo'sh qoldirsangiz, mock rasmlar avtomatik qo'shiladi" />
+                              Placeholder="https://cdn.example.com/page1.jpg&#10;https://cdn.example.com/page2.jpg"
+                              HelperText="Bo'sh qoldirsangiz mock rasmlar avtomatik qo'shiladi" />
 
                 <MudButton Variant="Variant.Filled"
                            Color="Color.Primary"
@@ -69,16 +75,20 @@
                     @if (_saving)
                     {
                         <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                        <span>Saqlanmoqda...</span>
+                        <text>Saqlanmoqda...</text>
                     }
-                    else { <span>Bobni saqlash</span> }
+                    else
+                    {
+                        <text>Bobni saqlash</text>
+                    }
                 </MudButton>
+
                 <MudButton Variant="Variant.Text"
                            FullWidth="true"
                            Class="mt-2"
                            OnClick="@(() => _showForm = false)"
                            Style="text-transform:none;">
-                    Bekor qilish
+                    ← Bekor qilish
                 </MudButton>
             </MudPaper>
         </MudItem>
@@ -87,13 +97,13 @@
             <MudPaper Elevation="1" Class="pa-4" Style="border-radius:12px;">
                 <MudText Typo="Typo.subtitle1" Class="mb-3 font-bold">💡 Ko'rsatmalar</MudText>
                 <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
-                    Sahifalar bo'sh qoldirilsa, mock rasmlar avtomatik qo'shiladi.
+                    Sahifalar bo'sh bo'lsa mock rasmlar avtomatik qo'shiladi.
                 </MudAlert>
                 <MudAlert Severity="Severity.Info" Dense="true" Class="mb-2">
-                    Bob raqami kasr bo'lishi mumkin (masalan 1.5 — maxsus bob uchun).
+                    Bob raqami kasr bo'lishi mumkin (1.5 — maxsus bob).
                 </MudAlert>
                 <MudAlert Severity="Severity.Success" Dense="true">
-                    URL'lar http:// yoki https:// bilan boshlanishi kerak.
+                    URL http:// yoki https:// bilan boshlanishi kerak.
                 </MudAlert>
             </MudPaper>
         </MudItem>
@@ -106,92 +116,100 @@ else
         <MudButton Variant="Variant.Filled"
                    Color="Color.Primary"
                    StartIcon="@Icons.Material.Filled.Add"
-                   OnClick="@(() => _showForm = true)"
+                   OnClick="@(() => { _showForm = true; _selectedComic = null; _chapNum = 1; _chapTitle = null; _locked = false; _pageUrls = ""; })"
                    Style="border-radius:20px;text-transform:none;font-weight:700;">
             Bob qo'shish
         </MudButton>
     </div>
 
+    <!-- Filter by comic using Autocomplete -->
     <MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:12px;">
         <MudText Typo="Typo.subtitle2" Class="mb-2">Komik bo'yicha filtrlash</MudText>
-        <MudSelect T="Guid?"
-                   Value="@_filterComicId"
-                   ValueChanged="@FilterChanged"
-                   Label="Komik tanlang..."
-                   Variant="Variant.Outlined"
-                   Margin="Margin.Dense"
-                   AnchorOrigin="Origin.BottomLeft"
-                   Clearable="true">
-            @foreach (var c in _allComics)
-            {
-                <MudSelectItem T="Guid?" Value="@((Guid?)c.Id)">
-                    @c.Title (@c.ChapterCount bob)
-                </MudSelectItem>
-            }
-        </MudSelect>
+        <MudAutocomplete T="ComicDto"
+                         Label="Komik tanlang..."
+                         Value="@_filterComic"
+                         ValueChanged="@FilterChanged"
+                         SearchFunc="@SearchComics"
+                         ToStringFunc="@(c => c?.Title ?? "")"
+                         Variant="Variant.Outlined"
+                         MinCharacters="0"
+                         ResetValueOnEmptyText="true"
+                         CoerceText="true"
+                         AdornmentIcon="@Icons.Material.Filled.Search"
+                         Adornment="Adornment.Start"
+                         Clearable="true"
+                         Placeholder="Komik nomini yozing yoki ro'yxatdan tanlang..." />
     </MudPaper>
 
-    @if (_filterComicId.HasValue)
+    @if (_loadingChapters)
     {
-        @if (_loading)
-        {
-            <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
-        }
-        else if (_chapters.Any())
-        {
-            <MudTable Items="@_chapters" Hover="true" Elevation="2" Style="border-radius:12px;">
-                <ToolBarContent>
-                    <MudText Typo="Typo.h6">@_chapters.Count ta bob</MudText>
-                </ToolBarContent>
-                <HeaderContent>
-                    <MudTh>Bob #</MudTh>
-                    <MudTh>Sarlavha</MudTh>
-                    <MudTh>Sahifalar</MudTh>
-                    <MudTh>Ko'rishlar</MudTh>
-                    <MudTh>Holat</MudTh>
-                    <MudTh>Sana</MudTh>
-                    <MudTh>Amallar</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>
-                        <MudChip T="string" Color="Color.Primary" Size="Size.Small" Label="true">
-                            @context.ChapterNumber-bob
-                        </MudChip>
-                    </MudTd>
-                    <MudTd>@(context.Title ?? "—")</MudTd>
-                    <MudTd>@context.PageCount bet</MudTd>
-                    <MudTd>@context.ViewCount.ToString("N0")</MudTd>
-                    <MudTd>
-                        @if (context.IsLocked)
-                        { <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Warning" Size="Size.Small" /> }
-                        else
-                        { <MudIcon Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small" Style="opacity:0.3;" /> }
-                    </MudTd>
-                    <MudTd>@context.PublishedAt?.ToString("dd.MM.yyyy")</MudTd>
-                    <MudTd>
-                        <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                                       Size="Size.Small"
-                                       Href="@($"/chapter/{context.Id}")"
-                                       Title="Ko'rish" />
-                        <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                                       Size="Size.Small"
-                                       Color="Color.Error"
-                                       OnClick="@(() => DelChapter(context))"
-                                       Title="O'chirish" />
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info" Style="border-radius:12px;">Bu komikda hali boblar yo'q.</MudAlert>
-        }
+        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+    }
+    else if (_filterComic != null && _chapters.Any())
+    {
+        <MudTable Items="@_chapters" Hover="true" Elevation="2" Style="border-radius:12px;">
+            <ToolBarContent>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:700;">
+                    @_filterComic.Title — @_chapters.Count ta bob
+                </MudText>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh>Bob #</MudTh>
+                <MudTh>Sarlavha</MudTh>
+                <MudTh>Sahifalar</MudTh>
+                <MudTh>Ko'rishlar</MudTh>
+                <MudTh>Holat</MudTh>
+                <MudTh>Sana</MudTh>
+                <MudTh>Amallar</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd>
+                    <MudChip T="string" Color="Color.Primary" Size="Size.Small" Label="true">
+                        @context.ChapterNumber-bob
+                    </MudChip>
+                </MudTd>
+                <MudTd>@(context.Title ?? "—")</MudTd>
+                <MudTd>@context.PageCount bet</MudTd>
+                <MudTd>@context.ViewCount.ToString("N0")</MudTd>
+                <MudTd>
+                    @if (context.IsLocked)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.Lock" Color="Color.Warning" Size="Size.Small" />
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.LockOpen" Size="Size.Small" Style="opacity:0.3;" />
+                    }
+                </MudTd>
+                <MudTd>@context.PublishedAt?.ToString("dd.MM.yyyy")</MudTd>
+                <MudTd>
+                    <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                                   Size="Size.Small"
+                                   Href="@($"/chapter/{context.Id}")"
+                                   Title="Ko'rish" />
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                   Size="Size.Small"
+                                   Color="Color.Error"
+                                   OnClick="@(() => DelChapter(context))"
+                                   Title="O'chirish" />
+                </MudTd>
+            </RowTemplate>
+        </MudTable>
+    }
+    else if (_filterComic != null)
+    {
+        <MudAlert Severity="Severity.Info" Style="border-radius:12px;">
+            Bu komikda hali boblar yo'q.
+        </MudAlert>
     }
     else
     {
-        <MudPaper Elevation="0" Class="pa-8 text-center" Style="border:2px dashed rgba(124,58,237,0.3);border-radius:14px;">
-            <MudIcon Icon="@Icons.Material.Filled.AutoStories" Style="font-size:48px;opacity:0.3;" />
-            <MudText Class="mt-3" Style="opacity:0.5;">Boblarni ko'rish uchun yuqoridan komik tanlang</MudText>
+        <MudPaper Elevation="0" Class="pa-10 text-center"
+                  Style="border:2px dashed rgba(124,58,237,0.25);border-radius:14px;">
+            <MudIcon Icon="@Icons.Material.Filled.AutoStories" Style="font-size:56px;opacity:0.25;" />
+            <MudText Class="mt-3" Style="opacity:0.45;">
+                Boblarni ko'rish uchun yuqoridan komik tanlang
+            </MudText>
         </MudPaper>
     }
 }
@@ -203,41 +221,63 @@ else
         new("Boblar", "#", disabled: true)
     };
 
-    private List<ComicDto> _allComics = new();
-    private List<ChapterDto> _chapters = new();
-    private Guid? _filterComicId;
+    private List<ComicDto> _allComics    = new();
+    private List<ChapterDto> _chapters   = new();
+    private ComicDto? _filterComic;
+    private ComicDto? _selectedComic;    // for add-form
     private bool _showForm;
     private bool _saving;
-    private bool _loading;
-    private string _pageUrls = "";
-    private Guid _comicId = Guid.Empty;
-    private double _chapNum = 1;
+    private bool _loadingChapters;
+    private string _pageUrls  = "";
+    private double _chapNum   = 1;
     private string? _chapTitle;
     private bool _locked;
 
     protected override async Task OnInitializedAsync()
     {
-        var r = await Mediator.Send(new GetComicsQuery(PageSize: 200));
+        var r = await Mediator.Send(new GetComicsQuery(PageSize: 500));
         _allComics = r.Items;
     }
 
-    private async Task FilterChanged(Guid? id)
+    // Search function for MudAutocomplete
+    private Task<IEnumerable<ComicDto>> SearchComics(string value, CancellationToken ct)
     {
-        _filterComicId = id;
-        _chapters = new();
-        if (id.HasValue)
+        if (string.IsNullOrWhiteSpace(value))
+            return Task.FromResult(_allComics.Take(20).AsEnumerable());
+
+        var lower = value.ToLowerInvariant();
+        var result = _allComics
+            .Where(c => c.Title.ToLowerInvariant().Contains(lower)
+                     || (c.Author != null && c.Author.ToLowerInvariant().Contains(lower)))
+            .Take(20);
+        return Task.FromResult(result);
+    }
+
+    private async Task FilterChanged(ComicDto? comic)
+    {
+        _filterComic = comic;
+        _chapters    = new();
+        if (comic != null)
         {
-            _loading = true;
+            _loadingChapters = true;
             StateHasChanged();
-            _chapters = await Mediator.Send(new GetChaptersByComicQuery(id.Value));
-            _loading = false;
+            _chapters = await Mediator.Send(new GetChaptersByComicQuery(comic.Id));
+            _loadingChapters = false;
         }
     }
 
     private async Task SaveChapter()
     {
-        if (_comicId == Guid.Empty) { Snackbar.Add("Komik tanlang!", Severity.Warning); return; }
-        if (_chapNum <= 0) { Snackbar.Add("Bob raqamini kiriting!", Severity.Warning); return; }
+        if (_selectedComic is null)
+        {
+            Snackbar.Add("⚠️ Komik tanlang!", Severity.Warning);
+            return;
+        }
+        if (_chapNum <= 0)
+        {
+            Snackbar.Add("⚠️ Bob raqamini kiriting!", Severity.Warning);
+            return;
+        }
 
         var urls = _pageUrls
             .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
@@ -246,34 +286,42 @@ else
 
         if (!urls.Any())
             urls = Enumerable.Range(1, 22)
-                .Select(i => $"https://picsum.photos/seed/{_comicId}-{(int)_chapNum}-{i}/800/1200")
+                .Select(i => $"https://picsum.photos/seed/{_selectedComic.Id}-{(int)_chapNum}-{i}/800/1200")
                 .ToList();
 
         _saving = true;
+        StateHasChanged();
+
         try
         {
-            var pages = urls.Select((u, i) => new CreateChapterPageDto(i + 1, u, null, null)).ToList();
+            var pages = urls.Select((u, i) =>
+                new CreateChapterPageDto(i + 1, u, null, null)).ToList();
+
             await Mediator.Send(new CreateChapterCommand(
-                _comicId, _chapNum, _chapTitle, null, _locked, DateTime.UtcNow, pages));
+                _selectedComic.Id, _chapNum, _chapTitle,
+                null, _locked, DateTime.UtcNow, pages));
 
             Snackbar.Add($"✅ {(int)_chapNum}-bob muvaffaqiyatli qo'shildi!", Severity.Success);
-            _comicId = Guid.Empty; _chapNum = 1; _chapTitle = null;
-            _locked = false; _pageUrls = "";
             _showForm = false;
 
-            // Refresh chapter list if filter is set
-            if (_filterComicId.HasValue)
-                _chapters = await Mediator.Send(new GetChaptersByComicQuery(_filterComicId.Value));
+            if (_filterComic?.Id == _selectedComic.Id)
+                _chapters = await Mediator.Send(new GetChaptersByComicQuery(_selectedComic.Id));
         }
-        catch (Exception ex) { Snackbar.Add($"❌ Xatolik: {ex.Message}", Severity.Error); }
-        finally { _saving = false; }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"❌ Xatolik: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 
     private async Task DelChapter(ChapterDto ch)
     {
         var ok = await DialogSvc.ShowMessageBox(
             "O'chirishni tasdiqlash",
-            $"{ch.ChapterNumber}-bobni o'chirasizmi? Bu amalni qaytarib bo'lmaydi.",
+            $"{ch.ChapterNumber}-bobni o'chirasizmi?",
             yesText: "Ha, o'chir",
             cancelText: "Bekor qilish");
 
@@ -281,8 +329,8 @@ else
         {
             await Mediator.Send(new DeleteChapterCommand(ch.Id));
             Snackbar.Add("✅ Bob o'chirildi", Severity.Success);
-            if (_filterComicId.HasValue)
-                _chapters = await Mediator.Send(new GetChaptersByComicQuery(_filterComicId.Value));
+            if (_filterComic != null)
+                _chapters = await Mediator.Send(new GetChaptersByComicQuery(_filterComic.Id));
         }
     }
 }
