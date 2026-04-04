@@ -8,37 +8,70 @@
 
 <PageTitle>Komiklar - Admin</PageTitle>
 
+<MudBreadcrumbs Items="@_crumbs" Class="mb-2 pa-0" />
+
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-    <MudText Typo="Typo.h5" Class="font-bold">📚 Komiklar</MudText>
-    <MudButton Href="/admin/comics/create" Variant="Variant.Filled" Color="Color.Primary"
+    <MudText Typo="Typo.h5" Class="font-bold">📚 Komiklar boshqaruvi</MudText>
+    <MudButton Href="/admin/comics/create"
+               Variant="Variant.Filled"
+               Color="Color.Primary"
                StartIcon="@Icons.Material.Filled.Add"
-               Style="border-radius:20px;text-transform:none;font-weight:700;">Yangi komik</MudButton>
+               Style="border-radius:20px;text-transform:none;font-weight:700;">
+        + Yangi komik
+    </MudButton>
 </div>
 
+<!-- Search -->
 <MudPaper Elevation="1" Class="pa-4 mb-4" Style="border-radius:12px;">
-    <MudGrid>
-        <MudItem xs="12" sm="8">
-            <MudTextField @bind-Value="_search" Label="Qidirish..." Variant="Variant.Outlined"
-                          Margin="Margin.Dense" Adornment="Adornment.Start"
+    <MudGrid Spacing="2">
+        <MudItem xs="12" sm="8" md="9">
+            <MudTextField Value="@_search"
+                          ValueChanged="@((string v) => _search = v)"
+                          Label="Komik nomini qidirish..."
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense"
+                          Adornment="Adornment.Start"
                           AdornmentIcon="@Icons.Material.Filled.Search"
-                          OnKeyDown="@HandleKey" />
+                          Immediate="true"
+                          OnKeyDown="@HandleKey"
+                          Clearable="true" />
         </MudItem>
-        <MudItem xs="6" sm="2">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Load"
-                       FullWidth="true" Style="height:40px;text-transform:none;">Qidirish</MudButton>
+        <MudItem xs="6" sm="2" md="2">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="@Load"
+                       FullWidth="true"
+                       Style="height:40px;text-transform:none;font-weight:600;">
+                Qidirish
+            </MudButton>
         </MudItem>
-        <MudItem xs="6" sm="2">
-            <MudButton Variant="Variant.Outlined" OnClick="@Clear"
-                       FullWidth="true" Style="height:40px;text-transform:none;">Tozalash</MudButton>
+        <MudItem xs="6" sm="2" md="1">
+            <MudButton Variant="Variant.Outlined"
+                       OnClick="@Clear"
+                       FullWidth="true"
+                       Style="height:40px;text-transform:none;">
+                ✕
+            </MudButton>
         </MudItem>
     </MudGrid>
 </MudPaper>
 
 @if (_loading)
-{ <MudProgressLinear Color="Color.Primary" Indeterminate="true" /> }
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-2" />
+}
 
-<MudTable Items="@(_result?.Items)" Hover="true" Elevation="2"
-          Style="border-radius:12px;" Loading="@_loading">
+<MudTable Items="@(_result?.Items ?? new())"
+          Hover="true"
+          Elevation="2"
+          Style="border-radius:12px;"
+          Loading="@_loading"
+          Dense="false">
+    <ToolBarContent>
+        <MudText Typo="Typo.body2" Style="opacity:0.5;">
+            @(_result?.TotalCount ?? 0) ta komik
+        </MudText>
+    </ToolBarContent>
     <HeaderContent>
         <MudTh>Muqova</MudTh>
         <MudTh>Nomi</MudTh>
@@ -46,94 +79,138 @@
         <MudTh>Holati</MudTh>
         <MudTh>Boblar</MudTh>
         <MudTh>Reyting</MudTh>
-        <MudTh>Amallar</MudTh>
+        <MudTh style="text-align:right">Amallar</MudTh>
     </HeaderContent>
     <RowTemplate>
-        <MudTd><MudAvatar Size="Size.Medium" Image="@(string.IsNullOrEmpty(context.CoverImageUrl) ? null : context.CoverImageUrl)" /></MudTd>
         <MudTd>
-            <MudText Typo="Typo.body2" Style="font-weight:700;">@context.Title</MudText>
+            <MudAvatar Size="Size.Medium"
+                       Image="@(string.IsNullOrEmpty(context.CoverImageUrl) ? null : context.CoverImageUrl)" />
+        </MudTd>
+        <MudTd>
+            <MudText Style="font-weight:700;font-size:14px;">@context.Title</MudText>
             <MudText Typo="Typo.caption" Style="opacity:0.5;">@context.Author</MudText>
         </MudTd>
-        <MudTd><MudChip T="string" Size="Size.Small" Label="true">@context.Type</MudChip></MudTd>
         <MudTd>
-            <MudChip T="string" Size="Size.Small" Label="true" Color="@GetColor(context.Status)">@StatusUz(context.Status)</MudChip>
+            <MudChip T="string" Size="Size.Small" Label="true">@context.Type</MudChip>
         </MudTd>
-        <MudTd>@context.ChapterCount</MudTd>
-        <MudTd><span style="color:#f59e0b;font-weight:700;">★ @context.AverageRating.ToString("F1")</span></MudTd>
         <MudTd>
-            <!-- Href navigation - no JS -->
-            <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                           Size="Size.Small" Color="Color.Primary"
-                           Href="@($"/admin/comics/edit/{context.Id}")"
-                           Title="Tahrirlash" />
-            <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                           Size="Size.Small"
-                           Href="@($"/comic/{context.Slug}")"
-                           Title="Ko'rish" />
-            <MudIconButton Icon="@Icons.Material.Filled.Delete"
-                           Size="Size.Small" Color="Color.Error"
-                           OnClick="@(() => Delete(context))"
-                           Title="O'chirish" />
+            <MudChip T="string" Size="Size.Small" Label="true" Color="@GetStatusColor(context.Status)">
+                @GetStatusText(context.Status)
+            </MudChip>
+        </MudTd>
+        <MudTd>@context.ChapterCount bob</MudTd>
+        <MudTd>
+            <span style="color:#f59e0b;font-weight:700;">★ @context.AverageRating.ToString("F1")</span>
+        </MudTd>
+        <MudTd style="text-align:right">
+            <MudTooltip Text="Ko'rish">
+                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
+                               Size="Size.Small"
+                               Href="@($"/comic/{context.Slug}")" />
+            </MudTooltip>
+            <MudTooltip Text="Tahrirlash">
+                <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                               Size="Size.Small"
+                               Color="Color.Primary"
+                               Href="@($"/admin/comics/edit/{context.Id}")" />
+            </MudTooltip>
+            <MudTooltip Text="O'chirish">
+                <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                               Size="Size.Small"
+                               Color="Color.Error"
+                               OnClick="@(() => Delete(context))" />
+            </MudTooltip>
         </MudTd>
     </RowTemplate>
-    <NoRecordsContent><MudText Class="pa-4">Hech narsa topilmadi.</MudText></NoRecordsContent>
+    <NoRecordsContent>
+        <MudText Class="pa-6 text-center" Style="opacity:0.5;">
+            @(string.IsNullOrWhiteSpace(_search) ? "Hali komiklar yo'q." : $"'{_search}' bo'yicha hech narsa topilmadi.")
+        </MudText>
+    </NoRecordsContent>
 </MudTable>
 
-@if (_result?.TotalPages > 1)
+@if ((_result?.TotalPages ?? 0) > 1)
 {
     <div class="d-flex justify-center mt-4">
-        <MudPagination Count="@_result.TotalPages" Selected="@_page"
-                       SelectedChanged="@OnPage" Color="Color.Primary" />
+        <MudPagination Count="@(_result!.TotalPages)"
+                       Selected="@_page"
+                       SelectedChanged="@OnPage"
+                       Color="Color.Primary"
+                       ShowFirstButton="true"
+                       ShowLastButton="true" />
     </div>
 }
 
 @code {
-    PaginatedList<ComicDto>? _result;
-    string _search = "";
-    bool _loading = true;
-    int _page = 1;
+    private readonly List<BreadcrumbItem> _crumbs = new()
+    {
+        new("Admin", "/admin"),
+        new("Komiklar", "#", disabled: true)
+    };
+
+    private PaginatedList<ComicDto>? _result;
+    private string _search = "";
+    private bool _loading = true;
+    private int _page = 1;
 
     protected override async Task OnInitializedAsync() => await Load();
 
-    async Task Load()
+    private async Task Load()
     {
         _loading = true;
+        StateHasChanged();
         _result = await Mediator.Send(new GetComicsQuery(
-            PageNumber: _page, PageSize: 20,
-            Search: string.IsNullOrWhiteSpace(_search) ? null : _search));
+            PageNumber: _page,
+            PageSize: 20,
+            Search: string.IsNullOrWhiteSpace(_search) ? null : _search.Trim()));
         _loading = false;
     }
 
-    async Task OnPage(int p) { _page = p; await Load(); }
-    async Task HandleKey(KeyboardEventArgs e) { if (e.Key == "Enter") await Load(); }
-    void Clear() { _search = ""; _page = 1; _ = Load(); }
+    private async Task OnPage(int p) { _page = p; await Load(); }
 
-    async Task Delete(ComicDto c)
+    private async Task HandleKey(KeyboardEventArgs e)
     {
-        var ok = await DialogSvc.ShowMessageBox("O'chirish",
-            $"'{c.Title}' komikini o'chirasizmi?",
-            yesText: "Ha, o'chir", cancelText: "Yo'q");
+        if (e.Key == "Enter") { _page = 1; await Load(); }
+    }
+
+    private void Clear()
+    {
+        _search = "";
+        _page = 1;
+        _ = Load();
+    }
+
+    private async Task Delete(ComicDto c)
+    {
+        var ok = await DialogSvc.ShowMessageBox(
+            "O'chirishni tasdiqlash",
+            $"'{c.Title}' komikini va uning barcha boblarini o'chirasizmi?",
+            yesText: "Ha, o'chir",
+            cancelText: "Bekor qilish");
+
         if (ok == true)
         {
             await Mediator.Send(new DeleteComicCommand(c.Id));
-            Snackbar.Add("O'chirildi", Severity.Success);
+            Snackbar.Add($"✅ '{c.Title}' o'chirildi", Severity.Success);
             await Load();
         }
     }
 
-    Color GetColor(ComicStatus s) => s switch
+    private Color GetStatusColor(ComicStatus s) => s switch
     {
         ComicStatus.Ongoing   => Color.Success,
         ComicStatus.Completed => Color.Primary,
         ComicStatus.Hiatus    => Color.Warning,
+        ComicStatus.Cancelled => Color.Error,
         _                     => Color.Default
     };
 
-    string StatusUz(ComicStatus s) => s switch
+    private string GetStatusText(ComicStatus s) => s switch
     {
         ComicStatus.Ongoing   => "Davom etmoqda",
         ComicStatus.Completed => "Tugallangan",
         ComicStatus.Hiatus    => "To'xtatilgan",
+        ComicStatus.Cancelled => "Bekor qilingan",
         _                     => s.ToString()
     };
 }
