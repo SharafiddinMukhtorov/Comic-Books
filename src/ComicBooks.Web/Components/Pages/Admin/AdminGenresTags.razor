@@ -4,59 +4,63 @@
 @rendermode InteractiveServer
 @inject IMediator Mediator
 @inject ISnackbar Snackbar
-@inject IDialogService DialogService
+@inject IDialogService DialogSvc
 
-<PageTitle>Genres &amp; Tags - Admin</PageTitle>
+<PageTitle>Janrlar va Teglar - Admin</PageTitle>
+
+<MudBreadcrumbs Items="@_crumbs" Class="mb-2 pa-0" />
+<MudText Typo="Typo.h5" Class="font-bold mb-5">🏷️ Janrlar va Teglar</MudText>
 
 <MudGrid>
+    <!-- GENRES -->
     <MudItem xs="12" md="6">
-        <div class="d-flex justify-space-between align-center mb-4">
-            <MudText Typo="Typo.h5" Class="font-bold">Genres</MudText>
-        </div>
-
-        <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius:12px;">
-            <MudText Typo="Typo.subtitle2" Class="mb-3">Add New Genre</MudText>
-            <MudGrid>
-                <MudItem xs="12" sm="7">
-                    <MudTextField @bind-Value="_newGenreName"
-                                  Label="Genre Name"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Placeholder="e.g. Action" />
-                </MudItem>
-                <MudItem xs="12" sm="5">
-                    <MudTextField @bind-Value="_newGenreDesc"
-                                  Label="Description"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense" />
-                </MudItem>
-            </MudGrid>
+        <MudPaper Elevation="2" Class="pa-5 mb-4" Style="border-radius:12px;">
+            <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">📁 Yangi janr qo'shish</MudText>
+            <MudTextField T="string"
+                          Value="@_genreName"
+                          ValueChanged="@((v) => _genreName = v ?? "")"
+                          Label="Janr nomi *"
+                          Variant="Variant.Outlined"
+                          Class="mb-3"
+                          Immediate="true"
+                          Placeholder="Masalan: Harakat" />
+            <MudTextField T="string"
+                          Value="@_genreDesc"
+                          ValueChanged="@((v) => _genreDesc = v ?? "")"
+                          Label="Tavsif (ixtiyoriy)"
+                          Variant="Variant.Outlined"
+                          Class="mb-3"
+                          Immediate="true" />
             <MudButton Variant="Variant.Filled"
                        Color="Color.Primary"
                        OnClick="@AddGenre"
                        StartIcon="@Icons.Material.Filled.Add"
-                       Class="mt-3">
-                Add Genre
+                       Disabled="@string.IsNullOrWhiteSpace(_genreName)"
+                       Style="text-transform:none;border-radius:8px;">
+                Janr qo'shish
             </MudButton>
         </MudPaper>
 
-        <MudTable Items="@_genres"
-                  Hover="true"
-                  Elevation="2"
-                  Dense="true"
-                  Style="border-radius:12px;">
+        <MudTable Items="@_genres" Hover="true" Elevation="2" Dense="true"
+                  Style="border-radius:12px;" Loading="@_loading">
+            <ToolBarContent>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:700;">
+                    Janrlar (@_genres.Count)
+                </MudText>
+            </ToolBarContent>
             <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh>Comics</MudTh>
-                <MudTh>Actions</MudTh>
+                <MudTh>Nomi</MudTh>
+                <MudTh>Slug</MudTh>
+                <MudTh>Komiklar</MudTh>
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
+                <MudTd><strong>@context.Name</strong></MudTd>
+                <MudTd><code style="font-size:11px;opacity:0.5;">@context.Slug</code></MudTd>
                 <MudTd>
-                    <MudText Typo="Typo.body2" Class="font-medium">@context.Name</MudText>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6;">/@context.Slug</MudText>
-                </MudTd>
-                <MudTd>
-                    <MudChip T="string" Size="Size.Small" Label="true">@context.ComicCount</MudChip>
+                    <MudChip T="string" Size="Size.Small" Label="true" Color="Color.Default">
+                        @context.ComicCount
+                    </MudChip>
                 </MudTd>
                 <MudTd>
                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
@@ -65,54 +69,56 @@
                                    OnClick="@(() => DeleteGenre(context))" />
                 </MudTd>
             </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="pa-4" Style="opacity:0.5;">Janrlar yo'q</MudText>
+            </NoRecordsContent>
         </MudTable>
     </MudItem>
 
+    <!-- TAGS -->
     <MudItem xs="12" md="6">
-        <div class="d-flex justify-space-between align-center mb-4">
-            <MudText Typo="Typo.h5" Class="font-bold">Tags</MudText>
-        </div>
-
-        <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius:12px;">
-            <MudText Typo="Typo.subtitle2" Class="mb-3">Add New Tag</MudText>
-            <MudGrid>
-                <MudItem xs="12" sm="8">
-                    <MudTextField @bind-Value="_newTagName"
-                                  Label="Tag Name"
-                                  Variant="Variant.Outlined"
-                                  Margin="Margin.Dense"
-                                  Placeholder="e.g. Strong MC" />
-                </MudItem>
-                <MudItem xs="12" sm="4">
-                    <MudButton Variant="Variant.Filled"
-                               Color="Color.Primary"
-                               OnClick="@AddTag"
-                               StartIcon="@Icons.Material.Filled.Add"
-                               FullWidth="true"
-                               Style="height:40px;">
-                        Add
-                    </MudButton>
-                </MudItem>
-            </MudGrid>
+        <MudPaper Elevation="2" Class="pa-5 mb-4" Style="border-radius:12px;">
+            <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">🔖 Yangi teg qo'shish</MudText>
+            <div style="display:flex;gap:8px;align-items:flex-start;">
+                <MudTextField T="string"
+                              Value="@_tagName"
+                              ValueChanged="@((v) => _tagName = v ?? "")"
+                              Label="Teg nomi *"
+                              Variant="Variant.Outlined"
+                              Class="flex-1"
+                              Immediate="true"
+                              Placeholder="Masalan: Kuchli qahramon" />
+                <MudButton Variant="Variant.Filled"
+                           Color="Color.Primary"
+                           OnClick="@AddTag"
+                           StartIcon="@Icons.Material.Filled.Add"
+                           Disabled="@string.IsNullOrWhiteSpace(_tagName)"
+                           Style="text-transform:none;border-radius:8px;height:56px;min-width:100px;">
+                    Qo'shish
+                </MudButton>
+            </div>
         </MudPaper>
 
-        <MudTable Items="@_tags"
-                  Hover="true"
-                  Elevation="2"
-                  Dense="true"
-                  Style="border-radius:12px;">
+        <MudTable Items="@_tags" Hover="true" Elevation="2" Dense="true"
+                  Style="border-radius:12px;" Loading="@_loading">
+            <ToolBarContent>
+                <MudText Typo="Typo.subtitle1" Style="font-weight:700;">
+                    Teglar (@_tags.Count)
+                </MudText>
+            </ToolBarContent>
             <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh>Comics</MudTh>
-                <MudTh>Actions</MudTh>
+                <MudTh>Nomi</MudTh>
+                <MudTh>Slug</MudTh>
+                <MudTh>Komiklar</MudTh>
+                <MudTh></MudTh>
             </HeaderContent>
             <RowTemplate>
+                <MudTd><strong>@context.Name</strong></MudTd>
+                <MudTd><code style="font-size:11px;opacity:0.5;">@context.Slug</code></MudTd>
                 <MudTd>
-                    <MudText Typo="Typo.body2" Class="font-medium">@context.Name</MudText>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6;">/@context.Slug</MudText>
-                </MudTd>
-                <MudTd>
-                    <MudChip T="string" Size="Size.Small" Label="true">@context.ComicCount</MudChip>
+                    <MudChip T="string" Size="Size.Small" Label="true" Color="Color.Default">
+                        @context.ComicCount
+                    </MudChip>
                 </MudTd>
                 <MudTd>
                     <MudIconButton Icon="@Icons.Material.Filled.Delete"
@@ -121,72 +127,85 @@
                                    OnClick="@(() => DeleteTag(context))" />
                 </MudTd>
             </RowTemplate>
+            <NoRecordsContent>
+                <MudText Class="pa-4" Style="opacity:0.5;">Teglar yo'q</MudText>
+            </NoRecordsContent>
         </MudTable>
     </MudItem>
 </MudGrid>
 
 @code {
-    private List<GenreDto> _genres = new();
-    private List<TagDto> _tags = new();
-    private string _newGenreName = "";
-    private string _newGenreDesc = "";
-    private string _newTagName = "";
+    private readonly List<BreadcrumbItem> _crumbs = new()
+    {
+        new("Admin", "/admin"),
+        new("Janrlar & Teglar", "#", disabled: true)
+    };
 
-    protected override async Task OnInitializedAsync() => await LoadAll();
+    private List<GenreDto> _genres = new();
+    private List<TagDto>   _tags   = new();
+    private string _genreName = "";
+    private string _genreDesc = "";
+    private string _tagName   = "";
+    private bool   _loading   = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAll();
+    }
 
     private async Task LoadAll()
     {
-        _genres = await Mediator.Send(new GetAllGenresQuery());
-        _tags = await Mediator.Send(new ComicBooks.Application.Features.Tags.Queries.GetAllTagsQuery());
+        _loading = true;
+        _genres  = await Mediator.Send(new GetAllGenresQuery());
+        _tags    = await Mediator.Send(new GetAllTagsQuery());
+        _loading = false;
     }
 
     private async Task AddGenre()
     {
-        if (string.IsNullOrWhiteSpace(_newGenreName)) return;
-        await Mediator.Send(new ComicBooks.Application.Features.Genres.Commands.CreateGenreCommand(_newGenreName, _newGenreDesc));
-        Snackbar.Add($"Genre '{_newGenreName}' added.", Severity.Success);
-        _newGenreName = "";
-        _newGenreDesc = "";
+        if (string.IsNullOrWhiteSpace(_genreName)) return;
+        await Mediator.Send(new CreateGenreCommand(_genreName.Trim(), _genreDesc.Trim()));
+        Snackbar.Add($"✅ '{_genreName}' janri qo'shildi!", Severity.Success);
+        _genreName = "";
+        _genreDesc = "";
         await LoadAll();
     }
 
-    private async Task DeleteGenre(GenreDto genre)
+    private async Task DeleteGenre(GenreDto g)
     {
-        var result = await DialogService.ShowMessageBox(
-            "Delete Genre",
-            $"Delete '{genre.Name}'?",
-            yesText: "Delete",
-            cancelText: "Cancel");
-
-        if (result == true)
+        var ok = await DialogSvc.ShowMessageBox(
+            "O'chirishni tasdiqlash",
+            $"'{g.Name}' janrini o'chirasizmi?",
+            yesText: "Ha, o'chir",
+            cancelText: "Bekor qilish");
+        if (ok == true)
         {
-            await Mediator.Send(new ComicBooks.Application.Features.Genres.Commands.DeleteGenreCommand(genre.Id));
-            Snackbar.Add($"Genre '{genre.Name}' deleted.", Severity.Success);
+            await Mediator.Send(new DeleteGenreCommand(g.Id));
+            Snackbar.Add($"✅ '{g.Name}' o'chirildi", Severity.Success);
             await LoadAll();
         }
     }
 
     private async Task AddTag()
     {
-        if (string.IsNullOrWhiteSpace(_newTagName)) return;
-        await Mediator.Send(new ComicBooks.Application.Features.Tags.Commands.CreateTagCommand(_newTagName));
-        Snackbar.Add($"Tag '{_newTagName}' added.", Severity.Success);
-        _newTagName = "";
+        if (string.IsNullOrWhiteSpace(_tagName)) return;
+        await Mediator.Send(new CreateTagCommand(_tagName.Trim()));
+        Snackbar.Add($"✅ '{_tagName}' tegi qo'shildi!", Severity.Success);
+        _tagName = "";
         await LoadAll();
     }
 
-    private async Task DeleteTag(TagDto tag)
+    private async Task DeleteTag(TagDto t)
     {
-        var result = await DialogService.ShowMessageBox(
-            "Delete Tag",
-            $"Delete '{tag.Name}'?",
-            yesText: "Delete",
-            cancelText: "Cancel");
-
-        if (result == true)
+        var ok = await DialogSvc.ShowMessageBox(
+            "O'chirishni tasdiqlash",
+            $"'{t.Name}' tegini o'chirasizmi?",
+            yesText: "Ha, o'chir",
+            cancelText: "Bekor qilish");
+        if (ok == true)
         {
-            await Mediator.Send(new DeleteTagCommand(tag.Id));
-            Snackbar.Add($"Tag '{tag.Name}' deleted.", Severity.Success);
+            await Mediator.Send(new DeleteTagCommand(t.Id));
+            Snackbar.Add($"✅ '{t.Name}' o'chirildi", Severity.Success);
             await LoadAll();
         }
     }
