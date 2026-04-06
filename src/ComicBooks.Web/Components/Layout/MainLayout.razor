@@ -1,158 +1,99 @@
 @inherits LayoutComponentBase
-@inject ThemeService ThemeSvc
+@inject ThemeService Theme
 @inject NavigationManager Nav
 @implements IDisposable
 
-@* 
-   KEY FIX: IsDarkMode bound to LOCAL field _dark, not directly to service.
-   When Toggle is clicked -> ThemeSvc.Toggle() -> OnChange event fires ->
-   _dark = ThemeSvc.IsDark -> StateHasChanged() -> MudThemeProvider re-renders.
-*@
-<MudThemeProvider @ref="@_provider" Theme="@_theme" IsDarkMode="@_dark" />
+<MudThemeProvider Theme="@_theme" IsDarkMode="@_dark" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
     <MudAppBar Elevation="2" Fixed="true">
-        <MudLink Href="/" Underline="Underline.None" Class="d-flex align-center">
-            <span style="font-weight:900;font-size:1.2rem;color:#7c3aed;letter-spacing:-0.5px;">
-                📚 AsuraComic
-            </span>
+        <MudLink Href="/" Underline="Underline.None">
+            <MudText Style="font-weight:900;font-size:1.2rem;color:#7c3aed;">📚 AsuraComic</MudText>
         </MudLink>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudButton Href="/"          Color="Color.Inherit" Variant="Variant.Text" Class="ml-3" Style="text-transform:none;font-weight:600;">Bosh sahifa</MudButton>
-            <MudButton Href="/bookmarks" Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-weight:600;">Saralganlar</MudButton>
-            <MudButton Href="/comics"    Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-weight:600;">Komiklar</MudButton>
-            <MudButton Href="/genres"    Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-weight:600;">Janrlar</MudButton>
+            <MudButton Href="/"          Color="Color.Inherit" Variant="Variant.Text" Class="ml-3" Style="text-transform:none;">Bosh sahifa</MudButton>
+            <MudButton Href="/bookmarks" Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;">Saralganlar</MudButton>
+            <MudButton Href="/comics"    Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;">Komiklar</MudButton>
+            <MudButton Href="/genres"    Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;">Janrlar</MudButton>
         </MudHidden>
 
         <MudSpacer />
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudTextField @bind-Value="_q"
-                          Placeholder="Qidirish..."
-                          Variant="Variant.Outlined"
-                          Margin="Margin.Dense"
-                          Adornment="Adornment.Start"
-                          AdornmentIcon="@Icons.Material.Filled.Search"
-                          Style="width:210px;"
-                          OnKeyDown="@DoSearch" />
+            <MudTextField @bind-Value="_q" Placeholder="Qidirish..." Variant="Variant.Outlined"
+                          Margin="Margin.Dense" Style="width:200px;"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          OnKeyDown="@OnSearch" />
         </MudHidden>
 
-        <!-- DARK / LIGHT TOGGLE -->
         <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit"
-                       OnClick="@ToggleTheme"
-                       Class="ml-2"
-                       Title="@(_dark ? "Yorug' rejim" : "Tungi rejim")" />
+                       Color="Color.Inherit" OnClick="@ToggleTheme" Class="ml-1" />
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudButton Href="/admin"
-                       Variant="Variant.Outlined"
-                       Color="Color.Primary"
-                       Size="Size.Small"
-                       Class="ml-2"
-                       Style="border-radius:20px;text-transform:none;font-weight:700;">
-                Admin
-            </MudButton>
+            <MudButton Href="/admin" Variant="Variant.Outlined" Color="Color.Primary"
+                       Size="Size.Small" Class="ml-2" Style="text-transform:none;">Admin</MudButton>
         </MudHidden>
 
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
-            <MudIconButton Icon="@Icons.Material.Filled.Menu"
-                           Color="Color.Inherit"
-                           OnClick="@(() => _drawerOpen = !_drawerOpen)" />
+            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
+                           OnClick="@(() => _open = !_open)" />
         </MudHidden>
     </MudAppBar>
 
-    <MudDrawer @bind-Open="_drawerOpen" Anchor="Anchor.Right" Variant="DrawerVariant.Temporary">
+    <MudDrawer @bind-Open="_open" Anchor="Anchor.Right" Variant="DrawerVariant.Temporary">
         <MudDrawerHeader>
-            <span style="font-weight:900;color:#7c3aed;font-size:1.1rem;">📚 AsuraComic</span>
+            <MudText Style="font-weight:900;color:#7c3aed;">📚 AsuraComic</MudText>
         </MudDrawerHeader>
-        <div style="padding:0 12px 8px;">
-            <MudTextField @bind-Value="_q" Placeholder="Qidirish..."
-                          Variant="Variant.Outlined" Margin="Margin.Dense"
-                          FullWidth="true" OnKeyDown="@DoSearch" />
-        </div>
+        <MudTextField @bind-Value="_q" Placeholder="Qidirish..." Variant="Variant.Outlined"
+                      Margin="Margin.Dense" Class="mx-3 mb-2" OnKeyDown="@OnSearch" />
         <MudNavMenu>
-            <MudNavLink Href="/"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Home"               OnClick="@(() => _drawerOpen=false)">Bosh sahifa</MudNavLink>
-            <MudNavLink Href="/bookmarks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Bookmark"           OnClick="@(() => _drawerOpen=false)">Saralganlar</MudNavLink>
-            <MudNavLink Href="/comics"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook"           OnClick="@(() => _drawerOpen=false)">Komiklar</MudNavLink>
-            <MudNavLink Href="/genres"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label"              OnClick="@(() => _drawerOpen=false)">Janrlar</MudNavLink>
-            <MudDivider Class="my-2" />
-            <MudNavLink Href="/admin"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings" OnClick="@(() => _drawerOpen=false)">Admin panel</MudNavLink>
+            <MudNavLink Href="/"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Home"               OnClick="@(() => _open=false)">Bosh sahifa</MudNavLink>
+            <MudNavLink Href="/bookmarks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Bookmark"           OnClick="@(() => _open=false)">Saralganlar</MudNavLink>
+            <MudNavLink Href="/comics"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook"           OnClick="@(() => _open=false)">Komiklar</MudNavLink>
+            <MudNavLink Href="/genres"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label"              OnClick="@(() => _open=false)">Janrlar</MudNavLink>
+            <MudDivider />
+            <MudNavLink Href="/admin"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings" OnClick="@(() => _open=false)">Admin</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
-    <MudMainContent Style="padding-top:64px;min-height:100vh;">
+    <MudMainContent Style="padding-top:64px;">
         @Body
     </MudMainContent>
 </MudLayout>
 
 @code {
-    private MudThemeProvider _provider = null!;
-    private bool _dark = true;        // local field drives IsDarkMode
-    private bool _drawerOpen = false;
-    private string _q = "";
+    bool _dark = true;
+    bool _open;
+    string _q = "";
 
-    private readonly MudTheme _theme = new()
+    readonly MudTheme _theme = new()
     {
-        PaletteLight = new PaletteLight
-        {
-            Primary          = "#7c3aed",
-            Secondary        = "#5b21b6",
-            Background       = "#f3f4f6",
-            Surface          = "#ffffff",
-            AppbarBackground = "#ffffff",
-            AppbarText       = "#111827",
-            DrawerBackground = "#f9f9fb",
-            DrawerText       = "#111827",
-            TextPrimary      = "#111827",
-            TextSecondary    = "#6b7280",
-        },
-        PaletteDark = new PaletteDark
-        {
-            Primary          = "#7c3aed",
-            Secondary        = "#5b21b6",
-            Background       = "#0f0f1a",
-            Surface          = "#1a1a2e",
-            AppbarBackground = "#16213e",
-            AppbarText       = "#e5e7eb",
-            DrawerBackground = "#16213e",
-            DrawerText       = "#e5e7eb",
-            TextPrimary      = "#f9fafb",
-            TextSecondary    = "#9ca3af",
-        }
+        PaletteLight = new PaletteLight { Primary="#7c3aed", Background="#f3f4f6", Surface="#ffffff", AppbarBackground="#ffffff", AppbarText="#111827", DrawerBackground="#f9f9fb", DrawerText="#111827", TextPrimary="#111827" },
+        PaletteDark  = new PaletteDark  { Primary="#7c3aed", Background="#0f0f1a", Surface="#1a1a2e", AppbarBackground="#16213e", AppbarText="#e5e7eb", DrawerBackground="#16213e", DrawerText="#e5e7eb", TextPrimary="#f9fafb", TextSecondary="#9ca3af" }
     };
 
     protected override void OnInitialized()
     {
-        _dark = ThemeSvc.IsDark;
-        ThemeSvc.OnChange += OnThemeChanged;
+        _dark = Theme.IsDark;
+        Theme.OnChange += Refresh;
     }
 
-    private async void ToggleTheme()
-    {
-        ThemeSvc.Toggle();
-        // OnChange event fires -> OnThemeChanged -> StateHasChanged
-    }
+    void ToggleTheme() { Theme.Toggle(); _dark = Theme.IsDark; }
 
-    private void OnThemeChanged()
-    {
-        _dark = ThemeSvc.IsDark;
-        InvokeAsync(StateHasChanged);
-    }
+    void Refresh() { _dark = Theme.IsDark; InvokeAsync(StateHasChanged); }
 
-    private void DoSearch(KeyboardEventArgs e)
+    void OnSearch(KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_q))
         {
             Nav.NavigateTo($"/comics?search={Uri.EscapeDataString(_q)}");
-            _drawerOpen = false;
-            _q = "";
+            _open = false; _q = "";
         }
     }
 
-    public void Dispose() => ThemeSvc.OnChange -= OnThemeChanged;
+    public void Dispose() => Theme.OnChange -= Refresh;
 }

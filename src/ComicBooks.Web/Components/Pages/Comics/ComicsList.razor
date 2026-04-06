@@ -4,198 +4,93 @@
 
 <PageTitle>Komiklar - AsuraComic</PageTitle>
 
-<div style="max-width:1400px;margin:0 auto;padding:20px 16px 48px;">
+<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
+    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+        <MudButton Href="/" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Style="text-transform:none;">Orqaga</MudButton>
+        <MudText Typo="Typo.h5">Barcha komiklar</MudText>
+    </MudStack>
 
-    <div style="margin-bottom:16px;">
-        <MudButton Href="/" Variant="Variant.Text"
-                   StartIcon="@Icons.Material.Filled.ArrowBack"
-                   Style="text-transform:none;">Bosh sahifaga qaytish</MudButton>
-    </div>
-
-    <MudText Typo="Typo.h4" Class="font-bold mb-5">Barcha komiklar</MudText>
-
-    <!-- Filters -->
-    <MudPaper Elevation="1" Class="pa-4 mb-5" Style="border-radius:14px;">
+    <MudPaper Class="pa-3 mb-4">
         <MudGrid Spacing="2">
-            <!-- Search field -->
-            <MudItem xs="12" sm="12" md="5">
-                <MudTextField Value="@_search"
-                              ValueChanged="@((string v) => _search = v)"
-                              Label="Komik nomi bo'yicha qidirish..."
-                              Variant="Variant.Outlined"
-                              Margin="Margin.Dense"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Search"
-                              Immediate="true"
-                              OnKeyDown="@HandleKey"
-                              Clearable="true" />
+            <MudItem xs="12" sm="5">
+                <MudTextField @bind-Value="_search" Label="Qidirish..." Variant="Variant.Outlined"
+                              Margin="Margin.Dense" OnKeyDown="@OnKey" Clearable="true" />
             </MudItem>
-
-            <!-- Status dropdown -->
-            <MudItem xs="6" sm="4" md="2">
-                <MudSelect T="ComicStatus?"
-                           Value="@_status"
-                           ValueChanged="@StatusChanged"
-                           Label="Holat"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Clearable="true"
-                           AnchorOrigin="Origin.BottomCenter"
-                           TransformOrigin="Origin.TopCenter">
+            <MudItem xs="6" sm="2">
+                <MudSelect T="ComicStatus?" @bind-Value="_status" Label="Holat" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
                     <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)ComicStatus.Ongoing)">Davom etmoqda</MudSelectItem>
                     <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)ComicStatus.Completed)">Tugallangan</MudSelectItem>
                     <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)ComicStatus.Hiatus)">To'xtatilgan</MudSelectItem>
                 </MudSelect>
             </MudItem>
-
-            <!-- Type dropdown -->
-            <MudItem xs="6" sm="4" md="2">
-                <MudSelect T="ComicType?"
-                           Value="@_type"
-                           ValueChanged="@TypeChanged"
-                           Label="Turi"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           Clearable="true"
-                           AnchorOrigin="Origin.BottomCenter"
-                           TransformOrigin="Origin.TopCenter">
+            <MudItem xs="6" sm="2">
+                <MudSelect T="ComicType?" @bind-Value="_type" Label="Turi" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
                     <MudSelectItem T="ComicType?" Value="@((ComicType?)ComicType.Manhwa)">Manhwa</MudSelectItem>
                     <MudSelectItem T="ComicType?" Value="@((ComicType?)ComicType.Manga)">Manga</MudSelectItem>
                     <MudSelectItem T="ComicType?" Value="@((ComicType?)ComicType.Manhua)">Manhua</MudSelectItem>
                 </MudSelect>
             </MudItem>
-
-            <!-- Sort dropdown -->
-            <MudItem xs="6" sm="4" md="2">
-                <MudSelect T="string"
-                           Value="@_sort"
-                           ValueChanged="@SortChanged"
-                           Label="Saralash"
-                           Variant="Variant.Outlined"
-                           Margin="Margin.Dense"
-                           AnchorOrigin="Origin.BottomCenter"
-                           TransformOrigin="Origin.TopCenter">
+            <MudItem xs="6" sm="2">
+                <MudSelect T="string" @bind-Value="_sort" Label="Saralash" Variant="Variant.Outlined" Margin="Margin.Dense">
                     <MudSelectItem T="string" Value="@("createdAt")">Yangi</MudSelectItem>
                     <MudSelectItem T="string" Value="@("views")">Ko'p ko'rilgan</MudSelectItem>
                     <MudSelectItem T="string" Value="@("rating")">Reyting</MudSelectItem>
                     <MudSelectItem T="string" Value="@("title")">A-Z</MudSelectItem>
                 </MudSelect>
             </MudItem>
-
-            <!-- Search button -->
-            <MudItem xs="6" sm="4" md="1">
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           OnClick="@DoSearch"
-                           FullWidth="true"
-                           Style="height:40px;text-transform:none;font-weight:600;border-radius:8px;">
-                    Qidirish
-                </MudButton>
+            <MudItem xs="6" sm="1">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Search"
+                           FullWidth="true" Style="height:40px;text-transform:none;">Qidirish</MudButton>
             </MudItem>
         </MudGrid>
-
-        <!-- Active filters display -->
-        @if (_status.HasValue || _type.HasValue || !string.IsNullOrWhiteSpace(_search))
-        {
-            <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;align-items:center;">
-                <span style="font-size:12px;opacity:0.5;">Faol filtrlar:</span>
-                @if (!string.IsNullOrWhiteSpace(_search))
-                {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Primary"
-                             OnClose="@(() => { _search = ""; _ = DoSearch(); })">
-                        "@_search"
-                    </MudChip>
-                }
-                @if (_status.HasValue)
-                {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Secondary"
-                             OnClose="@(() => { _status = null; _ = DoSearch(); })">
-                        @GetStatusText(_status.Value)
-                    </MudChip>
-                }
-                @if (_type.HasValue)
-                {
-                    <MudChip T="string" Size="Size.Small" Color="Color.Info"
-                             OnClose="@(() => { _type = null; _ = DoSearch(); })">
-                        @_type.Value.ToString()
-                    </MudChip>
-                }
-                <MudButton Size="Size.Small" Variant="Variant.Text" Color="Color.Default"
-                           OnClick="@ResetAll"
-                           Style="text-transform:none;font-size:12px;">
-                    Barchasini tozalash
-                </MudButton>
-            </div>
-        }
     </MudPaper>
 
-    <!-- Results -->
     @if (_loading)
     {
         <MudGrid Spacing="2">
             @for (int i = 0; i < 12; i++)
             {
                 <MudItem xs="6" sm="4" md="3" lg="2">
-                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="260px" Style="border-radius:10px;" />
-                    <MudSkeleton Class="mt-1" Width="80%" />
+                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="260px" />
+                    <MudSkeleton Class="mt-1" />
                 </MudItem>
             }
         </MudGrid>
     }
     else if (_result?.Items.Any() == true)
     {
-        <MudText Typo="Typo.body2" Style="opacity:0.5;margin-bottom:16px;">
-            @_result.TotalCount ta komik topildi
-        </MudText>
+        <MudText Typo="Typo.body2" Style="opacity:0.5;" Class="mb-3">@_result.TotalCount ta komik</MudText>
         <MudGrid Spacing="2">
             @foreach (var c in _result.Items)
             {
-                <MudItem xs="6" sm="4" md="3" lg="2">
-                    <ComicCard Comic="c" />
-                </MudItem>
+                <MudItem xs="6" sm="4" md="3" lg="2"><ComicCard Comic="c" /></MudItem>
             }
         </MudGrid>
-
         @if (_result.TotalPages > 1)
         {
-            <div class="d-flex justify-center mt-8">
-                <MudPagination Count="@_result.TotalPages"
-                               Selected="@_page"
-                               SelectedChanged="@OnPageChanged"
-                               Color="Color.Primary"
-                               ShowFirstButton="true"
-                               ShowLastButton="true" />
-            </div>
+            <MudStack AlignItems="AlignItems.Center" Class="mt-6">
+                <MudPagination Count="@_result.TotalPages" Selected="@_page" SelectedChanged="@OnPage"
+                               Color="Color.Primary" ShowFirstButton="true" ShowLastButton="true" />
+            </MudStack>
         }
     }
     else
     {
-        <MudPaper Elevation="0" Class="pa-10 text-center"
-                  Style="border:2px dashed rgba(128,128,128,0.2);border-radius:14px;">
-            <MudIcon Icon="@Icons.Material.Filled.SearchOff" Style="font-size:56px;opacity:0.25;" />
-            <MudText Class="mt-3" Style="opacity:0.5;">
-                @(string.IsNullOrWhiteSpace(_search)
-                    ? "Hech narsa topilmadi"
-                    : $"'{_search}' bo'yicha hech narsa topilmadi")
-            </MudText>
-            <MudButton OnClick="@ResetAll" Class="mt-3" Style="text-transform:none;">
-                Filtrlarni tozalash
-            </MudButton>
-        </MudPaper>
+        <MudText Style="opacity:0.5;text-align:center;padding:40px;">Hech narsa topilmadi.</MudText>
     }
-</div>
+</MudContainer>
 
 @code {
     [SupplyParameterFromQuery] public string? search { get; set; }
     [SupplyParameterFromQuery] public string? sortBy { get; set; }
 
-    private PaginatedList<ComicDto>? _result;
-    private bool   _loading = true;
-    private int    _page    = 1;
-    private string _search  = "";
-    private ComicStatus? _status;
-    private ComicType?   _type;
-    private string _sort = "createdAt";
+    PaginatedList<ComicDto>? _result;
+    bool   _loading = true;
+    int    _page    = 1;
+    string _search  = "";
+    string _sort    = "createdAt";
+    ComicStatus? _status;
+    ComicType?   _type;
 
     protected override async Task OnInitializedAsync()
     {
@@ -204,43 +99,17 @@
         await Load();
     }
 
-    private async Task Load()
+    async Task Load()
     {
         _loading = true;
         StateHasChanged();
-        _result = await Mediator.Send(new GetComicsQuery(
-            PageNumber: _page,
-            PageSize:   24,
-            Search:     string.IsNullOrWhiteSpace(_search) ? null : _search.Trim(),
-            Status:     _status,
-            Type:       _type,
-            SortBy:     _sort));
+        _result = await Mediator.Send(new GetComicsQuery(PageNumber: _page, PageSize: 24,
+            Search: string.IsNullOrWhiteSpace(_search) ? null : _search,
+            Status: _status, Type: _type, SortBy: _sort));
         _loading = false;
     }
 
-    private async Task DoSearch()      { _page = 1; await Load(); }
-    private async Task StatusChanged(ComicStatus? v) { _status = v; _page = 1; await Load(); }
-    private async Task TypeChanged(ComicType? v)     { _type   = v; _page = 1; await Load(); }
-    private async Task SortChanged(string v)         { _sort   = v; _page = 1; await Load(); }
-    private async Task OnPageChanged(int p)          { _page   = p; await Load(); }
-
-    private async Task HandleKey(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter") await DoSearch();
-    }
-
-    private async Task ResetAll()
-    {
-        _search = ""; _status = null; _type = null;
-        _sort = "createdAt"; _page = 1;
-        await Load();
-    }
-
-    private string GetStatusText(ComicStatus s) => s switch
-    {
-        ComicStatus.Ongoing   => "Davom etmoqda",
-        ComicStatus.Completed => "Tugallangan",
-        ComicStatus.Hiatus    => "To'xtatilgan",
-        _                     => s.ToString()
-    };
+    async Task Search() { _page = 1; await Load(); }
+    async Task OnPage(int p) { _page = p; await Load(); }
+    async Task OnKey(KeyboardEventArgs e) { if (e.Key == "Enter") await Search(); }
 }
