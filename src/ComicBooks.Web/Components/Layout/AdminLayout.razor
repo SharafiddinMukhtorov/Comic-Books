@@ -2,7 +2,7 @@
 @inject ThemeService Theme
 @implements IDisposable
 
-<MudThemeProvider Theme="@_theme" IsDarkMode="@_dark" />
+<MudThemeProvider @ref="_themeProvider" Theme="@_theme" @bind-IsDarkMode="_dark" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -15,9 +15,7 @@
         <MudSpacer />
         <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
                        Color="Color.Inherit" OnClick="@ToggleTheme" />
-        <MudButton Href="/" Variant="Variant.Text" Color="Color.Inherit" Style="text-transform:none;">
-            ← Sayt
-        </MudButton>
+        <MudButton Href="/" Variant="Variant.Text" Color="Color.Inherit" Style="text-transform:none;">← Sayt</MudButton>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always" Elevation="2">
@@ -40,17 +38,45 @@
 </MudLayout>
 
 @code {
+    MudThemeProvider _themeProvider = null!;
     bool _open = true;
     bool _dark = true;
 
     readonly MudTheme _theme = new()
     {
-        PaletteLight = new PaletteLight { Primary="#7c3aed", Background="#f3f4f6", Surface="#ffffff", AppbarBackground="#ffffff", AppbarText="#111827", DrawerBackground="#f9f9fb", DrawerText="#111827", TextPrimary="#111827" },
-        PaletteDark  = new PaletteDark  { Primary="#7c3aed", Background="#0f0f1a", Surface="#1a1a2e", AppbarBackground="#16213e", AppbarText="#e5e7eb", DrawerBackground="#16213e", DrawerText="#e5e7eb", TextPrimary="#f9fafb", TextSecondary="#9ca3af" }
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#7c3aed", Background = "#f3f4f6", Surface = "#ffffff",
+            AppbarBackground = "#ffffff", AppbarText = "#111827",
+            DrawerBackground = "#f9f9fb", DrawerText = "#111827", TextPrimary = "#111827"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#7c3aed", Background = "#0f0f1a", Surface = "#1a1a2e",
+            AppbarBackground = "#16213e", AppbarText = "#e5e7eb",
+            DrawerBackground = "#16213e", DrawerText = "#e5e7eb",
+            TextPrimary = "#f9fafb", TextSecondary = "#9ca3af"
+        }
     };
 
-    protected override void OnInitialized() { _dark = Theme.IsDark; Theme.OnChange += Refresh; }
-    void ToggleTheme() { Theme.Toggle(); _dark = Theme.IsDark; }
-    void Refresh() { _dark = Theme.IsDark; InvokeAsync(StateHasChanged); }
-    public void Dispose() => Theme.OnChange -= Refresh;
+    protected override void OnInitialized()
+    {
+        _dark = Theme.IsDark;
+        Theme.OnChange += OnThemeChanged;
+    }
+
+    async void ToggleTheme()
+    {
+        Theme.Toggle();
+        _dark = Theme.IsDark;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async void OnThemeChanged()
+    {
+        _dark = Theme.IsDark;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Theme.OnChange -= OnThemeChanged;
 }
