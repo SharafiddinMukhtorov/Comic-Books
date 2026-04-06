@@ -6,401 +6,183 @@
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
 
-<PageTitle>@(IsEdit ? "Komikni tahrirlash" : "Yangi komik") - Admin</PageTitle>
+<PageTitle>@(IsEdit ? "Tahrirlash" : "Yangi komik") - Admin</PageTitle>
 
-<MudBreadcrumbs Items="@Crumbs" Class="mb-2 pa-0" />
+<MudText Typo="Typo.h5" Class="mb-4">@(IsEdit ? "✏️ Komikni tahrirlash" : "➕ Yangi komik")</MudText>
 
-<MudText Typo="Typo.h5" Class="font-bold mb-5">
-    @(IsEdit ? "✏️ Komikni tahrirlash" : "➕ Yangi komik qo'shish")
-</MudText>
-
-@if (_pageLoading)
+@if (_loading)
 {
-    <div style="display:flex;align-items:center;gap:12px;padding:40px 0;">
-        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
-        <MudText Style="opacity:0.6;">Yuklanmoqda...</MudText>
-    </div>
-}
-else if (_notFound)
-{
-    <MudAlert Severity="Severity.Error" Class="mb-4">
-        Komik topilmadi. ID: @Id
-    </MudAlert>
-    <MudButton Href="/admin/comics" Variant="Variant.Filled" Color="Color.Primary"
-               Style="text-transform:none;">← Komiklar ro'yxatiga qaytish</MudButton>
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    <MudText Class="mt-2" Style="opacity:0.5;">Yuklanmoqda...</MudText>
 }
 else
 {
-    <MudGrid>
-        <!-- LEFT: Text fields -->
-        <MudItem xs="12" md="8">
-            <MudPaper Elevation="2" Class="pa-5 mb-4" Style="border-radius:12px;">
-                <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">📝 Asosiy ma'lumotlar</MudText>
+<MudGrid>
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4 mb-4">
+            <MudTextField @bind-Value="_title"     Label="Nomi *"       Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_altTitles" Label="Boshqa nomlar" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_desc"      Label="Tavsif"        Variant="Variant.Outlined" Lines="5" Class="mb-3" />
+            <MudGrid>
+                <MudItem xs="6"><MudTextField @bind-Value="_author" Label="Muallif" Variant="Variant.Outlined" /></MudItem>
+                <MudItem xs="6"><MudTextField @bind-Value="_artist" Label="Rassom"  Variant="Variant.Outlined" /></MudItem>
+            </MudGrid>
+            <MudTextField @bind-Value="_coverUrl"  Label="Muqova URL"  Variant="Variant.Outlined" Class="mt-3" />
+            <MudTextField @bind-Value="_bannerUrl" Label="Banner URL"   Variant="Variant.Outlined" Class="mt-3" />
+        </MudPaper>
 
-                <MudTextField T="string"
-                              Value="@_title"
-                              ValueChanged="@((v) => _title = v ?? "")"
-                              Label="Komik nomi *"
-                              Variant="Variant.Outlined"
-                              Class="mb-3"
-                              Immediate="true" />
+        <MudPaper Class="pa-4">
+            <MudText Typo="Typo.h6" Class="mb-3">Janrlar va Teglar</MudText>
+            <MudSelect T="Guid" @bind-SelectedValues="_genreIds" Label="Janrlar"
+                       MultiSelection="true" Variant="Variant.Outlined" Class="mb-3">
+                @foreach (var g in _genres)
+                { <MudSelectItem T="Guid" Value="@g.Id">@g.Name</MudSelectItem> }
+            </MudSelect>
+            <MudSelect T="Guid" @bind-SelectedValues="_tagIds" Label="Teglar"
+                       MultiSelection="true" Variant="Variant.Outlined">
+                @foreach (var t in _tags)
+                { <MudSelectItem T="Guid" Value="@t.Id">@t.Name</MudSelectItem> }
+            </MudSelect>
+        </MudPaper>
+    </MudItem>
 
-                <MudTextField T="string"
-                              Value="@_altTitles"
-                              ValueChanged="@((v) => _altTitles = v ?? "")"
-                              Label="Boshqa nomlar"
-                              Variant="Variant.Outlined"
-                              Class="mb-3"
-                              HelperText="Masalan: Solo Leveling, Na Honjaman"
-                              Immediate="true" />
-
-                <MudTextField T="string"
-                              Value="@_desc"
-                              ValueChanged="@((v) => _desc = v ?? "")"
-                              Label="Tavsif (Synopsis)"
-                              Variant="Variant.Outlined"
-                              Lines="6"
-                              Class="mb-3"
-                              HelperText="Komik haqida qisqacha ma'lumot"
-                              Immediate="true" />
-
-                <MudGrid>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField T="string"
-                                      Value="@_author"
-                                      ValueChanged="@((v) => _author = v ?? "")"
-                                      Label="Muallif (Author)"
-                                      Variant="Variant.Outlined"
-                                      Immediate="true" />
-                    </MudItem>
-                    <MudItem xs="12" sm="6">
-                        <MudTextField T="string"
-                                      Value="@_artist"
-                                      ValueChanged="@((v) => _artist = v ?? "")"
-                                      Label="Rassom (Artist)"
-                                      Variant="Variant.Outlined"
-                                      Immediate="true" />
-                    </MudItem>
-                </MudGrid>
-
-                <MudTextField T="string"
-                              Value="@_coverUrl"
-                              ValueChanged="@((v) => _coverUrl = v ?? "")"
-                              Label="Muqova rasmi URL"
-                              Variant="Variant.Outlined"
-                              Class="mt-3"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Image"
-                              HelperText="https:// bilan boshlanadigan URL"
-                              Immediate="true" />
-
-                <MudTextField T="string"
-                              Value="@_bannerUrl"
-                              ValueChanged="@((v) => _bannerUrl = v ?? "")"
-                              Label="Banner rasmi URL (ixtiyoriy)"
-                              Variant="Variant.Outlined"
-                              Class="mt-3"
-                              Adornment="Adornment.Start"
-                              AdornmentIcon="@Icons.Material.Filled.Wallpaper"
-                              Immediate="true" />
+    <MudItem xs="12" md="4">
+        @if (!string.IsNullOrEmpty(_coverUrl))
+        {
+            <MudPaper Class="pa-4 mb-4">
+                <MudText Typo="Typo.subtitle2" Class="mb-2">Muqova</MudText>
+                <img src="@_coverUrl" style="width:100%;border-radius:8px;max-height:280px;object-fit:cover;" onerror="this.style.display='none'" />
             </MudPaper>
+        }
 
-            <!-- Genres & Tags -->
-            <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px;">
-                <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">🏷️ Janrlar va Teglar</MudText>
+        <MudPaper Class="pa-4">
+            <MudSelect T="ComicStatus" @bind-Value="_status" Label="Holati" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem T="ComicStatus" Value="@ComicStatus.Ongoing">Davom etmoqda</MudSelectItem>
+                <MudSelectItem T="ComicStatus" Value="@ComicStatus.Completed">Tugallangan</MudSelectItem>
+                <MudSelectItem T="ComicStatus" Value="@ComicStatus.Hiatus">To'xtatilgan</MudSelectItem>
+                <MudSelectItem T="ComicStatus" Value="@ComicStatus.Cancelled">Bekor qilingan</MudSelectItem>
+            </MudSelect>
 
-                <MudSelect T="Guid"
-                           SelectedValues="@_genreIds"
-                           SelectedValuesChanged="@((IEnumerable<Guid> v) => _genreIds = v.ToHashSet())"
-                           Label="Janrlar"
-                           MultiSelection="true"
-                           Variant="Variant.Outlined"
-                           Class="mb-4"
-                           HelperText="@($"Tanlangan: {_genreIds.Count()}")">
-                    @foreach (var g in _genres)
-                    {
-                        <MudSelectItem T="Guid" Value="@g.Id">@g.Name</MudSelectItem>
-                    }
-                </MudSelect>
+            <MudSelect T="ComicType" @bind-Value="_type" Label="Turi" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem T="ComicType" Value="@ComicType.Manhwa">Manhwa</MudSelectItem>
+                <MudSelectItem T="ComicType" Value="@ComicType.Manga">Manga</MudSelectItem>
+                <MudSelectItem T="ComicType" Value="@ComicType.Manhua">Manhua</MudSelectItem>
+                <MudSelectItem T="ComicType" Value="@ComicType.Comic">Comic</MudSelectItem>
+            </MudSelect>
 
-                <MudSelect T="Guid"
-                           SelectedValues="@_tagIds"
-                           SelectedValuesChanged="@((IEnumerable<Guid> v) => _tagIds = v.ToHashSet())"
-                           Label="Teglar"
-                           MultiSelection="true"
-                           Variant="Variant.Outlined"
-                           HelperText="@($"Tanlangan: {_tagIds.Count()}")">
-                    @foreach (var t in _tags)
-                    {
-                        <MudSelectItem T="Guid" Value="@t.Id">@t.Name</MudSelectItem>
-                    }
-                </MudSelect>
-            </MudPaper>
-        </MudItem>
+            <MudSelect T="ContentRating" @bind-Value="_rating" Label="Yosh chegarasi" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem T="ContentRating" Value="@ContentRating.Everyone">Hammaga</MudSelectItem>
+                <MudSelectItem T="ContentRating" Value="@ContentRating.Teen">O'smirlar (13+)</MudSelectItem>
+                <MudSelectItem T="ContentRating" Value="@ContentRating.Mature">Kattalar (18+)</MudSelectItem>
+            </MudSelect>
 
-        <!-- RIGHT: Settings -->
-        <MudItem xs="12" md="4">
-            <!-- Cover preview -->
-            @if (!string.IsNullOrWhiteSpace(_coverUrl))
-            {
-                <MudPaper Elevation="2" Class="pa-4 mb-4" Style="border-radius:12px;">
-                    <MudText Typo="Typo.subtitle2" Class="mb-2" Style="opacity:0.55;">Muqova ko'rinishi</MudText>
-                    <img src="@_coverUrl" alt="cover preview"
-                         style="width:100%;border-radius:8px;max-height:300px;object-fit:cover;display:block;"
-                         onerror="this.style.display='none'" />
-                </MudPaper>
-            }
+            <MudNumericField T="int?" @bind-Value="_year" Label="Yil" Variant="Variant.Outlined" Class="mb-3" Min="1950" Max="2030" />
 
-            <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px;">
-                <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">⚙️ Sozlamalar</MudText>
+            <MudCheckBox T="bool" @bind-Checked="_featured" Label="Featured" Color="Color.Primary" Class="mb-1" />
+            <MudCheckBox T="bool" @bind-Checked="_popular"  Label="Mashhur"  Color="Color.Secondary" Class="mb-4" />
 
-                <MudSelect T="ComicStatus"
-                           Value="@_status"
-                           ValueChanged="@((ComicStatus v) => _status = v)"
-                           Label="Holati"
-                           Variant="Variant.Outlined"
-                           Class="mb-3">
-                    <MudSelectItem T="ComicStatus" Value="@ComicStatus.Ongoing">🟢 Davom etmoqda</MudSelectItem>
-                    <MudSelectItem T="ComicStatus" Value="@ComicStatus.Completed">🟣 Tugallangan</MudSelectItem>
-                    <MudSelectItem T="ComicStatus" Value="@ComicStatus.Hiatus">🟡 To'xtatilgan</MudSelectItem>
-                    <MudSelectItem T="ComicStatus" Value="@ComicStatus.Cancelled">🔴 Bekor qilingan</MudSelectItem>
-                    <MudSelectItem T="ComicStatus" Value="@ComicStatus.ComingSoon">⚪ Tez kunda</MudSelectItem>
-                </MudSelect>
-
-                <MudSelect T="ComicType"
-                           Value="@_type"
-                           ValueChanged="@((ComicType v) => _type = v)"
-                           Label="Turi"
-                           Variant="Variant.Outlined"
-                           Class="mb-3">
-                    <MudSelectItem T="ComicType" Value="@ComicType.Manhwa">🇰🇷 Manhwa</MudSelectItem>
-                    <MudSelectItem T="ComicType" Value="@ComicType.Manga">🇯🇵 Manga</MudSelectItem>
-                    <MudSelectItem T="ComicType" Value="@ComicType.Manhua">🇨🇳 Manhua</MudSelectItem>
-                    <MudSelectItem T="ComicType" Value="@ComicType.Comic">🇺🇸 Comic</MudSelectItem>
-                    <MudSelectItem T="ComicType" Value="@ComicType.WebToon">📱 WebToon</MudSelectItem>
-                </MudSelect>
-
-                <MudSelect T="ContentRating"
-                           Value="@_rating"
-                           ValueChanged="@((ContentRating v) => _rating = v)"
-                           Label="Yosh chegarasi"
-                           Variant="Variant.Outlined"
-                           Class="mb-3">
-                    <MudSelectItem T="ContentRating" Value="@ContentRating.Everyone">👶 Hammaga mos</MudSelectItem>
-                    <MudSelectItem T="ContentRating" Value="@ContentRating.Teen">🧑 O'smirlar (13+)</MudSelectItem>
-                    <MudSelectItem T="ContentRating" Value="@ContentRating.Mature">🔞 Kattalar (18+)</MudSelectItem>
-                </MudSelect>
-
-                <MudNumericField T="int?"
-                                 Value="@_year"
-                                 ValueChanged="@((int? v) => _year = v)"
-                                 Label="Chiqarilgan yil"
-                                 Variant="Variant.Outlined"
-                                 Class="mb-4"
-                                 Min="1950" Max="2030"
-                                 Placeholder="2020" />
-
-                <MudDivider Class="mb-3" />
-
-                <MudCheckBox T="bool"
-                             Checked="@_featured"
-                             CheckedChanged="@((bool v) => _featured = v)"
-                             Label="🔥 Tanlangan (Featured)"
-                             Color="Color.Primary"
-                             Class="mb-2" />
-
-                <MudCheckBox T="bool"
-                             Checked="@_popular"
-                             CheckedChanged="@((bool v) => _popular = v)"
-                             Label="⭐ Mashhur (Popular)"
-                             Color="Color.Secondary"
-                             Class="mb-5" />
-
-                <!-- Save -->
-                <MudButton Variant="Variant.Filled"
-                           Color="Color.Primary"
-                           FullWidth="true"
-                           Size="Size.Large"
-                           OnClick="@Save"
-                           Disabled="@_saving"
-                           Style="border-radius:10px;text-transform:none;font-weight:700;height:52px;">
-                    @if (_saving)
-                    {
-                        <MudProgressCircular Size="Size.Small" Indeterminate="true" Class="mr-2" />
-                        <text>Saqlanmoqda...</text>
-                    }
-                    else if (IsEdit)
-                    {
-                        <MudIcon Icon="@Icons.Material.Filled.Save" Class="mr-2" />
-                        <text>O'zgarishlarni saqlash</text>
-                    }
-                    else
-                    {
-                        <MudIcon Icon="@Icons.Material.Filled.Add" Class="mr-2" />
-                        <text>Komikni qo'shish</text>
-                    }
-                </MudButton>
-
-                <MudButton Href="/admin/comics"
-                           Variant="Variant.Outlined"
-                           Color="Color.Default"
-                           FullWidth="true"
-                           Class="mt-2"
-                           Style="text-transform:none;border-radius:10px;">
-                    ← Orqaga
-                </MudButton>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                       OnClick="@Save" Disabled="@_saving" Style="height:48px;text-transform:none;font-weight:700;">
+                @(_saving ? "Saqlanmoqda..." : (IsEdit ? "Saqlash" : "Qo'shish"))
+            </MudButton>
+            <MudButton Href="/admin/comics" Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Style="text-transform:none;">
+                ← Orqaga
+            </MudButton>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
 }
 
 @code {
     [Parameter] public Guid Id { get; set; }
-    private bool IsEdit => Id != Guid.Empty;
+    bool IsEdit => Id != Guid.Empty;
 
-    private List<BreadcrumbItem> Crumbs => new()
-    {
-        new("Admin", "/admin"),
-        new("Komiklar", "/admin/comics"),
-        new(IsEdit ? "Tahrirlash" : "Yangi komik", "#", disabled: true)
-    };
+    string _title = "", _altTitles = "", _desc = "", _author = "", _artist = "", _coverUrl = "", _bannerUrl = "";
+    ComicStatus   _status  = ComicStatus.Ongoing;
+    ComicType     _type    = ComicType.Manhwa;
+    ContentRating _rating  = ContentRating.Teen;
+    int?          _year;
+    bool          _featured, _popular;
+    IEnumerable<Guid> _genreIds = new HashSet<Guid>();
+    IEnumerable<Guid> _tagIds   = new HashSet<Guid>();
 
-    // Form state
-    private string        _title     = "";
-    private string        _altTitles = "";
-    private string        _desc      = "";
-    private string        _author    = "";
-    private string        _artist    = "";
-    private string        _coverUrl  = "";
-    private string        _bannerUrl = "";
-    private ComicStatus   _status    = ComicStatus.Ongoing;
-    private ComicType     _type      = ComicType.Manhwa;
-    private ContentRating _rating    = ContentRating.Teen;
-    private int?          _year;
-    private bool          _featured;
-    private bool          _popular;
-    private IEnumerable<Guid> _genreIds = new HashSet<Guid>();
-    private IEnumerable<Guid> _tagIds   = new HashSet<Guid>();
-
-    private List<GenreDto> _genres = new();
-    private List<TagDto>   _tags   = new();
-
-    // Page state — start as FALSE so form shows immediately for Create
-    private bool _pageLoading = false;
-    private bool _notFound    = false;
-    private bool _saving      = false;
-
-    // Prevent re-loading when fields change
-    private Guid _lastLoadedId = Guid.Empty;
+    List<GenreDto> _genres = new();
+    List<TagDto>   _tags   = new();
+    bool _loading = true;
+    bool _saving  = false;
+    Guid _loadedId;
 
     protected override async Task OnInitializedAsync()
     {
-        await LoadPageData();
-    }
-
-    protected override async Task OnParametersSetAsync()
-    {
-        // Re-load ONLY when navigating to a different comic or switching create/edit
-        if (Id != _lastLoadedId)
-        {
-            await LoadPageData();
-        }
-    }
-
-    private async Task LoadPageData()
-    {
-        _lastLoadedId = Id;
-        _notFound     = false;
-
-        // Show spinner only for edit (create has no data to fetch)
-        if (IsEdit) { _pageLoading = true; StateHasChanged(); }
-
-        // Always load genres + tags
         _genres = await Mediator.Send(new GetAllGenresQuery());
         _tags   = await Mediator.Send(new GetAllTagsQuery());
 
         if (IsEdit)
+            await LoadComic();
+
+        _loadedId = Id;
+        _loading  = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != _loadedId && _loadedId != Guid.Empty)
         {
-            var comic = await Mediator.Send(new GetComicByIdQuery(Id));
-            if (comic is null)
-            {
-                _notFound    = true;
-                _pageLoading = false;
-                StateHasChanged();
-                return;    // ← do NOT navigate here, show error message instead
-            }
+            _loadedId = Id;
+            _loading  = true;
+            StateHasChanged();
 
-            // Fill all form fields from existing comic
-            _title     = comic.Title ?? "";
-            _altTitles = comic.AlternativeTitles ?? "";
-            _desc      = comic.Description ?? "";
-            _author    = comic.Author ?? "";
-            _artist    = comic.Artist ?? "";
-            _coverUrl  = comic.CoverImageUrl ?? "";
-            _bannerUrl = comic.BannerImageUrl ?? "";
-            _status    = comic.Status;
-            _type      = comic.Type;
-            _rating    = comic.Rating;
-            _year      = comic.ReleaseYear;
-            _featured  = comic.IsFeatured;
-            _popular   = comic.IsPopular;
+            _genres = await Mediator.Send(new GetAllGenresQuery());
+            _tags   = await Mediator.Send(new GetAllTagsQuery());
+            if (IsEdit) await LoadComic();
+            else Reset();
 
-            // Map genre/tag names → IDs
-            var gMap = _genres.ToDictionary(g => g.Name, g => g.Id, StringComparer.OrdinalIgnoreCase);
-            _genreIds = comic.Genres.Where(n => gMap.ContainsKey(n)).Select(n => gMap[n]).ToHashSet();
-
-            var tMap = _tags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
-            _tagIds = comic.Tags.Where(n => tMap.ContainsKey(n)).Select(n => tMap[n]).ToHashSet();
-
-            _pageLoading = false;
+            _loading = false;
         }
     }
 
-    private async Task Save()
+    async Task LoadComic()
     {
-        if (string.IsNullOrWhiteSpace(_title))
-        {
-            Snackbar.Add("⚠️ Komik nomini kiriting!", Severity.Warning);
-            return;
-        }
+        var c = await Mediator.Send(new GetComicByIdQuery(Id));
+        if (c is null) { Nav.NavigateTo("/admin/comics"); return; }
 
+        _title = c.Title ?? ""; _altTitles = c.AlternativeTitles ?? "";
+        _desc = c.Description ?? ""; _author = c.Author ?? "";
+        _artist = c.Artist ?? ""; _coverUrl = c.CoverImageUrl ?? "";
+        _bannerUrl = c.BannerImageUrl ?? ""; _status = c.Status;
+        _type = c.Type; _rating = c.Rating; _year = c.ReleaseYear;
+        _featured = c.IsFeatured; _popular = c.IsPopular;
+
+        var gMap = _genres.ToDictionary(g => g.Name, g => g.Id, StringComparer.OrdinalIgnoreCase);
+        _genreIds = c.Genres.Where(n => gMap.ContainsKey(n)).Select(n => gMap[n]).ToHashSet();
+
+        var tMap = _tags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
+        _tagIds = c.Tags.Where(n => tMap.ContainsKey(n)).Select(n => tMap[n]).ToHashSet();
+    }
+
+    void Reset()
+    {
+        _title = ""; _altTitles = ""; _desc = ""; _author = ""; _artist = ""; _coverUrl = ""; _bannerUrl = "";
+        _status = ComicStatus.Ongoing; _type = ComicType.Manhwa; _rating = ContentRating.Teen;
+        _year = null; _featured = false; _popular = false;
+        _genreIds = new HashSet<Guid>(); _tagIds = new HashSet<Guid>();
+    }
+
+    async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(_title)) { Snackbar.Add("Nomni kiriting!", Severity.Warning); return; }
         _saving = true;
-        StateHasChanged();
-
         try
         {
             if (!IsEdit)
-            {
-                await Mediator.Send(new CreateComicCommand(
-                    _title.Trim(), _altTitles.Trim(), _desc.Trim(),
-                    _coverUrl.Trim(), _bannerUrl.Trim(),
-                    _status, _type, _rating,
-                    _author.Trim(), _artist.Trim(), _year,
-                    _featured, _popular,
-                    _genreIds.ToList(), _tagIds.ToList()));
-
-                Snackbar.Add("✅ Komik muvaffaqiyatli qo'shildi!", Severity.Success);
-            }
+                await Mediator.Send(new CreateComicCommand(_title, _altTitles, _desc, _coverUrl, _bannerUrl, _status, _type, _rating, _author, _artist, _year, _featured, _popular, _genreIds.ToList(), _tagIds.ToList()));
             else
-            {
-                await Mediator.Send(new UpdateComicCommand(
-                    Id, _title.Trim(), _altTitles.Trim(), _desc.Trim(),
-                    _coverUrl.Trim(), _bannerUrl.Trim(),
-                    _status, _type, _rating,
-                    _author.Trim(), _artist.Trim(), _year,
-                    _featured, _popular,
-                    _genreIds.ToList(), _tagIds.ToList()));
+                await Mediator.Send(new UpdateComicCommand(Id, _title, _altTitles, _desc, _coverUrl, _bannerUrl, _status, _type, _rating, _author, _artist, _year, _featured, _popular, _genreIds.ToList(), _tagIds.ToList()));
 
-                Snackbar.Add("✅ O'zgarishlar saqlandi!", Severity.Success);
-            }
-
+            Snackbar.Add("✅ Saqlandi!", Severity.Success);
             Nav.NavigateTo("/admin/comics");
         }
-        catch (Exception ex)
-        {
-            Snackbar.Add($"❌ Xatolik: {ex.Message}", Severity.Error);
-            _saving = false;
-            StateHasChanged();
-        }
+        catch (Exception ex) { Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error); }
+        finally { _saving = false; }
     }
 }

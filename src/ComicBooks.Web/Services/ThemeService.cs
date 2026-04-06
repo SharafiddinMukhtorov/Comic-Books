@@ -2,13 +2,13 @@ namespace ComicBooks.Web.Services;
 
 public class ThemeService
 {
-    private bool _isDark = true;
-    public bool IsDark => _isDark;
+    private bool _dark = true;
+    public bool IsDark => _dark;
     public event Action? OnChange;
 
     public void Toggle()
     {
-        _isDark = !_isDark;
+        _dark = !_dark;
         OnChange?.Invoke();
     }
 }
