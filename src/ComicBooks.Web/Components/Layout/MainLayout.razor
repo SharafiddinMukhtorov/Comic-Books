@@ -3,7 +3,7 @@
 @inject NavigationManager Nav
 @implements IDisposable
 
-<MudThemeProvider Theme="@_theme" IsDarkMode="@_dark" />
+<MudThemeProvider @ref="_themeProvider" Theme="@_theme" @bind-IsDarkMode="_dark" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -66,34 +66,56 @@
 </MudLayout>
 
 @code {
+    MudThemeProvider _themeProvider = null!;
     bool _dark = true;
     bool _open;
     string _q = "";
 
     readonly MudTheme _theme = new()
     {
-        PaletteLight = new PaletteLight { Primary="#7c3aed", Background="#f3f4f6", Surface="#ffffff", AppbarBackground="#ffffff", AppbarText="#111827", DrawerBackground="#f9f9fb", DrawerText="#111827", TextPrimary="#111827" },
-        PaletteDark  = new PaletteDark  { Primary="#7c3aed", Background="#0f0f1a", Surface="#1a1a2e", AppbarBackground="#16213e", AppbarText="#e5e7eb", DrawerBackground="#16213e", DrawerText="#e5e7eb", TextPrimary="#f9fafb", TextSecondary="#9ca3af" }
+        PaletteLight = new PaletteLight
+        {
+            Primary = "#7c3aed", Background = "#f3f4f6", Surface = "#ffffff",
+            AppbarBackground = "#ffffff", AppbarText = "#111827",
+            DrawerBackground = "#f9f9fb", DrawerText = "#111827", TextPrimary = "#111827"
+        },
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#7c3aed", Background = "#0f0f1a", Surface = "#1a1a2e",
+            AppbarBackground = "#16213e", AppbarText = "#e5e7eb",
+            DrawerBackground = "#16213e", DrawerText = "#e5e7eb",
+            TextPrimary = "#f9fafb", TextSecondary = "#9ca3af"
+        }
     };
 
     protected override void OnInitialized()
     {
         _dark = Theme.IsDark;
-        Theme.OnChange += Refresh;
+        Theme.OnChange += OnThemeChanged;
     }
 
-    void ToggleTheme() { Theme.Toggle(); _dark = Theme.IsDark; }
+    async void ToggleTheme()
+    {
+        Theme.Toggle();
+        _dark = Theme.IsDark;
+        await InvokeAsync(StateHasChanged);
+    }
 
-    void Refresh() { _dark = Theme.IsDark; InvokeAsync(StateHasChanged); }
+    async void OnThemeChanged()
+    {
+        _dark = Theme.IsDark;
+        await InvokeAsync(StateHasChanged);
+    }
 
     void OnSearch(KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_q))
         {
             Nav.NavigateTo($"/comics?search={Uri.EscapeDataString(_q)}");
-            _open = false; _q = "";
+            _open = false;
+            _q = "";
         }
     }
 
-    public void Dispose() => Theme.OnChange -= Refresh;
+    public void Dispose() => Theme.OnChange -= OnThemeChanged;
 }
