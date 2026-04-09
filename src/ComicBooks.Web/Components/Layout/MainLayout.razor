@@ -1,9 +1,10 @@
 @inherits LayoutComponentBase
 @inject ThemeService Theme
 @inject NavigationManager Nav
+@inject UserSessionService Session
 @implements IDisposable
 
-<MudThemeProvider @ref="_themeProvider" Theme="@_theme" @bind-IsDarkMode="_dark" />
+<MudThemeProvider @ref="_tp" Theme="@_theme" @bind-IsDarkMode="_dark" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -33,10 +34,42 @@
         <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
                        Color="Color.Inherit" OnClick="@ToggleTheme" Class="ml-1" />
 
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudButton Href="/admin" Variant="Variant.Outlined" Color="Color.Primary"
-                       Size="Size.Small" Class="ml-2" Style="text-transform:none;">Admin</MudButton>
-        </MudHidden>
+        <!-- User menu -->
+        @if (Session.IsAuthenticated)
+        {
+            <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                <ActivatorContent>
+                    @if (!string.IsNullOrEmpty(Session.Picture))
+                    {
+                        <MudAvatar Style="cursor:pointer;width:36px;height:36px;margin-left:8px;"
+                                   Image="@Session.Picture" />
+                    }
+                    else
+                    {
+                        <MudAvatar Style="cursor:pointer;width:36px;height:36px;margin-left:8px;"
+                                   Color="Color.Primary">
+                            @Session.Name?[0]
+                        </MudAvatar>
+                    }
+                </ActivatorContent>
+                <ChildContent>
+                    <MudMenuItem Disabled="true">
+                        <MudText Typo="Typo.body2" Style="font-weight:700;">@Session.Name</MudText>
+                        <MudText Typo="Typo.caption" Style="opacity:0.5;">@Session.Email</MudText>
+                    </MudMenuItem>
+                    <MudDivider />
+                    <MudMenuItem Href="/admin" Icon="@Icons.Material.Filled.AdminPanelSettings">Admin panel</MudMenuItem>
+                    <MudMenuItem Href="/auth/logout" Icon="@Icons.Material.Filled.Logout">Chiqish</MudMenuItem>
+                </ChildContent>
+            </MudMenu>
+        }
+        else
+        {
+            <MudButton Href="/login" Variant="Variant.Outlined" Color="Color.Primary"
+                       Size="Size.Small" Class="ml-2" Style="text-transform:none;border-radius:20px;">
+                Kirish
+            </MudButton>
+        }
 
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
@@ -56,7 +89,15 @@
             <MudNavLink Href="/comics"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook"           OnClick="@(() => _open=false)">Komiklar</MudNavLink>
             <MudNavLink Href="/genres"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label"              OnClick="@(() => _open=false)">Janrlar</MudNavLink>
             <MudDivider />
-            <MudNavLink Href="/admin"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings" OnClick="@(() => _open=false)">Admin</MudNavLink>
+            @if (Session.IsAuthenticated)
+            {
+                <MudNavLink Href="/admin"       Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings" OnClick="@(() => _open=false)">Admin</MudNavLink>
+                <MudNavLink Href="/auth/logout" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Logout"             OnClick="@(() => _open=false)">Chiqish</MudNavLink>
+            }
+            else
+            {
+                <MudNavLink Href="/login" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login" OnClick="@(() => _open=false)">Kirish</MudNavLink>
+            }
         </MudNavMenu>
     </MudDrawer>
 
@@ -66,56 +107,29 @@
 </MudLayout>
 
 @code {
-    MudThemeProvider _themeProvider = null!;
+    MudThemeProvider _tp = null!;
     bool _dark = true;
     bool _open;
     string _q = "";
 
     readonly MudTheme _theme = new()
     {
-        PaletteLight = new PaletteLight
-        {
-            Primary = "#7c3aed", Background = "#f3f4f6", Surface = "#ffffff",
-            AppbarBackground = "#ffffff", AppbarText = "#111827",
-            DrawerBackground = "#f9f9fb", DrawerText = "#111827", TextPrimary = "#111827"
-        },
-        PaletteDark = new PaletteDark
-        {
-            Primary = "#7c3aed", Background = "#0f0f1a", Surface = "#1a1a2e",
-            AppbarBackground = "#16213e", AppbarText = "#e5e7eb",
-            DrawerBackground = "#16213e", DrawerText = "#e5e7eb",
-            TextPrimary = "#f9fafb", TextSecondary = "#9ca3af"
-        }
+        PaletteLight = new PaletteLight { Primary="#7c3aed", Background="#f3f4f6", Surface="#ffffff", AppbarBackground="#ffffff", AppbarText="#111827", DrawerBackground="#f9f9fb", DrawerText="#111827", TextPrimary="#111827" },
+        PaletteDark  = new PaletteDark  { Primary="#7c3aed", Background="#0f0f1a", Surface="#1a1a2e", AppbarBackground="#16213e", AppbarText="#e5e7eb", DrawerBackground="#16213e", DrawerText="#e5e7eb", TextPrimary="#f9fafb", TextSecondary="#9ca3af" }
     };
 
-    protected override void OnInitialized()
-    {
-        _dark = Theme.IsDark;
-        Theme.OnChange += OnThemeChanged;
-    }
-
-    async void ToggleTheme()
-    {
-        Theme.Toggle();
-        _dark = Theme.IsDark;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    async void OnThemeChanged()
-    {
-        _dark = Theme.IsDark;
-        await InvokeAsync(StateHasChanged);
-    }
+    protected override void OnInitialized() { _dark = Theme.IsDark; Theme.OnChange += Refresh; }
+    async void ToggleTheme() { Theme.Toggle(); _dark = Theme.IsDark; await InvokeAsync(StateHasChanged); }
+    async void Refresh()     { _dark = Theme.IsDark; await InvokeAsync(StateHasChanged); }
 
     void OnSearch(KeyboardEventArgs e)
     {
         if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_q))
         {
             Nav.NavigateTo($"/comics?search={Uri.EscapeDataString(_q)}");
-            _open = false;
-            _q = "";
+            _open = false; _q = "";
         }
     }
 
-    public void Dispose() => Theme.OnChange -= OnThemeChanged;
+    public void Dispose() => Theme.OnChange -= Refresh;
 }

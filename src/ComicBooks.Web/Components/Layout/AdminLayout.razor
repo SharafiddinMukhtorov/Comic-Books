@@ -16,6 +16,7 @@
         <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
                        Color="Color.Inherit" OnClick="@ToggleTheme" />
         <MudButton Href="/" Variant="Variant.Text" Color="Color.Inherit" Style="text-transform:none;">← Sayt</MudButton>
+        <MudButton Href="/auth/logout" Variant="Variant.Text" Color="Color.Inherit" Style="text-transform:none;" StartIcon="@Icons.Material.Filled.Logout">Chiqish</MudButton>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always" Elevation="2">

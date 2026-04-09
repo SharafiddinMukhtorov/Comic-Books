@@ -32,13 +32,19 @@ else
 
         <MudPaper Class="pa-4">
             <MudText Typo="Typo.h6" Class="mb-3">Janrlar va Teglar</MudText>
-            <MudSelect T="Guid" @bind-SelectedValues="_genreIds" Label="Janrlar"
-                       MultiSelection="true" Variant="Variant.Outlined" Class="mb-3">
+            <MudSelect T="Guid"
+                           SelectedValues="@_genreIds"
+                           SelectedValuesChanged="@((IEnumerable<Guid> v) => _genreIds = v.ToList())"
+                           Label="Janrlar"
+                           MultiSelection="true" Variant="Variant.Outlined" Class="mb-3">
                 @foreach (var g in _genres)
                 { <MudSelectItem T="Guid" Value="@g.Id">@g.Name</MudSelectItem> }
             </MudSelect>
-            <MudSelect T="Guid" @bind-SelectedValues="_tagIds" Label="Teglar"
-                       MultiSelection="true" Variant="Variant.Outlined">
+            <MudSelect T="Guid"
+                           SelectedValues="@_tagIds"
+                           SelectedValuesChanged="@((IEnumerable<Guid> v) => _tagIds = v.ToList())"
+                           Label="Teglar"
+                           MultiSelection="true" Variant="Variant.Outlined">
                 @foreach (var t in _tags)
                 { <MudSelectItem T="Guid" Value="@t.Id">@t.Name</MudSelectItem> }
             </MudSelect>
@@ -102,8 +108,8 @@ else
     ContentRating _rating  = ContentRating.Teen;
     int?          _year;
     bool          _featured, _popular;
-    IEnumerable<Guid> _genreIds = new HashSet<Guid>();
-    IEnumerable<Guid> _tagIds   = new HashSet<Guid>();
+    List<Guid> _genreIds = new();
+    List<Guid> _tagIds = new();
 
     List<GenreDto> _genres = new();
     List<TagDto>   _tags   = new();
@@ -153,10 +159,10 @@ else
         _featured = c.IsFeatured; _popular = c.IsPopular;
 
         var gMap = _genres.ToDictionary(g => g.Name, g => g.Id, StringComparer.OrdinalIgnoreCase);
-        _genreIds = c.Genres.Where(n => gMap.ContainsKey(n)).Select(n => gMap[n]).ToHashSet();
+        _genreIds = c.Genres.Where(n => gMap.ContainsKey(n)).Select(n => gMap[n]).ToList();
 
         var tMap = _tags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
-        _tagIds = c.Tags.Where(n => tMap.ContainsKey(n)).Select(n => tMap[n]).ToHashSet();
+        _tagIds = c.Tags.Where(n => tMap.ContainsKey(n)).Select(n => tMap[n]).ToList();
     }
 
     void Reset()
@@ -164,7 +170,7 @@ else
         _title = ""; _altTitles = ""; _desc = ""; _author = ""; _artist = ""; _coverUrl = ""; _bannerUrl = "";
         _status = ComicStatus.Ongoing; _type = ComicType.Manhwa; _rating = ContentRating.Teen;
         _year = null; _featured = false; _popular = false;
-        _genreIds = new HashSet<Guid>(); _tagIds = new HashSet<Guid>();
+        _genreIds = new List<Guid>(); _tagIds = new List<Guid>();
     }
 
     async Task Save()

@@ -375,7 +375,26 @@ namespace ComicBooks.Infrastructure.Migrations
             modelBuilder.Entity("ComicBooks.Domain.Entities.Tag", b =>
                 {
                     b.Navigation("ComicTags");
+                })
+
+            modelBuilder.Entity("ComicBooks.Domain.Entities.AppUser", b =>
+                {
+                    b.Property<Guid>("Id").ValueGeneratedOnAdd().HasColumnType("TEXT");
+                    b.Property<DateTime>("CreatedAt").HasColumnType("TEXT");
+                    b.Property<string>("Email").IsRequired().HasColumnType("TEXT");
+                    b.Property<string>("GoogleId").IsRequired().HasColumnType("TEXT");
+                    b.Property<bool>("IsAdmin").HasColumnType("INTEGER");
+                    b.Property<bool>("IsDeleted").HasColumnType("INTEGER");
+                    b.Property<DateTime>("LastLogin").HasColumnType("TEXT");
+                    b.Property<string>("Name").IsRequired().HasColumnType("TEXT");
+                    b.Property<string>("Picture").HasColumnType("TEXT");
+                    b.Property<DateTime?>("UpdatedAt").HasColumnType("TEXT");
+                    b.HasKey("Id");
+                    b.HasIndex("Email").IsUnique();
+                    b.HasIndex("GoogleId").IsUnique();
+                    b.ToTable("Users");
                 });
+;
 #pragma warning restore 612, 618
         }
     }

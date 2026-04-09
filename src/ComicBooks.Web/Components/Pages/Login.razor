@@ -1,0 +1,55 @@
+@page "/login"
+@layout EmptyLayout
+
+<PageTitle>Kirish - AsuraComic</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.ExtraSmall">
+    <MudPaper Elevation="6" Class="pa-8" Style="border-radius:20px;text-align:center;">
+
+        <MudText Style="font-size:3rem;">📚</MudText>
+        <MudText Typo="Typo.h5" Style="font-weight:900;color:#7c3aed;margin-top:8px;">AsuraComic</MudText>
+        <MudText Typo="Typo.body2" Style="opacity:0.5;margin-top:4px;margin-bottom:32px;">
+            Komiklar dunyosiga xush kelibsiz
+        </MudText>
+
+        @if (Error)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-4">
+                Kirish amalga oshmadi. Qaytadan urinib ko'ring.
+            </MudAlert>
+        }
+
+        <MudDivider Class="mb-6" />
+
+        <!-- Google Login Button -->
+        <MudButton Href="/auth/google"
+                   Variant="Variant.Outlined"
+                   FullWidth="true"
+                   Size="Size.Large"
+                   Style="border-radius:12px;text-transform:none;font-weight:600;
+                          height:52px;border-color:rgba(128,128,128,0.3);font-size:1rem;">
+            <img src="https://www.google.com/favicon.ico"
+                 width="20" height="20"
+                 style="margin-right:12px;"
+                 alt="Google" />
+            Google orqali davom etish
+        </MudButton>
+
+        <MudText Typo="Typo.caption" Style="opacity:0.4;margin-top:16px;display:block;">
+            Kirish orqali siz shartlar va maxfiylik siyosatiga rozisiz
+        </MudText>
+
+        <MudDivider Class="my-4" />
+
+        <MudButton Href="/"
+                   Variant="Variant.Text"
+                   Style="text-transform:none;opacity:0.5;">
+            ← Saytga qaytish
+        </MudButton>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    [SupplyParameterFromQuery] public string? error { get; set; }
+    bool Error => error == "1";
+}

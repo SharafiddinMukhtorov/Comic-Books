@@ -10,30 +10,26 @@ public record GetChaptersByComicQuery(Guid ComicId) : IRequest<List<ChapterDto>>
 public class GetChaptersByComicQueryHandler : IRequestHandler<GetChaptersByComicQuery, List<ChapterDto>>
 {
     private readonly IApplicationDbContext _context;
-
-    public GetChaptersByComicQueryHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
+    public GetChaptersByComicQueryHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<List<ChapterDto>> Handle(GetChaptersByComicQuery request, CancellationToken cancellationToken)
     {
         return await _context.Chapters
-            .Include(ch => ch.Pages)
             .Where(ch => ch.ComicId == request.ComicId && !ch.IsDeleted)
             .OrderByDescending(ch => ch.ChapterNumber)
             .Select(ch => new ChapterDto
             {
-                Id = ch.Id,
-                ComicId = ch.ComicId,
+                Id            = ch.Id,
+                ComicId       = ch.ComicId,
                 ChapterNumber = ch.ChapterNumber,
-                Title = ch.Title,
-                ViewCount = ch.ViewCount,
-                IsLocked = ch.IsLocked,
-                PublishedAt = ch.PublishedAt,
-                Slug = ch.Slug,
-                CreatedAt = ch.CreatedAt,
-                PageCount = ch.Pages.Count
+                Title         = ch.Title,
+                ViewCount     = ch.ViewCount,
+                IsLocked      = ch.IsLocked,
+                PublishedAt   = ch.PublishedAt,
+                Slug          = ch.Slug,
+                CreatedAt     = ch.CreatedAt,
+                // Subquery — EF Core translates this to COUNT(*) in SQL
+                PageCount     = _context.ChapterPages.Count(p => p.ChapterId == ch.Id)
             })
             .ToListAsync(cancellationToken);
     }
@@ -44,51 +40,47 @@ public record GetChapterWithPagesQuery(Guid ChapterId) : IRequest<(ChapterDto? C
 public class GetChapterWithPagesQueryHandler : IRequestHandler<GetChapterWithPagesQuery, (ChapterDto? Chapter, List<ChapterPageDto> Pages)>
 {
     private readonly IApplicationDbContext _context;
-
-    public GetChapterWithPagesQueryHandler(IApplicationDbContext context)
-    {
-        _context = context;
-    }
+    public GetChapterWithPagesQueryHandler(IApplicationDbContext context) => _context = context;
 
     public async Task<(ChapterDto? Chapter, List<ChapterPageDto> Pages)> Handle(GetChapterWithPagesQuery request, CancellationToken cancellationToken)
     {
         var chapter = await _context.Chapters
-            .Include(ch => ch.Pages)
             .Include(ch => ch.Comic)
             .Where(ch => ch.Id == request.ChapterId && !ch.IsDeleted)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (chapter is null) return (null, new List<ChapterPageDto>());
 
-        var chapterDto = new ChapterDto
-        {
-            Id = chapter.Id,
-            ComicId = chapter.ComicId,
-            ComicTitle = chapter.Comic.Title,
-            ComicCoverUrl = chapter.Comic.CoverImageUrl,
-            ChapterNumber = chapter.ChapterNumber,
-            Title = chapter.Title,
-            ViewCount = chapter.ViewCount,
-            IsLocked = chapter.IsLocked,
-            PublishedAt = chapter.PublishedAt,
-            Slug = chapter.Slug,
-            CreatedAt = chapter.CreatedAt,
-            PageCount = chapter.Pages.Count
-        };
-
-        var pages = chapter.Pages
+        var pages = await _context.ChapterPages
+            .Where(p => p.ChapterId == request.ChapterId)
             .OrderBy(p => p.PageNumber)
             .Select(p => new ChapterPageDto
             {
-                Id = p.Id,
-                ChapterId = p.ChapterId,
+                Id         = p.Id,
+                ChapterId  = p.ChapterId,
                 PageNumber = p.PageNumber,
-                ImageUrl = p.ImageUrl,
-                Width = p.Width,
-                Height = p.Height
+                ImageUrl   = p.ImageUrl,
+                Width      = p.Width,
+                Height     = p.Height
             })
-            .ToList();
+            .ToListAsync(cancellationToken);
 
-        return (chapterDto, pages);
+        var dto = new ChapterDto
+        {
+            Id           = chapter.Id,
+            ComicId      = chapter.ComicId,
+            ComicTitle   = chapter.Comic.Title,
+            ComicCoverUrl = chapter.Comic.CoverImageUrl,
+            ChapterNumber = chapter.ChapterNumber,
+            Title        = chapter.Title,
+            ViewCount    = chapter.ViewCount,
+            IsLocked     = chapter.IsLocked,
+            PublishedAt  = chapter.PublishedAt,
+            Slug         = chapter.Slug,
+            CreatedAt    = chapter.CreatedAt,
+            PageCount    = pages.Count
+        };
+
+        return (dto, pages);
     }
 }

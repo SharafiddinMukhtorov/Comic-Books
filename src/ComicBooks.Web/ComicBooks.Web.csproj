@@ -10,6 +10,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.Google" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ComicBooks.Application\ComicBooks.Application.csproj" />

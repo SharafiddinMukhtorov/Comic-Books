@@ -1,0 +1,27 @@
+@inherits LayoutComponentBase
+@inject ThemeService Theme
+@implements IDisposable
+
+<MudThemeProvider @ref="_tp" Theme="@_theme" @bind-IsDarkMode="_dark" />
+<MudPopoverProvider />
+<MudDialogProvider />
+<MudSnackbarProvider />
+
+<MudContainer Style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px;">
+    @Body
+</MudContainer>
+
+@code {
+    MudThemeProvider _tp = null!;
+    bool _dark = true;
+
+    readonly MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight { Primary="#7c3aed", Background="#f3f4f6", Surface="#ffffff", TextPrimary="#111827" },
+        PaletteDark  = new PaletteDark  { Primary="#7c3aed", Background="#0f0f1a", Surface="#1a1a2e", AppbarBackground="#16213e", TextPrimary="#f9fafb" }
+    };
+
+    protected override void OnInitialized() { _dark = Theme.IsDark; Theme.OnChange += Refresh; }
+    void Refresh() { _dark = Theme.IsDark; InvokeAsync(StateHasChanged); }
+    public void Dispose() => Theme.OnChange -= Refresh;
+}
