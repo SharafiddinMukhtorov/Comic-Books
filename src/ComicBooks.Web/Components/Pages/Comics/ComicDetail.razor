@@ -87,11 +87,11 @@ else
 
                     <!-- Bookmark + Read buttons -->
                     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                        <MudButton Variant="Variant.Filled"
+                                   Color="Color.Primary"
                                    StartIcon="@Icons.Material.Filled.Bookmark"
                                    OnClick="@(() => BookmarkSvc.Toggle(_comic.Id))"
-                                   Style="border-radius:8px;text-transform:none;font-weight:700;height:46px;padding:0 20px;
-                                          @(IsBookmarked?"background:#5b21b6;":"")">
+                                   Style="@GetBookmarkButtonStyle()">
                             @(IsBookmarked ? "Bookmarked" : "Bookmark")
                         </MudButton>
                         @if (_chapters.Any())
@@ -169,26 +169,28 @@ else
                 @foreach (var ch in FilteredChapters())
                 {
                     <MudLink Href="@($"/chapter/{ch.Id}")" Underline="Underline.None" Color="Color.Default">
-                        <div style="display:flex;justify-content:space-between;align-items:center;
-                                    padding:12px 8px;border-radius:8px;cursor:pointer;
-                                    transition:background 0.15s;border-bottom:1px solid rgba(128,128,128,0.08);"
-                             @onmouseover="@(e => _chapHover=ch.Id)"
-                             @onmouseout="@(e => _chapHover=Guid.Empty)"
-                             style="@(_chapHover==ch.Id?"background:rgba(124,58,237,0.08);":"")">
-                            <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;
+                       padding:12px 8px; border-radius:8px; cursor:pointer;
+                       transition:background 0.15s; border-bottom:1px solid rgba(128,128,128,0.08);
+                       @(_chapHover == ch.Id ? "background:rgba(124,58,237,0.08);" : "")"
+                             @onmouseover="@(e => _chapHover = ch.Id)"
+                             @onmouseout="@(e => _chapHover = Guid.Empty)">
+
+                            <div style="display:flex; align-items:center; gap:10px;">
                                 @if (ch.IsLocked)
                                 {
-                                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="color:#f59e0b;opacity:0.7;" />
+                                    <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="color:#f59e0b; opacity:0.7;" />
                                 }
                                 <div>
-                                    <span style="font-weight:700;font-size:14px;">Chapter @ch.ChapterNumber</span>
+                                    <span style="font-weight:700; font-size:14px;">Chapter @ch.ChapterNumber</span>
                                     @if (!string.IsNullOrEmpty(ch.Title))
                                     {
-                                        <span style="font-size:13px;opacity:0.5;margin-left:8px;">@ch.Title</span>
+                                        <span style="font-size:13px; opacity:0.5; margin-left:8px;">@ch.Title</span>
                                     }
                                 </div>
                             </div>
-                            <div style="display:flex;gap:16px;font-size:12px;opacity:0.4;flex-shrink:0;">
+
+                            <div style="display:flex; gap:16px; font-size:12px; opacity:0.4; flex-shrink:0;">
                                 <span>@ch.PageCount pages</span>
                                 <span>@FormatDate(ch.PublishedAt)</span>
                             </div>
@@ -210,6 +212,10 @@ else
     bool _showMore = false;
     string _chapSearch = "";
     Guid _chapHover;
+
+    private string GetBookmarkButtonStyle() =>
+    $"border-radius:8px; text-transform:none; font-weight:700; height:46px; padding:0 20px; " +
+    (IsBookmarked ? "background:#5b21b6;" : "");
 
     bool IsBookmarked      => _comic != null && BookmarkSvc.IsBookmarked(_comic.Id);
     Guid FirstChapterId    => _chapters.OrderBy(c => c.ChapterNumber).FirstOrDefault()?.Id ?? Guid.Empty;
