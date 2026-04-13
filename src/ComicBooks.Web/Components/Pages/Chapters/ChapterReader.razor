@@ -2,7 +2,7 @@
 @inject IMediator Mediator
 @inject NavigationManager Nav
 
-<PageTitle>@GetTitle() - AsuraComic</PageTitle>
+<PageTitle>@GetTitle()</PageTitle>
 
 @if (_loading)
 {
@@ -10,126 +10,181 @@
 }
 else if (_chapter is null)
 {
-    <div style="text-align:center;padding:80px 16px;">
+    <div style="text-align:center;padding:80px;">
         <MudText Typo="Typo.h5" Class="mb-4">Bob topilmadi</MudText>
-        <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary"
-                   Style="border-radius:20px;text-transform:none;">Bosh sahifa</MudButton>
+        <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Style="text-transform:none;">Bosh sahifa</MudButton>
     </div>
 }
 else
 {
-    <!-- Sticky toolbar -->
-    <div style="position:sticky;top:64px;z-index:100;
+    <!-- ═══ STICKY TOOLBAR ═══ -->
+    <div style="position:sticky;top:64px;z-index:200;
                 background:var(--mud-palette-appbar-background);
-                border-bottom:1px solid rgba(128,128,128,0.15);
-                padding:8px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                border-bottom:1px solid rgba(128,128,128,0.12);
+                padding:8px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
 
-        <!-- Back: use Href to comic page -->
         <MudButton Href="@($"/comic/{ComicSlug()}")"
-                   Variant="Variant.Text"
-                   Size="Size.Small"
+                   Variant="Variant.Text" Size="Size.Small"
                    StartIcon="@Icons.Material.Filled.ArrowBack"
-                   Style="text-transform:none;flex-shrink:0;">Orqaga</MudButton>
+                   Style="text-transform:none;flex-shrink:0;">
+            Back
+        </MudButton>
 
         <div style="flex:1;min-width:0;font-size:13px;font-weight:600;
                     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            @_chapter.ComicTitle › @_chapter.ChapterNumber-bob
+            @_chapter.ComicTitle &nbsp;›&nbsp; Chapter @_chapter.ChapterNumber
             @if (!string.IsNullOrEmpty(_chapter.Title)) { <text> – @_chapter.Title</text> }
         </div>
 
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudSelect T="string"
-                       Value="@_width"
-                       ValueChanged="@(v => _width = v)"
-                       Label="Kenglik"
-                       Variant="Variant.Outlined"
-                       Margin="Margin.Dense"
-                       Style="width:120px;flex-shrink:0;">
-                <MudSelectItem T="string" Value="@W600">Tor</MudSelectItem>
-                <MudSelectItem T="string" Value="@W800">O'rta</MudSelectItem>
-                <MudSelectItem T="string" Value="@W1000">Keng</MudSelectItem>
-                <MudSelectItem T="string" Value="@WFull">To'liq</MudSelectItem>
-            </MudSelect>
-        </MudHidden>
+        <span style="font-size:12px;opacity:0.4;">@_pages.Count pages</span>
 
-        <span style="font-size:12px;opacity:0.4;flex-shrink:0;">@_pages.Count bet</span>
-
+        <!-- Prev / Next -->
         @if (_prevId != Guid.Empty)
         {
-            <MudButton Href="@($"/chapter/{_prevId}")"
-                       Variant="Variant.Outlined" Size="Size.Small" Color="Color.Primary"
-                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">← Oldingi</MudButton>
+            <MudButton Href="@($"/chapter/{_prevId}")" Variant="Variant.Outlined" Size="Size.Small"
+                       Color="Color.Primary" Style="border-radius:20px;text-transform:none;flex-shrink:0;">
+                ← Prev
+            </MudButton>
         }
-        else
-        {
-            <MudButton Variant="Variant.Outlined" Size="Size.Small" Disabled="true"
-                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">← Oldingi</MudButton>
-        }
-
         @if (_nextId != Guid.Empty)
         {
-            <MudButton Href="@($"/chapter/{_nextId}")"
-                       Variant="Variant.Filled" Size="Size.Small" Color="Color.Primary"
-                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">Keyingi →</MudButton>
+            <MudButton Href="@($"/chapter/{_nextId}")" Variant="Variant.Filled" Size="Size.Small"
+                       Color="Color.Primary" Style="border-radius:20px;text-transform:none;flex-shrink:0;">
+                Next →
+            </MudButton>
         }
-        else
-        {
-            <MudButton Variant="Variant.Filled" Size="Size.Small" Disabled="true"
-                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">Keyingi →</MudButton>
-        }
+
+        <!-- Settings button -->
+        <MudIconButton Icon="@Icons.Material.Filled.Tune"
+                       Size="Size.Small"
+                       OnClick="@(() => _showSettings = !_showSettings)"
+                       Title="O'qish moslamasi" />
     </div>
 
-    <!-- Pages -->
-    <div style="max-width:@_width;margin:0 auto;padding:8px 0;">
+    <!-- ═══ SETTINGS PANEL ═══ -->
+    @if (_showSettings)
+    {
+        <div style="position:sticky;top:112px;z-index:199;
+                    background:var(--mud-palette-surface);
+                    border-bottom:1px solid rgba(128,128,128,0.1);
+                    padding:16px 20px;">
+            <div style="max-width:600px;margin:0 auto;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                    <MudText Typo="Typo.subtitle1" Style="font-weight:700;">O'qish moslamasi</MudText>
+                    <MudText Typo="Typo.caption" Style="opacity:0.5;">Reader eni shu brauzerda saqlanadi.</MudText>
+                    <MudIconButton Icon="@Icons.Material.Filled.Close" Size="Size.Small"
+                                   OnClick="@(() => _showSettings = false)" />
+                </div>
+
+                <!-- Width slider - px based like AsuraScans -->
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                    <MudIconButton Icon="@Icons.Material.Filled.Remove" Size="Size.Small"
+                                   Variant="Variant.Filled" Color="Color.Primary"
+                                   OnClick="@(() => SetWidth(_width - 40))" />
+
+                    <MudSlider T="int" Value="@_width" ValueChanged="@SetWidth"
+                               Min="400" Max="1400" Step="40"
+                               Color="Color.Primary" Style="flex:1;" />
+
+                    <MudIconButton Icon="@Icons.Material.Filled.Add" Size="Size.Small"
+                                   Variant="Variant.Filled" Color="Color.Primary"
+                                   OnClick="@(() => SetWidth(_width + 40))" />
+
+                    <MudIconButton Icon="@Icons.Material.Filled.RestartAlt" Size="Size.Small"
+                                   Variant="Variant.Filled" Color="Color.Secondary"
+                                   OnClick="@(() => SetWidth(800))" />
+                </div>
+
+                <div style="text-align:center;font-size:13px;font-weight:700;color:#7c3aed;margin-bottom:4px;">
+                    @_width px
+                </div>
+
+                <MudText Typo="Typo.caption" Style="opacity:0.45;">
+                    Qisqa tugmalar: +/−, 0 (oldingi holiga qaytish), P (panel), Esc (yopish).
+                </MudText>
+            </div>
+        </div>
+    }
+
+    <!-- ═══ PAGES ═══ -->
+    <div style="max-width:@(_width)px;margin:0 auto;padding:8px 0;transition:max-width 0.2s;">
         @foreach (var p in _pages.OrderBy(x => x.PageNumber))
         {
             <img src="@p.ImageUrl"
-                 alt="@p.PageNumber-bet"
-                 style="width:100%;display:block;margin-bottom:3px;"
+                 alt="Page @p.PageNumber"
+                 style="width:100%;display:block;margin-bottom:2px;"
                  loading="lazy"
                  onerror="this.onerror=null;this.src='https://picsum.photos/seed/pg@(p.PageNumber)/800/1200'" />
         }
     </div>
 
-    <!-- Bottom nav -->
-    <div style="display:flex;justify-content:center;gap:12px;padding:32px 16px;flex-wrap:wrap;">
+    <!-- ═══ BOTTOM NAV ═══ -->
+    <div style="display:flex;justify-content:center;gap:12px;
+                padding:32px 16px 48px;flex-wrap:wrap;">
         @if (_prevId != Guid.Empty)
         {
-            <MudButton Href="@($"/chapter/{_prevId}")"
-                       Variant="Variant.Outlined" Color="Color.Primary" Size="Size.Large"
-                       Style="border-radius:22px;text-transform:none;font-weight:700;">← Oldingi bob</MudButton>
+            <MudButton Href="@($"/chapter/{_prevId}")" Variant="Variant.Outlined"
+                       Color="Color.Primary" Size="Size.Large"
+                       Style="border-radius:10px;text-transform:none;font-weight:700;">
+                ← Previous Chapter
+            </MudButton>
         }
-        <MudButton Href="@($"/comic/{ComicSlug()}")"
-                   Variant="Variant.Text" Color="Color.Default" Size="Size.Large"
-                   Style="border-radius:22px;text-transform:none;">Komikga qaytish</MudButton>
+        <MudButton Href="@($"/comic/{ComicSlug()}")" Variant="Variant.Text"
+                   Size="Size.Large" Style="text-transform:none;">
+            Comic Page
+        </MudButton>
         @if (_nextId != Guid.Empty)
         {
-            <MudButton Href="@($"/chapter/{_nextId}")"
-                       Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large"
-                       Style="border-radius:22px;text-transform:none;font-weight:700;">Keyingi bob →</MudButton>
+            <MudButton Href="@($"/chapter/{_nextId}")" Variant="Variant.Filled"
+                       Color="Color.Primary" Size="Size.Large"
+                       Style="border-radius:10px;text-transform:none;font-weight:700;">
+                Next Chapter →
+            </MudButton>
         }
+    </div>
+
+    <!-- Floating settings button -->
+    <div style="position:fixed;bottom:24px;right:24px;z-index:300;">
+        <MudFab Color="Color.Primary"
+                StartIcon="@Icons.Material.Filled.Tune"
+                Label="O'qish moslamasi"
+                Size="Size.Medium"
+                OnClick="@(() => _showSettings = !_showSettings)"
+                Style="box-shadow:0 4px 20px rgba(124,58,237,0.4);" />
     </div>
 }
 
 @code {
     [Parameter] public Guid ChapterId { get; set; }
 
-    const string W600 = "600px", W800 = "800px", W1000 = "1000px", WFull = "100%";
+    ChapterDto?          _chapter;
+    List<ChapterPageDto> _pages    = new();
+    Guid  _prevId, _nextId;
+    bool  _loading      = true;
+    bool  _showSettings = false;
+    int   _width        = 800;
+    int   _prevWidth    = 800;
 
-    ChapterDto? _chapter;
-    List<ChapterPageDto> _pages = new();
-    Guid _prevId, _nextId;
-    string _width = W800;
-    bool _loading = true;
-
-    string GetTitle() => _chapter != null ? $"{_chapter.ChapterNumber}-bob — {_chapter.ComicTitle}" : "O'qilmoqda...";
+    string GetTitle() => _chapter != null
+        ? $"Ch.@_chapter.ChapterNumber — @_chapter.ComicTitle"
+        : "O'qilmoqda...";
 
     string ComicSlug() => _chapter?.ComicTitle != null
-        ? System.Text.RegularExpressions.Regex.Replace(_chapter.ComicTitle.ToLower(), @"[^a-z0-9\-]", "-")
+        ? System.Text.RegularExpressions.Regex.Replace(
+            _chapter.ComicTitle.ToLower(), @"[^a-z0-9]+", "-").Trim('-')
         : "";
 
+    void SetWidth(int w)
+    {
+        _prevWidth = _width;
+        _width = Math.Clamp(w, 400, 1400);
+    }
+
     protected override async Task OnInitializedAsync() => await Load();
-    protected override async Task OnParametersSetAsync() { if (!_loading) await Load(); }
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!_loading) await Load();
+    }
 
     async Task Load()
     {
@@ -140,7 +195,6 @@ else
         _chapter = r.Chapter;
         _pages   = r.Pages;
 
-        // Auto mock pages if none stored
         if (_chapter != null && !_pages.Any())
             _pages = Enumerable.Range(1, 22).Select(i => new ChapterPageDto
             {
