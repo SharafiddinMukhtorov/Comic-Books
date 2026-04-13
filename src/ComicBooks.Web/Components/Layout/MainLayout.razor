@@ -9,71 +9,66 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="0" Fixed="true"
-               Style="border-bottom:1px solid rgba(128,128,128,0.12);">
-
-        <!-- Logo -->
-        <MudLink Href="/" Underline="Underline.None" Class="d-flex align-center">
-            <span style="font-weight:900;font-size:1.3rem;
-                         background:linear-gradient(135deg,#7c3aed,#a855f7);
-                         -webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-                AsuraComic
-            </span>
-        </MudLink>
+    <MudAppBar Elevation="0" Fixed="true" Style="background:#7c3aed !important;">
+        <!-- Logo icon -->
+        <div style="width:40px;height:40px;background:rgba(0,0,0,0.25);border-radius:50%;
+                    display:flex;align-items:center;justify-content:center;margin-right:16px;flex-shrink:0;">
+            <MudIcon Icon="@Icons.Material.Filled.MenuBook" Style="color:#fff;font-size:22px;" />
+        </div>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudButton Href="/"          Color="Color.Inherit" Variant="Variant.Text" Class="ml-4" Style="text-transform:none;font-size:14px;font-weight:600;">Home</MudButton>
-            <MudButton Href="/bookmarks" Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-size:14px;font-weight:600;">Bookmarks</MudButton>
-            <MudButton Href="/comics"    Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-size:14px;font-weight:600;">Comics</MudButton>
-            <MudButton Href="/genres"    Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-size:14px;font-weight:600;">Genres</MudButton>
+            <MudButton Href="/"          Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-weight:600;font-size:15px;color:#fff;">Home</MudButton>
+            <MudButton Href="/bookmarks" Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-weight:600;font-size:15px;color:#fff;">Bookmarks</MudButton>
+            <MudButton Href="/comics"    Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-weight:600;font-size:15px;color:#fff;">Browse</MudButton>
         </MudHidden>
 
         <MudSpacer />
 
-        <!-- Search -->
+        <!-- Search bar -->
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudTextField @bind-Value="_q" Placeholder="Search comics..."
-                          Variant="Variant.Outlined" Margin="Margin.Dense"
-                          Style="width:220px;border-radius:20px;"
-                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
-                          OnKeyDown="@OnSearch" />
+            <div style="background:rgba(255,255,255,0.15);border-radius:8px;
+                        display:flex;align-items:center;padding:6px 14px;gap:8px;width:220px;">
+                <MudIcon Icon="@Icons.Material.Filled.Search" Style="color:rgba(255,255,255,0.7);font-size:18px;" />
+                <input @bind="_q" @bind:event="oninput" @onkeydown="@OnSearch"
+                       placeholder="Search..."
+                       style="background:transparent;border:none;outline:none;
+                              color:#fff;font-size:14px;width:100%;" />
+            </div>
         </MudHidden>
 
         <!-- Dark mode -->
         <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit" OnClick="@ToggleTheme" Class="ml-1" />
+                       Color="Color.Inherit" OnClick="@ToggleTheme" Class="ml-2" Style="color:#fff;" />
 
-        <!-- Login / User -->
-        <MudButton Href="/login" Variant="Variant.Filled" Color="Color.Primary"
+        <!-- Log In button -->
+        <MudButton Href="/login" Variant="Variant.Filled"
                    StartIcon="@Icons.Material.Filled.Login"
                    Size="Size.Small" Class="ml-2"
-                   Style="border-radius:8px;text-transform:none;font-weight:700;">
+                   Style="border-radius:8px;text-transform:none;font-weight:700;
+                          background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.3);">
             Log In
         </MudButton>
 
-        <!-- Mobile menu -->
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
-                           OnClick="@(() => _open = !_open)" Class="ml-1" />
+                           OnClick="@(() => _open = !_open)" Style="color:#fff;" />
         </MudHidden>
     </MudAppBar>
 
-    <!-- Mobile Drawer -->
     <MudDrawer @bind-Open="_open" Anchor="Anchor.Right" Variant="DrawerVariant.Temporary" Elevation="4">
         <MudDrawerHeader>
-            <span style="font-weight:900;font-size:1.1rem;
-                         background:linear-gradient(135deg,#7c3aed,#a855f7);
-                         -webkit-background-clip:text;-webkit-text-fill-color:transparent;">
-                AsuraComic
-            </span>
+            <MudText Style="font-weight:900;font-size:1.1rem;color:#7c3aed;">AsuraComic</MudText>
         </MudDrawerHeader>
-        <MudTextField @bind-Value="_q" Placeholder="Search..." Variant="Variant.Outlined"
-                      Margin="Margin.Dense" Class="mx-3 mb-2" OnKeyDown="@OnSearch" />
+        <div style="padding:0 12px 8px;">
+            <input @bind="_q" @bind:event="oninput" @onkeydown="@OnSearch"
+                   placeholder="Search..."
+                   style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(128,128,128,0.3);
+                          background:transparent;outline:none;font-size:14px;" />
+        </div>
         <MudNavMenu>
             <MudNavLink Href="/"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Home"               OnClick="@Close">Home</MudNavLink>
             <MudNavLink Href="/bookmarks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Bookmark"           OnClick="@Close">Bookmarks</MudNavLink>
-            <MudNavLink Href="/comics"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook"           OnClick="@Close">Comics</MudNavLink>
-            <MudNavLink Href="/genres"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label"              OnClick="@Close">Genres</MudNavLink>
+            <MudNavLink Href="/comics"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook"           OnClick="@Close">Browse</MudNavLink>
             <MudDivider />
             <MudNavLink Href="/admin"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings" OnClick="@Close">Admin</MudNavLink>
             <MudNavLink Href="/login"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login"              OnClick="@Close">Log In</MudNavLink>
@@ -96,14 +91,14 @@
         PaletteLight = new PaletteLight
         {
             Primary = "#7c3aed", Background = "#f3f4f6", Surface = "#ffffff",
-            AppbarBackground = "#ffffff", AppbarText = "#111827",
-            DrawerBackground = "#f9f9fb", DrawerText = "#111827", TextPrimary = "#111827"
+            AppbarBackground = "#7c3aed", AppbarText = "#ffffff",
+            DrawerBackground = "#ffffff", DrawerText = "#111827", TextPrimary = "#111827"
         },
         PaletteDark = new PaletteDark
         {
-            Primary = "#7c3aed", Background = "#0d0d16", Surface = "#16162a",
-            AppbarBackground = "#0d0d16", AppbarText = "#e5e7eb",
-            DrawerBackground = "#12121f", DrawerText = "#e5e7eb",
+            Primary = "#7c3aed", Background = "#111118", Surface = "#1a1a28",
+            AppbarBackground = "#7c3aed", AppbarText = "#ffffff",
+            DrawerBackground = "#111118", DrawerText = "#e5e7eb",
             TextPrimary = "#f1f1f5", TextSecondary = "#9ca3af"
         }
     };

@@ -2,7 +2,7 @@
 @inject IMediator Mediator
 @inject NavigationManager Nav
 
-<PageTitle>AsuraComic - Manhwa, Manga o'qing</PageTitle>
+<PageTitle>AsuraComic - Read Manhwa Online</PageTitle>
 
 @if (_loading)
 {
@@ -12,309 +12,253 @@
 }
 else
 {
-    <!-- ═══ HERO SECTION - fullwidth sliding banner ═══ -->
-    <div style="position:relative;width:100%;overflow:hidden;background:#0a0a12;">
+    <!-- ═══ HERO HORIZONTAL SCROLL (AsuraScans exact) ═══ -->
+    <div style="background:#0d0d18;padding:20px 0 0;overflow:hidden;position:relative;">
+        <!-- Ambient background from active hero -->
+        @if (_hero != null)
+        {
+            <div style="position:absolute;inset:0;z-index:0;pointer-events:none;">
+                <img src="@BgOf(_hero)"
+                     style="width:100%;height:100%;object-fit:cover;
+                            filter:blur(40px) brightness(0.15) saturate(1.8);
+                            transform:scale(1.2);transition:opacity 0.6s;" />
+            </div>
+        }
+        <div style="position:absolute;inset:0;z-index:0;pointer-events:none;
+                    background:linear-gradient(to bottom,rgba(13,13,24,0.5) 0%,rgba(13,13,24,0.98) 100%);"></div>
 
-        <!-- Background blur image that changes with active slide -->
-        <div style="position:absolute;inset:0;z-index:0;transition:background-image 0.5s ease;">
-            @if (_heroComic != null)
+        <!-- Cards row -->
+        <div style="position:relative;z-index:1;display:flex;align-items:flex-end;justify-content:center;
+                    gap:10px;padding:0 16px 0;overflow-x:auto;scrollbar-width:none;
+                    scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;">
+            @{ int hi = 0; var featList = _featured?.Items ?? new(); }
+            @foreach (var c in featList)
             {
-                <img src="@HeroBg()"
-                     style="width:100%;height:100%;object-fit:cover;filter:blur(20px) brightness(0.3);
-                            transform:scale(1.1);transition:opacity 0.5s;"
-                     onerror="this.style.display='none'" />
-            }
-            <div style="position:absolute;inset:0;background:linear-gradient(to right, rgba(10,10,18,0.95) 0%, rgba(10,10,18,0.4) 60%, transparent 100%);"></div>
-            <div style="position:absolute;inset:0;background:linear-gradient(to top, rgba(10,10,18,1) 0%, transparent 50%);"></div>
-        </div>
-
-        <!-- Slides row - horizontal scroll snapping -->
-        <div style="position:relative;z-index:1;display:flex;overflow-x:auto;
-                    scroll-snap-type:x mandatory;scrollbar-width:none;
-                    padding:32px 0 48px;"
-             @ref="_heroScrollRef">
-            <div style="display:flex;gap:0;min-width:100%;">
-                @foreach (var c in _featured?.Items ?? new())
-                {
-                    <div style="flex:0 0 100%;max-width:100%;scroll-snap-align:start;position:relative;">
-                        <div style="max-width:1200px;margin:0 auto;padding:0 24px;
-                                    display:flex;align-items:center;gap:40px;">
-                            <!-- Cover -->
-                            <div style="flex:0 0 auto;cursor:pointer;"
-                                 @onclick="@(() => Nav.NavigateTo($"/comic/{c.Slug}"))">
-                                <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/300/420")"
-                                     style="width:220px;height:310px;object-fit:cover;
-                                            border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.6);
-                                            transition:transform 0.3s;"
-                                     onmouseover="this.style.transform='scale(1.03)'"
-                                     onmouseout="this.style.transform='scale(1)'"
-                                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)/300/420'" />
-                            </div>
-                            <!-- Info -->
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-size:11px;font-weight:700;color:#f59e0b;
-                                            letter-spacing:2px;text-transform:uppercase;margin-bottom:8px;">
-                                    ⭐ @c.AverageRating.ToString("F1") &nbsp;·&nbsp; @c.Type
-                                </div>
-                                <div style="font-size:2.2rem;font-weight:900;line-height:1.15;
-                                            color:#fff;margin-bottom:12px;
-                                            text-shadow:0 2px 20px rgba(0,0,0,0.5);">
-                                    @c.Title
-                                </div>
-                                @if (!string.IsNullOrEmpty(c.AlternativeTitles))
-                                {
-                                    <div style="font-size:13px;opacity:0.45;margin-bottom:12px;">
-                                        @c.AlternativeTitles
-                                    </div>
-                                }
-                                @if (!string.IsNullOrEmpty(c.Description))
-                                {
-                                    <div style="font-size:14px;opacity:0.75;line-height:1.7;
-                                                max-width:520px;margin-bottom:24px;
-                                                display:-webkit-box;-webkit-line-clamp:3;
-                                                -webkit-box-orient:vertical;overflow:hidden;">
-                                        @c.Description
-                                    </div>
-                                }
-                                <!-- Action buttons -->
-                                <div style="display:flex;gap:12px;flex-wrap:wrap;">
-                                    <MudButton Href="@($"/comic/{c.Slug}")"
-                                               Variant="Variant.Filled" Color="Color.Primary"
-                                               StartIcon="@Icons.Material.Filled.AutoStories"
-                                               Style="border-radius:8px;text-transform:none;
-                                                      font-weight:700;height:44px;padding:0 24px;">
-                                        O'qishni boshlash
-                                    </MudButton>
-                                    <MudButton Href="@($"/comic/{c.Slug}")"
-                                               Variant="Variant.Outlined"
-                                               Style="border-radius:8px;text-transform:none;
-                                                      font-weight:600;height:44px;padding:0 20px;
-                                                      border-color:rgba(255,255,255,0.3);color:#fff;">
-                                        Batafsil
-                                    </MudButton>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                }
-            </div>
-        </div>
-
-        <!-- Thumbnail strip at bottom (like AsuraScans) -->
-        <div style="position:absolute;bottom:0;left:0;right:0;z-index:2;
-                    background:linear-gradient(transparent, rgba(10,10,18,0.95));
-                    padding:0 24px 8px;">
-            <div style="max-width:1200px;margin:0 auto;
-                        display:flex;gap:8px;overflow-x:auto;
-                        scrollbar-width:none;padding-bottom:4px;">
-                @{ int hi = 0; }
-                @foreach (var c in _featured?.Items ?? new())
-                {
-                    int idx = hi++;
-                    <div style="flex:0 0 auto;cursor:pointer;position:relative;"
-                         @onclick="@(() => SetHero(c))">
-                        <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/120/170")"
-                             style="width:62px;height:88px;object-fit:cover;border-radius:6px;
-                                    transition:all 0.2s;
-                                    @(_heroComic?.Id == c.Id ? "outline:2px solid #7c3aed;transform:scale(1.05);" : "opacity:0.55;")"
-                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)/120/170'" />
-                        @if (_heroComic?.Id == c.Id)
+                bool isCenter = (_heroIdx >= 0 && featList.Count > 0 && c.Id == featList[Math.Min(_heroIdx, featList.Count-1)].Id);
+                hi++;
+                <div style="flex:0 0 auto;scroll-snap-align:center;cursor:pointer;
+                            transition:all 0.3s ease;
+                            @(isCenter
+                                ? "width:200px;transform:translateY(-8px);filter:none;z-index:2;"
+                                : "width:130px;filter:brightness(0.55);z-index:1;")"
+                     @onclick="@(() => SetHero(c, featList.IndexOf(c)))">
+                    <div style="position:relative;border-radius:10px;overflow:hidden;
+                                aspect-ratio:2/3;box-shadow:@(isCenter?"0 24px 60px rgba(0,0,0,0.7)":"0 8px 24px rgba(0,0,0,0.4)");">
+                        <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/300/450")"
+                             style="width:100%;height:100%;object-fit:cover;display:block;"
+                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)/300/450'" />
+                        @if (isCenter)
                         {
-                            <div style="position:absolute;bottom:-4px;left:50%;transform:translateX(-50%);
-                                        width:6px;height:6px;background:#7c3aed;border-radius:50%;"></div>
+                            <div style="position:absolute;top:8px;left:8px;
+                                        background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);
+                                        border-radius:6px;padding:2px 8px;
+                                        display:flex;align-items:center;gap:3px;">
+                                <span style="color:#f59e0b;font-size:12px;">★</span>
+                                <span style="color:#fff;font-size:12px;font-weight:800;">@c.AverageRating.ToString("F1")</span>
+                            </div>
                         }
-                        <div style="position:absolute;top:4px;left:4px;
-                                    background:rgba(0,0,0,0.75);backdrop-filter:blur(4px);
-                                    border-radius:4px;padding:1px 5px;
-                                    font-size:9px;font-weight:800;color:#f59e0b;">
-                            ★ @c.AverageRating.ToString("F1")
-                        </div>
                     </div>
-                }
-            </div>
+                    @if (isCenter)
+                    {
+                        <div style="text-align:center;margin-top:8px;padding-bottom:12px;">
+                            <div style="font-size:13px;font-weight:700;color:#fff;
+                                        overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px;">
+                                @c.Title
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
         </div>
+
+        <!-- Bottom fade -->
+        <div style="height:32px;background:linear-gradient(transparent,var(--mud-palette-background));position:relative;z-index:2;"></div>
     </div>
 
-    <!-- ═══ MAIN CONTENT ═══ -->
-    <div style="background:var(--mud-palette-background);padding:24px 0 48px;">
-        <div style="max-width:1200px;margin:0 auto;padding:0 16px;">
+    <!-- ═══ MAIN BODY ═══ -->
+    <div style="max-width:1280px;margin:0 auto;padding:24px 20px 60px;">
 
-            <!-- Trending Today -->
-            <div style="margin-bottom:36px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <MudText Typo="Typo.h6" Style="font-weight:800;">Trending Today</MudText>
-                    <MudLink Href="/comics?sortBy=views" Underline="Underline.None"
-                             Style="font-size:13px;color:#7c3aed;font-weight:600;">
-                        View All →
-                    </MudLink>
-                </div>
-                <MudGrid Spacing="2">
-                    @foreach (var c in _trending?.Items ?? new())
-                    {
-                        <MudItem xs="6" sm="4" md="3" lg="2">
-                            <ComicCard Comic="c" />
-                        </MudItem>
-                    }
-                </MudGrid>
+        <!-- Trending Today -->
+        <div style="margin-bottom:36px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <span style="font-size:1.1rem;font-weight:800;">Trending Today</span>
+                <MudLink Href="/comics?sortBy=views" Underline="Underline.None"
+                         Style="font-size:13px;color:#7c3aed;font-weight:600;">View All →</MudLink>
             </div>
-
-            <!-- Latest Updates + Rankings -->
-            <MudGrid Spacing="4">
-                <!-- Latest -->
-                <MudItem xs="12" md="8">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                        <MudText Typo="Typo.h6" Style="font-weight:800;">Latest Updates</MudText>
-                        <MudLink Href="/comics" Underline="Underline.None"
-                                 Style="font-size:13px;color:#7c3aed;font-weight:600;">View All →</MudLink>
+            <!-- Horizontal scroll row like AsuraScans -->
+            <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;scrollbar-width:thin;
+                        scrollbar-color:#7c3aed transparent;scroll-snap-type:x mandatory;">
+                @foreach (var c in _trending?.Items ?? new())
+                {
+                    <div style="flex:0 0 auto;width:130px;scroll-snap-align:start;">
+                        <ComicCard Comic="c" />
                     </div>
+                }
+                <!-- View all arrow -->
+                <div style="flex:0 0 auto;width:48px;display:flex;align-items:center;justify-content:center;cursor:pointer;"
+                     @onclick="@(() => Nav.NavigateTo("/comics?sortBy=views"))">
+                    <div style="width:36px;height:36px;border-radius:50%;
+                                background:rgba(124,58,237,0.15);display:flex;align-items:center;justify-content:center;">
+                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Style="color:#7c3aed;" />
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Latest Updates (2-column) + Popular sidebar -->
+        <div style="display:grid;grid-template-columns:1fr 320px;gap:28px;">
+
+            <!-- Latest Updates - 2 columns of comic+chapters -->
+            <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                    <span style="font-size:1.1rem;font-weight:800;">Latest Updates</span>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
                     @foreach (var c in _latest?.Items ?? new())
                     {
                         <MudLink Href="@($"/comic/{c.Slug}")" Underline="Underline.None" Color="Color.Default">
-                            <div style="display:flex; gap:12px; padding:10px 8px; border-radius:10px;
-                       border-bottom:1px solid rgba(128,128,128,0.1); cursor:pointer;
-                       transition:background 0.15s;
-                       @(_hover == c.Id ? "background:rgba(124,58,237,0.07);" : "")"
-                                 @onmouseover="@(e => _hover = c.Id)"
-                                 @onmouseout="@(e => _hover = Guid.Empty)">
-
+                            <div style="display:flex;gap:10px;padding:10px 8px;cursor:pointer;
+                                        border-bottom:1px solid rgba(128,128,128,0.1);
+                                        transition:background 0.15s;"
+                                 @onmouseover="@(e => _latestHover=c.Id)"
+                                 @onmouseout="@(e => _latestHover=Guid.Empty)"
+                                 style="@(_latestHover==c.Id?"background:rgba(124,58,237,0.06);":"")">
+                                <!-- Cover -->
                                 <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/80/110")"
-                                     style="width:52px; height:74px; object-fit:cover; border-radius:7px; flex-shrink:0;"
-                                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)/80/110'" />
-
-                                <div style="flex:1; min-width:0;">
-                                    <div style="font-weight:700; font-size:14px; margin-bottom:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+                                     style="width:60px;height:84px;object-fit:cover;border-radius:6px;flex-shrink:0;"
+                                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)l/80/110'" />
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-weight:700;font-size:13px;margin-bottom:5px;
+                                                overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                         @c.Title
                                     </div>
-                                    <div style="font-size:12px; opacity:0.4; margin-bottom:6px;">@c.Author</div>
-                                    <div style="display:flex; gap:5px; flex-wrap:wrap;">
-                                        @foreach (var g in c.Genres.Take(3))
-                                        {
-                                            <span style="font-size:10px; background:rgba(124,58,237,0.12); color:#7c3aed; padding:2px 8px; border-radius:10px; font-weight:600;">
-                                                @g
+                                    <!-- Show up to 3 chapter numbers like AsuraScans -->
+                                    @if (c.LatestChapterNumber.HasValue)
+                                    {
+                                        <div style="font-size:12px;opacity:0.75;margin-bottom:2px;">
+                                            Chapter @((int)c.LatestChapterNumber.Value)
+                                            <span style="float:right;opacity:0.45;font-size:11px;">
+                                                @FormatDate(c.CreatedAt)
                                             </span>
+                                        </div>
+                                        @if (c.LatestChapterNumber.Value > 1)
+                                        {
+                                            <div style="font-size:12px;color:#7c3aed;opacity:0.8;margin-bottom:2px;">
+                                                Chapter @((int)c.LatestChapterNumber.Value - 1)
+                                                <span style="float:right;opacity:0.45;font-size:11px;">last week</span>
+                                            </div>
                                         }
-                                    </div>
-                                </div>
-
-                                <div style="flex-shrink:0; text-align:right; display:flex; flex-direction:column; gap:4px;">
-                                    <span style="@StatusBadge(c.Status)">@StatusUz(c.Status)</span>
-                                    <span style="color:#f59e0b; font-size:11px; font-weight:700;">★ @c.AverageRating.ToString("F1")</span>
-                                    <span style="font-size:10px; opacity:0.35;">@c.LatestChapterNumber-bob</span>
-                                </div>
-                            </div>
-                        </MudLink>
-                    }
-                </MudItem>
-
-                <!-- Rankings -->
-                <MudItem xs="12" md="4">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                        <MudText Typo="Typo.h6" Style="font-weight:800;">Top Rated</MudText>
-                        <div style="display:flex;gap:4px;">
-                            <MudChip T="string" Size="Size.Small" Color="@(_tab==0?Color.Primary:Color.Default)"
-                                     Label="true" OnClick="@(()=>_tab=0)" Style="cursor:pointer;">Weekly</MudChip>
-                            <MudChip T="string" Size="Size.Small" Color="@(_tab==1?Color.Primary:Color.Default)"
-                                     Label="true" OnClick="@(()=>_tab=1)" Style="cursor:pointer;">All time</MudChip>
-                        </div>
-                    </div>
-                    @{ int rank = 0; }
-                    @foreach (var c in TabList())
-                    {
-                        int r = ++rank;
-                        <MudLink Href="@($"/comic/{c.Slug}")" Underline="Underline.None" Color="Color.Default">
-                            <div style="display:flex;gap:10px;align-items:center;padding:8px 4px;
-                                        border-bottom:1px solid rgba(128,128,128,0.1);cursor:pointer;">
-                                <span style="@RankBadge(r);width:26px;height:26px;border-radius:6px;
-                                             display:flex;align-items:center;justify-content:center;
-                                             font-size:12px;font-weight:900;flex-shrink:0;">@r</span>
-                                <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/50/70")"
-                                     style="width:38px;height:54px;object-fit:cover;border-radius:5px;flex-shrink:0;"
-                                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)r/50/70'" />
-                                <div style="flex:1;min-width:0;">
-                                    <div style="font-size:13px;font-weight:700;overflow:hidden;
-                                                text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
-                                    <div style="font-size:10px;opacity:0.4;margin-top:2px;">@string.Join(", ",c.Genres.Take(2))</div>
-                                    <div style="color:#f59e0b;font-size:11px;font-weight:700;margin-top:2px;">
-                                        ★ @c.AverageRating.ToString("F1") · @Fmt(c.ViewCount) views
-                                    </div>
+                                        @if (c.LatestChapterNumber.Value > 2)
+                                        {
+                                            <div style="font-size:12px;opacity:0.55;">
+                                                Chapter @((int)c.LatestChapterNumber.Value - 2)
+                                                <span style="float:right;opacity:0.4;font-size:11px;">2 weeks ago</span>
+                                            </div>
+                                        }
+                                    }
                                 </div>
                             </div>
                         </MudLink>
                     }
-                </MudItem>
-            </MudGrid>
-
-            <!-- New Releases -->
-            <div style="margin-top:40px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <MudText Typo="Typo.h6" Style="font-weight:800;">New Releases</MudText>
-                    <MudLink Href="/comics" Underline="Underline.None"
-                             Style="font-size:13px;color:#7c3aed;font-weight:600;">View All →</MudLink>
                 </div>
-                <MudGrid Spacing="2">
-                    @foreach (var c in _all?.Items ?? new())
-                    {
-                        <MudItem xs="6" sm="4" md="3" lg="2">
-                            <ComicCard Comic="c" />
-                        </MudItem>
-                    }
-                </MudGrid>
+            </div>
+
+            <!-- Popular Sidebar -->
+            <div>
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                    <span style="font-size:1.1rem;font-weight:800;">Popular</span>
+                    <div style="display:flex;gap:4px;">
+                        <button @onclick="@(()=>_tab=0)" style="@TabBtn(_tab==0)">Weekly</button>
+                        <button @onclick="@(()=>_tab=1)" style="@TabBtn(_tab==1)">Monthly</button>
+                        <button @onclick="@(()=>_tab=2)" style="@TabBtn(_tab==2)">All Time</button>
+                    </div>
+                </div>
+                @{ int rk = 0; }
+                @foreach (var c in TabList())
+                {
+                    int r = ++rk;
+                    <MudLink Href="@($"/comic/{c.Slug}")" Underline="Underline.None" Color="Color.Default">
+                        <div style="display:flex;gap:10px;align-items:center;padding:8px 0;
+                                    border-bottom:1px solid rgba(128,128,128,0.08);cursor:pointer;">
+                            <!-- Rank number -->
+                            <div style="@RankStyle(r);width:22px;height:22px;border-radius:6px;
+                                        display:flex;align-items:center;justify-content:center;
+                                        font-size:11px;font-weight:900;flex-shrink:0;">@r</div>
+                            <!-- Cover -->
+                            <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/40/56")"
+                                 style="width:44px;height:60px;object-fit:cover;border-radius:5px;flex-shrink:0;"
+                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)r/44/60'" />
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;font-weight:700;overflow:hidden;
+                                            text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;">@c.Title</div>
+                                <div style="font-size:11px;opacity:0.45;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    Genres: @string.Join(", ", c.Genres.Take(3))
+                                </div>
+                                <div style="display:flex;gap:2px;">
+                                    @for(int s=1;s<=5;s++)
+                                    {
+                                        <span style="color:@(s <= Math.Round(c.AverageRating/2.0) ? "#f59e0b" : "rgba(128,128,128,0.3)");font-size:12px;">★</span>
+                                    }
+                                    <span style="font-size:11px;font-weight:700;color:#f59e0b;margin-left:3px;">@c.AverageRating.ToString("F1")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </MudLink>
+                }
             </div>
         </div>
     </div>
 }
 
 @code {
-    PaginatedList<ComicDto>? _featured, _trending, _popular, _latest, _all;
-    bool   _loading = true;
-    int    _tab     = 0;
-    Guid   _hover;
-    ComicDto? _heroComic;
-
-    // ElementReference for hero scroll
-    ElementReference _heroScrollRef;
+    PaginatedList<ComicDto>? _featured, _trending, _popular, _latest;
+    bool      _loading    = true;
+    int       _tab        = 0;
+    int       _heroIdx    = 0;
+    ComicDto? _hero;
+    Guid      _latestHover;
 
     protected override async Task OnInitializedAsync()
     {
-        _featured = await Mediator.Send(new GetComicsQuery(PageSize:12, IsFeatured:true, SortBy:"rating"));
-        _trending = await Mediator.Send(new GetComicsQuery(PageSize:6,  SortBy:"views"));
-        _popular  = await Mediator.Send(new GetComicsQuery(PageSize:10, IsPopular:true, SortBy:"rating"));
-        _latest   = await Mediator.Send(new GetComicsQuery(PageSize:10, SortBy:"createdAt"));
-        _all      = await Mediator.Send(new GetComicsQuery(PageSize:18, SortBy:"createdAt"));
-        _heroComic = _featured?.Items.FirstOrDefault();
-        _loading  = false;
+        _featured = await Mediator.Send(new GetComicsQuery(PageSize:12, IsFeatured:true,  SortBy:"rating"));
+        _trending = await Mediator.Send(new GetComicsQuery(PageSize:8,  SortBy:"views"));
+        _popular  = await Mediator.Send(new GetComicsQuery(PageSize:10, IsPopular:true,   SortBy:"rating"));
+        _latest   = await Mediator.Send(new GetComicsQuery(PageSize:12, SortBy:"createdAt"));
+
+        var featList = _featured?.Items ?? new();
+        _heroIdx = featList.Count > 2 ? featList.Count / 2 : 0;
+        _hero    = featList.Count > 0 ? featList[_heroIdx] : null;
+        _loading = false;
     }
 
-    void SetHero(ComicDto c) => _heroComic = c;
+    void SetHero(ComicDto c, int idx) { _hero = c; _heroIdx = idx; }
 
-    string HeroBg() => !string.IsNullOrEmpty(_heroComic?.BannerImageUrl)
-        ? _heroComic.BannerImageUrl
-        : !string.IsNullOrEmpty(_heroComic?.CoverImageUrl)
-            ? _heroComic.CoverImageUrl
-            : $"https://picsum.photos/seed/{_heroComic?.Slug}bg/1400/500";
+    string BgOf(ComicDto c) => !string.IsNullOrEmpty(c.BannerImageUrl) ? c.BannerImageUrl
+                             : !string.IsNullOrEmpty(c.CoverImageUrl)  ? c.CoverImageUrl
+                             : $"https://picsum.photos/seed/{c.Slug}bg/1400/600";
 
-    List<ComicDto> TabList() => _tab == 0 ? (_trending?.Items ?? new()) : (_popular?.Items ?? new());
-    string Fmt(int v) => v >= 1_000_000 ? $"{v/1_000_000.0:F1}M" : v >= 1_000 ? $"{v/1_000}K" : v.ToString();
+    List<ComicDto> TabList() => _tab == 0 ? (_trending?.Items?.Take(10).ToList() ?? new())
+                              : _tab == 1 ? (_popular?.Items?.Take(10).ToList()  ?? new())
+                              :              (_popular?.Items?.Take(10).ToList()  ?? new());
 
-    string StatusBadge(ComicStatus s) => s switch
+    string FormatDate(DateTime d)
     {
-        ComicStatus.Ongoing   => "background:#059669;color:#fff;",
-        ComicStatus.Completed => "background:#7c3aed;color:#fff;",
-        ComicStatus.Hiatus    => "background:#d97706;color:#fff;",
-        _                     => "background:#374151;color:#fff;"
-    };
-    string StatusUz(ComicStatus s) => s switch
-    {
-        ComicStatus.Ongoing   => "Ongoing",
-        ComicStatus.Completed => "Completed",
-        ComicStatus.Hiatus    => "Hiatus",
-        _                     => s.ToString()
-    };
-    string RankBadge(int r) => r switch
-    {
+        var diff = DateTime.UtcNow - d;
+        if (diff.TotalHours  < 1)  return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours  < 24) return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays   < 7)  return $"{(int)diff.TotalDays} days ago";
+        if (diff.TotalDays   < 30) return $"{(int)(diff.TotalDays/7)} weeks ago";
+        return d.ToString("MMM d");
+    }
+
+    string TabBtn(bool active) => active
+        ? "background:#7c3aed;color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px;border:none;cursor:pointer;"
+        : "background:transparent;color:inherit;font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid rgba(128,128,128,0.3);cursor:pointer;opacity:0.7;";
+
+    string RankStyle(int r) => r switch {
         1 => "background:#f59e0b;color:#000;",
         2 => "background:#9ca3af;color:#000;",
         3 => "background:#b45309;color:#fff;",
-        _ => "background:rgba(124,58,237,0.15);color:#7c3aed;"
+        _ => "background:rgba(124,58,237,0.12);color:#7c3aed;"
     };
 }
