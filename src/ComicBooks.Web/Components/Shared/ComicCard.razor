@@ -1,75 +1,74 @@
 @inject NavigationManager Nav
 @inject BookmarkService BookmarkSvc
 
-<div style="cursor:pointer;border-radius:8px;overflow:hidden;
-            transition:transform 0.2s;position:relative;"
-     @onclick="@Go"
+<div @onclick="@Go"
      @onmouseover="@(() => _hover=true)"
-     @onmouseout="@(() => _hover=false)">
+     @onmouseout="@(() => _hover=false)"
+     style="cursor:pointer;border-radius:8px;overflow:hidden;transition:transform 0.2s;position:relative;">
 
-    <!-- Cover image -->
     <div style="position:relative;aspect-ratio:2/3;background:#1a1a2e;overflow:hidden;border-radius:8px;">
+
         <img src="@CoverUrl()"
              alt="@Comic.Title"
-             style="width:100%;height:100%;object-fit:cover;display:block;
-                    transition:transform 0.3s;
-                    @(_hover ? "transform:scale(1.05);" : "")"
              loading="lazy"
+             style="width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.3s;@(_hover?"transform:scale(1.05);":"")"
              onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(Comic.Slug)/300/420'" />
 
-        <!-- Rating badge top-left -->
-        <div style="position:absolute;top:6px;left:6px;z-index:2;
-                    background:rgba(0,0,0,0.7);backdrop-filter:blur(4px);
-                    border-radius:6px;padding:2px 7px;
-                    display:flex;align-items:center;gap:3px;">
-            <span style="color:#f59e0b;font-size:11px;">★</span>
-            <span style="font-size:11px;font-weight:700;color:#fff;">@Comic.AverageRating.ToString("F1")</span>
+        <!-- TOP ROW: rating left, bookmark right -->
+        <div style="position:absolute;top:6px;left:6px;right:6px;z-index:3;
+                    display:flex;justify-content:space-between;align-items:center;">
+
+            <!-- Rating + Type in one pill -->
+            <div style="display:flex;align-items:center;gap:4px;">
+                <div style="background:rgba(0,0,0,0.72);backdrop-filter:blur(4px);
+                            border-radius:6px;padding:2px 6px;
+                            display:flex;align-items:center;gap:2px;">
+                    <span style="color:#f59e0b;font-size:11px;line-height:1;">★</span>
+                    <span style="font-size:11px;font-weight:800;color:#fff;line-height:1;">@Comic.AverageRating.ToString("F1")</span>
+                </div>
+                <div style="@TypeBg();border-radius:6px;padding:2px 6px;
+                            font-size:9px;font-weight:800;letter-spacing:0.3px;
+                            text-transform:uppercase;line-height:1.4;">
+                    @Comic.Type
+                </div>
+            </div>
+
+            <!-- Bookmark -->
+            <div @onclick:stopPropagation="true" @onclick="@Bookmark"
+                 style="background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);
+                        border-radius:50%;width:26px;height:26px;
+                        display:flex;align-items:center;justify-content:center;cursor:pointer;">
+                <MudIcon Icon="@(BookmarkSvc.IsBookmarked(Comic.Id) ? Icons.Material.Filled.Bookmark : Icons.Material.Outlined.BookmarkBorder)"
+                         Style="@(BookmarkSvc.IsBookmarked(Comic.Id) ? "color:#7c3aed;" : "color:rgba(255,255,255,0.8);")"
+                         Size="Size.Small" />
+            </div>
         </div>
 
-        <!-- Bookmark button top-right -->
-        <div style="position:absolute;top:4px;right:4px;z-index:4;"
-             @onclick:stopPropagation="true"
-             @onclick="@Bookmark">
-            <MudIconButton Size="Size.Small"
-                           Icon="@(BookmarkSvc.IsBookmarked(Comic.Id) ? Icons.Material.Filled.Bookmark : Icons.Material.Outlined.BookmarkBorder)"
-                           Style="@(BookmarkSvc.IsBookmarked(Comic.Id) ? "color:#7c3aed;" : "color:rgba(255,255,255,0.7);")" />
-        </div>
-
-        <!-- Status badge -->
-        <div style="position:absolute;top:6px;right:30px;z-index:2;">
-            <span style="@StatusStyle();font-size:9px;font-weight:800;
-                         padding:2px 6px;border-radius:6px;letter-spacing:0.3px;
-                         text-transform:uppercase;">
-                @Comic.Type
-            </span>
-        </div>
-
-        <!-- Latest chapter overlay at bottom -->
+        <!-- Bottom: latest chapter -->
         @if (Comic.LatestChapterNumber.HasValue)
         {
             <div style="position:absolute;bottom:0;left:0;right:0;z-index:2;
                         background:linear-gradient(transparent,rgba(0,0,0,0.88));
-                        padding:20px 8px 7px;">
-                <div style="font-size:11px;font-weight:700;color:#a78bfa;">
+                        padding:18px 8px 6px;">
+                <span style="font-size:11px;font-weight:700;color:#a78bfa;">
                     Chapter @Comic.LatestChapterNumber
-                </div>
+                </span>
             </div>
         }
 
         <!-- Hover overlay -->
         @if (_hover)
         {
-            <div style="position:absolute;inset:0;z-index:3;
-                        background:rgba(124,58,237,0.15);
-                        display:flex;align-items:center;justify-content:center;
-                        transition:opacity 0.2s;">
+            <div style="position:absolute;inset:0;z-index:2;
+                        background:rgba(124,58,237,0.18);
+                        display:flex;align-items:center;justify-content:center;">
                 <MudIcon Icon="@Icons.Material.Filled.PlayArrow"
                          Style="font-size:40px;color:rgba(255,255,255,0.9);" />
             </div>
         }
     </div>
 
-    <!-- Title + info below -->
+    <!-- Title below -->
     <div style="padding:7px 2px 4px;">
         <div style="font-size:12px;font-weight:700;line-height:1.4;
                     overflow:hidden;display:-webkit-box;
@@ -92,11 +91,12 @@
 
     void Go()       => Nav.NavigateTo($"/comic/{Comic.Slug}");
     void Bookmark() => BookmarkSvc.Toggle(Comic.Id);
+
     string CoverUrl() => !string.IsNullOrEmpty(Comic.CoverImageUrl)
         ? Comic.CoverImageUrl
         : $"https://picsum.photos/seed/{Comic.Slug}/300/420";
 
-    string StatusStyle() => Comic.Status switch
+    string TypeBg() => Comic.Status switch
     {
         ComicStatus.Ongoing   => "background:#059669;color:#fff;",
         ComicStatus.Completed => "background:#7c3aed;color:#fff;",
