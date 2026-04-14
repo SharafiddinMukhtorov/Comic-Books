@@ -180,10 +180,9 @@ else
                 <MudLink Href="@($"/chapter/{ch.Id}")" Underline="Underline.None" Color="Color.Default">
                     <div style="display:flex;justify-content:space-between;align-items:center;
                                 padding:13px 16px;border-bottom:1px solid rgba(128,128,128,0.07);
-                                cursor:pointer;transition:background 0.15s;"
+                                cursor:pointer;transition:background 0.15s;@(_chapHover==ch.Id ? "background:rgba(124,58,237,0.07);" : "")"
                          @onmouseover="@(e => _chapHover=ch.Id)"
-                         @onmouseout="@(e => _chapHover=Guid.Empty)"
-                         style="@(_chapHover==ch.Id ? "background:rgba(124,58,237,0.07);" : "")">
+                         @onmouseout="@(e => _chapHover=Guid.Empty)">
                         <div style="display:flex;align-items:center;gap:8px;">
                             @if (ch.IsLocked)
                             {

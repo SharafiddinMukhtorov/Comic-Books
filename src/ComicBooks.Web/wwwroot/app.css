@@ -1,124 +1,78 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-
+/* ═══ GLOBAL RESETS ═══ */
 *, *::before, *::after { box-sizing: border-box; }
 
-html, body {
-    font-family: 'Inter', sans-serif;
-    scroll-behavior: smooth;
-    margin: 0;
-    padding: 0;
-}
+/* Remove Blazor error overlay in dev */
+#blazor-error-ui { display: none !important; }
 
-/* ===== SCROLLBAR ===== */
+/* Scrollbar styling */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #7c3aed; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #6d28d9; }
+::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
 
-/* ===== NAVBAR ===== */
-.nav-link-btn {
-    font-weight: 500 !important;
-    font-size: 0.95rem !important;
-    text-transform: none !important;
-    letter-spacing: 0 !important;
-    opacity: 0.85;
-    transition: opacity 0.2s;
-}
-.nav-link-btn:hover { opacity: 1 !important; color: #7c3aed !important; }
+/* Hide scrollbar but keep scrolling */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ===== COMIC CARD ===== */
-.comic-card {
-    border-radius: 10px !important;
-    overflow: hidden;
-    transition: transform 0.25s ease, box-shadow 0.25s ease !important;
-    cursor: pointer;
-}
-.comic-card:hover {
-    transform: translateY(-6px) scale(1.02) !important;
-    box-shadow: 0 16px 40px rgba(124, 58, 237, 0.3) !important;
-}
-.comic-card:hover .comic-cover-img {
-    transform: scale(1.08);
-}
-.comic-cover-img {
-    transition: transform 0.3s ease;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
+/* ═══ DARK / LIGHT MODE ADAPTIVE COLORS ═══ */
+
+/* Text that should adapt to theme */
+body {
+    --text-muted: rgba(128,128,128,0.6);
+    --border-subtle: rgba(128,128,128,0.12);
+    --hover-bg: rgba(124,58,237,0.07);
+    --card-bg: var(--mud-palette-surface);
 }
 
-/* ===== HERO SCROLL ===== */
-.hero-scroll {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding: 8px 0 16px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-}
-.hero-scroll::-webkit-scrollbar { height: 4px; }
-.hero-scroll-item {
-    flex: 0 0 auto;
-    scroll-snap-align: start;
+/* Input elements adapt to theme */
+input {
+    color: var(--mud-palette-text-primary);
+    background: transparent;
 }
 
-/* ===== SECTION TITLE ===== */
-.section-title {
-    font-size: 1.25rem;
-    font-weight: 700;
-    margin: 0 0 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+input::placeholder {
+    color: var(--mud-palette-text-secondary);
+    opacity: 0.6;
 }
 
-/* ===== UTILITIES ===== */
-.font-bold { font-weight: 700 !important; }
-.font-medium { font-weight: 500 !important; }
-
-/* ===== DARK/LIGHT transitions ===== */
-.mud-main-content, .mud-appbar, .mud-drawer, .mud-paper {
-    transition: background-color 0.2s ease, color 0.2s ease !important;
+/* Comic card hover */
+.comic-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.3);
 }
 
-/* ===== HOME PAGE FEATURED BANNER ===== */
-.featured-banner {
-    position: relative;
-    width: 100%;
-    height: 380px;
-    overflow: hidden;
-    border-radius: 16px;
-    margin-bottom: 32px;
-}
-.featured-banner img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-.featured-banner-overlay {
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(to right, rgba(0,0,0,0.85) 30%, transparent 70%);
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    padding: 32px;
+/* Chapter row hover */
+.chapter-row:hover {
+    background: var(--hover-bg) !important;
 }
 
-@media (max-width: 600px) {
-    .featured-banner { height: 220px; }
-    .featured-banner-overlay { padding: 16px; }
+/* Hero section - always dark */
+.hero-section {
+    background: #0d0d18;
 }
 
-/* ===== CHAPTER READER ===== */
-.reader-page-img {
-    width: 100%;
-    display: block;
-    margin-bottom: 4px;
+/* MudBlazor overrides */
+.mud-nav-link.active {
+    color: #7c3aed !important;
 }
 
-/* ===== BOOKMARKS ===== */
-.bookmark-icon-active { color: #7c3aed !important; }
-.bookmark-icon { color: #9ca3af; }
-.bookmark-icon:hover { color: #7c3aed; }
+/* Smooth transitions */
+.mud-main-content {
+    transition: background-color 0.3s;
+}
+
+/* Fix MudChip in light mode */
+.mud-chip {
+    font-weight: 600 !important;
+}
+
+/* Genre chips */
+.genre-chip {
+    background: rgba(124,58,237,0.12) !important;
+    color: #7c3aed !important;
+}
+
+/* Font */
+body, .mud-typography {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}

@@ -119,10 +119,9 @@ else
                         <MudLink Href="@($"/comic/{c.Slug}")" Underline="Underline.None" Color="Color.Default">
                             <div style="display:flex;gap:10px;padding:10px 8px;cursor:pointer;
                                         border-bottom:1px solid rgba(128,128,128,0.1);
-                                        transition:background 0.15s;"
+                                        transition:background 0.15s;@(_latestHover==c.Id?"background:rgba(124,58,237,0.06);":"")"
                                  @onmouseover="@(e => _latestHover=c.Id)"
-                                 @onmouseout="@(e => _latestHover=Guid.Empty)"
-                                 style="@(_latestHover==c.Id?"background:rgba(124,58,237,0.06);":"")">
+                                 @onmouseout="@(e => _latestHover=Guid.Empty)">
                                 <!-- Cover -->
                                 <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/80/110")"
                                      style="width:60px;height:84px;object-fit:cover;border-radius:6px;flex-shrink:0;"
