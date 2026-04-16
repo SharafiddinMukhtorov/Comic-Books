@@ -9,69 +9,87 @@
 <MudSnackbarProvider />
 
 <MudLayout>
-    <MudAppBar Elevation="0" Fixed="true" Style="background:#7c3aed !important;">
-        <!-- Logo icon -->
-        <div style="width:40px;height:40px;background:rgba(0,0,0,0.25);border-radius:50%;
-                    display:flex;align-items:center;justify-content:center;margin-right:16px;flex-shrink:0;">
-            <MudIcon Icon="@Icons.Material.Filled.MenuBook" Style="color:#fff;font-size:22px;" />
-        </div>
+    <MudAppBar Elevation="0" Fixed="true"
+               Style="@(_dark
+                   ? "background:linear-gradient(90deg,#030082 0%,#1b13be 100%) !important;"
+                   : "background:linear-gradient(90deg,#419fd9 0%,#92d4fc 100%) !important;")">
+
+        <!-- Logo -->
+        <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+            <img src="@(_dark ? "/img/logo-dark.svg" : "/img/logo-light.svg")"
+                 width="36" height="36" alt="Manga Dunyo" />
+            <span style="font-weight:900;font-size:1.15rem;color:#fff;letter-spacing:-0.3px;
+                         text-shadow:0 1px 4px rgba(0,0,0,0.3);">
+                MANGA DUNYO
+            </span>
+        </a>
 
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudButton Href="/"          Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-weight:600;font-size:15px;color:#fff;">Home</MudButton>
-            <MudButton Href="/bookmarks" Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-weight:600;font-size:15px;color:#fff;">Bookmarks</MudButton>
-            <MudButton Href="/comics"    Color="Color.Inherit" Variant="Variant.Text" Style="text-transform:none;font-weight:600;font-size:15px;color:#fff;">Browse</MudButton>
+            <MudButton Href="/"          Color="Color.Inherit" Variant="Variant.Text" Class="ml-4"
+                       Style="text-transform:none;font-weight:600;font-size:14px;color:#fff;">Bosh sahifa</MudButton>
+            <MudButton Href="/bookmarks" Color="Color.Inherit" Variant="Variant.Text"
+                       Style="text-transform:none;font-weight:600;font-size:14px;color:#fff;">Saqlanganlar</MudButton>
+            <MudButton Href="/comics"    Color="Color.Inherit" Variant="Variant.Text"
+                       Style="text-transform:none;font-weight:600;font-size:14px;color:#fff;">Katalog</MudButton>
         </MudHidden>
 
         <MudSpacer />
 
-        <!-- Search bar -->
+        <!-- Search -->
         <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <div style="background:rgba(255,255,255,0.15);border-radius:8px;
-                        display:flex;align-items:center;padding:6px 14px;gap:8px;width:220px;">
-                <MudIcon Icon="@Icons.Material.Filled.Search" Style="color:rgba(255,255,255,0.7);font-size:18px;" />
+            <div style="background:rgba(255,255,255,0.18);border-radius:8px;
+                        display:flex;align-items:center;padding:6px 14px;gap:8px;width:240px;
+                        border:1px solid rgba(255,255,255,0.25);">
+                <MudIcon Icon="@Icons.Material.Filled.Search" Style="color:rgba(255,255,255,0.75);font-size:18px;" />
                 <input @bind="_q" @bind:event="oninput" @onkeydown="@OnSearch"
-                       placeholder="Search..."
+                       placeholder="Qidirish..."
                        style="background:transparent;border:none;outline:none;
                               color:#fff;font-size:14px;width:100%;" />
             </div>
         </MudHidden>
 
-        <!-- Dark mode -->
+        <!-- Dark/light toggle -->
         <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit" OnClick="@ToggleTheme" Class="ml-2" Style="color:#fff;" />
+                       Color="Color.Inherit" OnClick="@ToggleTheme"
+                       Class="ml-2" Style="color:#fff;" />
 
-        <!-- Log In button -->
-        <MudButton Href="/login" Variant="Variant.Filled"
-                   StartIcon="@Icons.Material.Filled.Login"
-                   Size="Size.Small" Class="ml-2"
+        <!-- Log In -->
+        <MudButton Href="/login" Variant="Variant.Outlined" Class="ml-2"
                    Style="border-radius:8px;text-transform:none;font-weight:700;
-                          background:rgba(255,255,255,0.2);color:#fff;border:1px solid rgba(255,255,255,0.3);">
+                          border-color:rgba(255,255,255,0.5);color:#fff;
+                          background:rgba(255,255,255,0.1);">
+            <MudIcon Icon="@Icons.Material.Filled.Login" Style="font-size:16px;margin-right:6px;" />
             Log In
         </MudButton>
 
         <MudHidden Breakpoint="Breakpoint.MdAndUp">
             <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
-                           OnClick="@(() => _open = !_open)" Style="color:#fff;" />
+                           Style="color:#fff;" OnClick="@(() => _open = !_open)" />
         </MudHidden>
     </MudAppBar>
 
     <MudDrawer @bind-Open="_open" Anchor="Anchor.Right" Variant="DrawerVariant.Temporary" Elevation="4">
         <MudDrawerHeader>
-            <MudText Style="font-weight:900;font-size:1.1rem;color:#7c3aed;">AsuraComic</MudText>
+            <div style="display:flex;align-items:center;gap:8px;">
+                <img src="@(_dark ? "/img/logo-dark.svg" : "/img/logo-light.svg")" width="28" height="28" />
+                <span style="font-weight:900;font-size:1rem;color:#419fd9;">MANGA DUNYO</span>
+            </div>
         </MudDrawerHeader>
         <div style="padding:0 12px 8px;">
             <input @bind="_q" @bind:event="oninput" @onkeydown="@OnSearch"
-                   placeholder="Search..."
-                   style="width:100%;padding:8px 12px;border-radius:8px;border:1px solid rgba(128,128,128,0.3);
-                          background:transparent;outline:none;font-size:14px;" />
+                   placeholder="Qidirish..."
+                   style="width:100%;padding:8px 12px;border-radius:8px;
+                          border:1px solid rgba(128,128,128,0.25);
+                          background:transparent;outline:none;font-size:14px;
+                          color:var(--mud-palette-text-primary);" />
         </div>
         <MudNavMenu>
-            <MudNavLink Href="/"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Home"               OnClick="@Close">Home</MudNavLink>
-            <MudNavLink Href="/bookmarks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Bookmark"           OnClick="@Close">Bookmarks</MudNavLink>
-            <MudNavLink Href="/comics"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook"           OnClick="@Close">Browse</MudNavLink>
+            <MudNavLink Href="/"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Home"                 OnClick="@Close">Bosh sahifa</MudNavLink>
+            <MudNavLink Href="/bookmarks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Bookmark"             OnClick="@Close">Saqlanganlar</MudNavLink>
+            <MudNavLink Href="/comics"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook"             OnClick="@Close">Katalog</MudNavLink>
             <MudDivider />
-            <MudNavLink Href="/admin"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings" OnClick="@Close">Admin</MudNavLink>
-            <MudNavLink Href="/login"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login"              OnClick="@Close">Log In</MudNavLink>
+            <MudNavLink Href="/admin"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings"   OnClick="@Close">Admin</MudNavLink>
+            <MudNavLink Href="/login"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login"                OnClick="@Close">Log In</MudNavLink>
         </MudNavMenu>
     </MudDrawer>
 
@@ -90,33 +108,33 @@
     {
         PaletteLight = new PaletteLight
         {
-            Primary           = "#7c3aed",
-            Secondary         = "#5b21b6",
-            Background        = "#f4f4f8",
-            Surface           = "#ffffff",
-            AppbarBackground  = "#7c3aed",
-            AppbarText        = "#ffffff",
-            DrawerBackground  = "#ffffff",
-            DrawerText        = "#1f1f2e",
-            TextPrimary       = "#1a1a2e",
-            TextSecondary     = "#6b7280",
-            ActionDefault     = "#374151",
-            LinesDefault      = "rgba(0,0,0,0.08)",
+            Primary          = "#419fd9",
+            Secondary        = "#1b13be",
+            Background       = "#f0f4f8",
+            Surface          = "#ffffff",
+            AppbarBackground = "#419fd9",
+            AppbarText       = "#ffffff",
+            DrawerBackground = "#ffffff",
+            DrawerText       = "#1a1a2e",
+            TextPrimary      = "#1a1a2e",
+            TextSecondary    = "#5a6a7a",
+            ActionDefault    = "#2d3748",
+            LinesDefault     = "rgba(0,0,0,0.08)",
         },
         PaletteDark = new PaletteDark
         {
-            Primary           = "#7c3aed",
-            Secondary         = "#5b21b6",
-            Background        = "#0d0d18",
-            Surface           = "#16162a",
-            AppbarBackground  = "#7c3aed",
-            AppbarText        = "#ffffff",
-            DrawerBackground  = "#111120",
-            DrawerText        = "#e2e2f0",
-            TextPrimary       = "#f0f0f8",
-            TextSecondary     = "#9ca3af",
-            ActionDefault     = "#d1d5db",
-            LinesDefault      = "rgba(255,255,255,0.08)",
+            Primary          = "#1b13be",
+            Secondary        = "#419fd9",
+            Background       = "#0a0a14",
+            Surface          = "#12121e",
+            AppbarBackground = "#030082",
+            AppbarText       = "#ffffff",
+            DrawerBackground = "#0e0e1c",
+            DrawerText       = "#e2e2f0",
+            TextPrimary      = "#f0f0f8",
+            TextSecondary    = "#8892a4",
+            ActionDefault    = "#c8d0e0",
+            LinesDefault     = "rgba(255,255,255,0.07)",
         }
     };
 

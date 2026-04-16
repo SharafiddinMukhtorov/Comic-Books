@@ -1,8 +1,9 @@
 @page "/"
 @inject IMediator Mediator
 @inject NavigationManager Nav
+@inject ThemeService Theme
 
-<PageTitle>AsuraComic - Read Manhwa Online</PageTitle>
+<PageTitle>Manga Dunyo - Manhwa, Manga o'qing</PageTitle>
 
 @if (_loading)
 {
@@ -13,52 +14,70 @@
 else
 {
     <!-- ═══ HERO SECTION ═══ -->
-    <!-- Fixed height container so cards are always visible -->
-    <div style="position:relative;height:340px;background:#0d0d18;overflow:hidden;">
+    <div style="position:relative;height:380px;overflow:hidden;">
 
-        <!-- Blur background - changes with selected hero -->
-        <div style="position:absolute;inset:0;z-index:0;">
-            @if (_hero != null)
-            {
-                <img src="@BgOf(_hero)"
-                     style="width:100%;height:100%;object-fit:cover;
-                            filter:blur(32px) brightness(0.18) saturate(2);
-                            transform:scale(1.15);" />
-            }
-            <!-- Dark overlay -->
-            <div style="position:absolute;inset:0;
-                        background:linear-gradient(to bottom,rgba(13,13,24,0.4) 0%,rgba(13,13,24,0.96) 100%);"></div>
-        </div>
+        <!-- BLUR BACKGROUND - changes when hero changes -->
+        @if (_hero != null)
+        {
+            <img src="@BgOf(_hero)"
+                 key="@_hero.Id"
+                 style="position:absolute;inset:0;width:100%;height:100%;
+                        object-fit:cover;
+                        filter:blur(28px) brightness(0.22) saturate(1.8);
+                        transform:scale(1.12);
+                        z-index:0;transition:opacity 0.5s;" />
+        }
 
-        <!-- Cards centered row -->
+        <!-- Dark gradient overlay -->
         <div style="position:absolute;inset:0;z-index:1;
+                    background:linear-gradient(to bottom,
+                        rgba(10,10,20,0.3) 0%,
+                        rgba(10,10,20,0.55) 60%,
+                        var(--mud-palette-background) 100%);"></div>
+
+        <!-- Colored top gradient from brand -->
+        <div style="position:absolute;top:0;left:0;right:0;height:6px;z-index:3;
+                    background:linear-gradient(90deg,
+                        @(Theme.IsDark ? "#030082" : "#419fd9") 0%,
+                        @(Theme.IsDark ? "#1b13be" : "#92d4fc") 100%);"></div>
+
+        <!-- CARDS ROW -->
+        <div style="position:absolute;inset:0;z-index:2;
                     display:flex;align-items:flex-end;justify-content:center;
-                    padding:0 24px;gap:10px;overflow-x:auto;
-                    scrollbar-width:none;-webkit-overflow-scrolling:touch;">
+                    gap:10px;padding:0 20px 0;
+                    overflow-x:auto;scrollbar-width:none;">
 
             @{ var featList = _featured?.Items ?? new(); }
             @foreach (var c in featList)
             {
                 bool active = _hero?.Id == c.Id;
                 <div @onclick="@(() => SetHero(c))"
-                     style="flex:0 0 auto;cursor:pointer;transition:all 0.3s;
+                     style="flex:0 0 auto;cursor:pointer;
+                            transition:all 0.35s cubic-bezier(0.4,0,0.2,1);
                             @(active
-                                ? "width:190px;transform:translateY(-12px);"
-                                : "width:120px;opacity:0.5;transform:translateY(0);")">
+                                ? "width:185px;transform:translateY(-14px);filter:none;z-index:3;"
+                                : "width:118px;filter:brightness(0.5);transform:translateY(0);z-index:1;")">
+
                     <div style="border-radius:10px;overflow:hidden;aspect-ratio:2/3;
-                                box-shadow:@(active ? "0 20px 50px rgba(0,0,0,0.7)" : "0 4px 16px rgba(0,0,0,0.4)");">
+                                box-shadow:@(active
+                                    ? "0 24px 56px rgba(0,0,0,0.75),0 0 0 2px rgba(255,255,255,0.15)"
+                                    : "0 4px 16px rgba(0,0,0,0.4)");">
                         <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/300/450")"
                              style="width:100%;height:100%;object-fit:cover;display:block;"
                              onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)/300/450'" />
                     </div>
+
                     @if (active)
                     {
-                        <div style="text-align:center;padding:6px 4px 0;">
-                            <div style="font-size:12px;font-weight:700;color:#fff;
-                                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                        <div style="text-align:center;padding:7px 4px 0;">
+                            <div style="font-size:12px;font-weight:800;color:#fff;
+                                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+                                        text-shadow:0 1px 6px rgba(0,0,0,0.7);">
                                 @c.Title
                             </div>
-                            <div style="font-size:11px;color:#f59e0b;font-weight:700;">★ @c.AverageRating.ToString("F1")</div>
+                            <div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:2px;">
+                                ★ @c.AverageRating.ToString("F1")
+                            </div>
                         </div>
                     }
                 </div>
@@ -66,39 +85,43 @@ else
         </div>
     </div>
 
-    <!-- ═══ MAIN BODY ═══ -->
-    <div style="max-width:1280px;margin:0 auto;padding:28px 20px 60px;">
+    <!-- ═══ BODY ═══ -->
+    <div style="max-width:1300px;margin:0 auto;padding:24px 20px 64px;">
 
         <!-- Trending Today -->
         <div style="margin-bottom:36px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                 <span style="font-size:1.1rem;font-weight:800;">Trending Today</span>
                 <MudLink Href="/comics?sortBy=views" Underline="Underline.None"
-                         Style="font-size:13px;color:#7c3aed;font-weight:600;">View All →</MudLink>
+                         Style="font-size:13px;font-weight:600;
+                                color:@(Theme.IsDark ? "#1b13be" : "#419fd9");">
+                    View All →
+                </MudLink>
             </div>
-            <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;
-                        scrollbar-width:thin;scrollbar-color:#7c3aed transparent;">
+            <div style="display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;
+                        scrollbar-width:thin;scrollbar-color:rgba(65,159,217,0.4) transparent;">
                 @foreach (var c in _trending?.Items ?? new())
                 {
                     <div style="flex:0 0 140px;">
                         <ComicCard Comic="c" />
                     </div>
                 }
-                <div style="flex:0 0 44px;display:flex;align-items:center;justify-content:center;cursor:pointer;"
-                     @onclick="@(() => Nav.NavigateTo("/comics?sortBy=views"))">
+                <div style="flex:0 0 44px;display:flex;align-items:center;justify-content:center;
+                            cursor:pointer;" @onclick="@(() => Nav.NavigateTo("/comics?sortBy=views"))">
                     <div style="width:36px;height:36px;border-radius:50%;
-                                background:rgba(124,58,237,0.15);
+                                background:@(Theme.IsDark ? "rgba(27,19,190,0.2)" : "rgba(65,159,217,0.15)");
                                 display:flex;align-items:center;justify-content:center;">
-                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight" Style="color:#7c3aed;" />
+                        <MudIcon Icon="@Icons.Material.Filled.ChevronRight"
+                                 Style="@($"color:{(Theme.IsDark ? "#1b13be" : "#419fd9")};")" />
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Latest Updates (2-col) + Popular sidebar -->
-        <div style="display:grid;grid-template-columns:1fr 300px;gap:32px;">
+        <!-- Latest Updates + Popular -->
+        <div style="display:grid;grid-template-columns:1fr 310px;gap:32px;">
 
-            <!-- Latest Updates -->
+            <!-- Latest Updates - 2-column grid -->
             <div>
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
                     <span style="font-size:1.1rem;font-weight:800;">Latest Updates</span>
@@ -107,12 +130,14 @@ else
                     @foreach (var c in _latest?.Items ?? new())
                     {
                         <MudLink Href="@($"/comic/{c.Slug}")" Underline="Underline.None" Color="Color.Default">
-                            <div @onmouseover="@(()=>_latestHover=c.Id)"
-                                 @onmouseout="@(()=>_latestHover=Guid.Empty)"
+                            <div @onmouseover="@(()=>_lHover=c.Id)"
+                                 @onmouseout="@(()=>_lHover=Guid.Empty)"
                                  style="display:flex;gap:10px;padding:10px 8px;cursor:pointer;
-                                        border-bottom:1px solid rgba(128,128,128,0.1);
                                         transition:background 0.15s;
-                                        background:@(_latestHover==c.Id ? "rgba(124,58,237,0.06)" : "transparent");">
+                                        border-bottom:1px solid rgba(128,128,128,0.09);
+                                        background:@(_lHover==c.Id
+                                            ? (Theme.IsDark ? "rgba(27,19,190,0.08)" : "rgba(65,159,217,0.08)")
+                                            : "transparent");">
                                 <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/80/110")"
                                      style="width:60px;height:84px;object-fit:cover;border-radius:6px;flex-shrink:0;"
                                      onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)l/80/110'" />
@@ -126,11 +151,12 @@ else
                                         <div style="font-size:12px;opacity:0.75;margin-bottom:2px;
                                                     display:flex;justify-content:space-between;">
                                             <span>Chapter @((int)c.LatestChapterNumber.Value)</span>
-                                            <span style="opacity:0.45;font-size:11px;">@FmtDate(c.CreatedAt)</span>
+                                            <span style="opacity:0.42;font-size:11px;">@FmtDate(c.CreatedAt)</span>
                                         </div>
                                         @if (c.LatestChapterNumber.Value >= 2)
                                         {
-                                            <div style="font-size:12px;color:#7c3aed;margin-bottom:2px;
+                                            <div style="font-size:12px;margin-bottom:2px;
+                                                        color:@(Theme.IsDark ? "#5b8af0" : "#2563eb");
                                                         display:flex;justify-content:space-between;">
                                                 <span>Chapter @((int)c.LatestChapterNumber.Value - 1)</span>
                                                 <span style="opacity:0.4;font-size:11px;">last week</span>
@@ -138,7 +164,7 @@ else
                                         }
                                         @if (c.LatestChapterNumber.Value >= 3)
                                         {
-                                            <div style="font-size:12px;opacity:0.5;
+                                            <div style="font-size:12px;opacity:0.48;
                                                         display:flex;justify-content:space-between;">
                                                 <span>Chapter @((int)c.LatestChapterNumber.Value - 2)</span>
                                                 <span style="opacity:0.4;font-size:11px;">2 weeks ago</span>
@@ -157,11 +183,12 @@ else
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:4px;">
                     <span style="font-size:1.1rem;font-weight:800;">Popular</span>
                     <div style="display:flex;gap:4px;">
-                        <button @onclick="@(()=>_tab=0)" style="@TabBtn(_tab==0)">Weekly</button>
-                        <button @onclick="@(()=>_tab=1)" style="@TabBtn(_tab==1)">Monthly</button>
+                        <button @onclick="@(()=>_tab=0)" style="@TabBtn(_tab==0)">Haftalik</button>
+                        <button @onclick="@(()=>_tab=1)" style="@TabBtn(_tab==1)">Oylik</button>
                         <button @onclick="@(()=>_tab=2)" style="@TabBtn(_tab==2)">All Time</button>
                     </div>
                 </div>
+
                 @{ int rk = 0; }
                 @foreach (var c in TabList())
                 {
@@ -180,14 +207,14 @@ else
                                             text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;">
                                     @c.Title
                                 </div>
-                                <div style="font-size:11px;opacity:0.4;margin-bottom:3px;
+                                <div style="font-size:11px;opacity:0.42;margin-bottom:3px;
                                             overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                     @string.Join(", ", c.Genres.Take(2))
                                 </div>
                                 <div style="display:flex;gap:1px;align-items:center;">
                                     @for (int s = 1; s <= 5; s++)
                                     {
-                                        <span style="color:@(s <= Math.Round(c.AverageRating/2.0) ? "#f59e0b" : "rgba(128,128,128,0.25)");font-size:11px;">★</span>
+                                        <span style="color:@(s <= (int)Math.Round(c.AverageRating/2.0) ? "#f59e0b" : "rgba(128,128,128,0.22)");font-size:11px;">★</span>
                                     }
                                     <span style="font-size:11px;font-weight:700;color:#f59e0b;margin-left:3px;">
                                         @c.AverageRating.ToString("F1")
@@ -204,53 +231,54 @@ else
 
 @code {
     PaginatedList<ComicDto>? _featured, _trending, _popular, _latest;
-    bool      _loading     = true;
-    int       _tab         = 0;
+    bool      _loading = true;
+    int       _tab     = 0;
     ComicDto? _hero;
-    Guid      _latestHover;
+    Guid      _lHover;
 
     protected override async Task OnInitializedAsync()
     {
-        _featured = await Mediator.Send(new GetComicsQuery(PageSize:12, IsFeatured:true,  SortBy:"rating"));
+        _featured = await Mediator.Send(new GetComicsQuery(PageSize:14, IsFeatured:true,  SortBy:"rating"));
         _trending = await Mediator.Send(new GetComicsQuery(PageSize:8,  SortBy:"views"));
         _popular  = await Mediator.Send(new GetComicsQuery(PageSize:10, IsPopular:true,   SortBy:"rating"));
-        _latest   = await Mediator.Send(new GetComicsQuery(PageSize:12, SortBy:"createdAt"));
+        _latest   = await Mediator.Send(new GetComicsQuery(PageSize:14, SortBy:"createdAt"));
 
-        // Default active hero = middle of featured list
         var list = _featured?.Items ?? new();
+        // Start with middle card active (like AsuraScans)
         _hero = list.Count > 0 ? list[list.Count / 2] : null;
         _loading = false;
     }
 
     void SetHero(ComicDto c) => _hero = c;
 
-    string BgOf(ComicDto c)
-    {
-        if (!string.IsNullOrEmpty(c.BannerImageUrl)) return c.BannerImageUrl;
-        if (!string.IsNullOrEmpty(c.CoverImageUrl))  return c.CoverImageUrl;
-        return $"https://picsum.photos/seed/{c.Slug}bg/1400/500";
-    }
+    string BgOf(ComicDto c) =>
+        !string.IsNullOrEmpty(c.BannerImageUrl) ? c.BannerImageUrl :
+        !string.IsNullOrEmpty(c.CoverImageUrl)  ? c.CoverImageUrl  :
+        $"https://picsum.photos/seed/{c.Slug}bg/1400/500";
 
-    List<ComicDto> TabList() => (_tab == 0 ? _trending?.Items : _popular?.Items) ?? new();
+    List<ComicDto> TabList() =>
+        _tab == 0 ? (_trending?.Items?.Take(10).ToList() ?? new()) :
+        _tab == 1 ? (_popular?.Items?.Take(10).ToList()  ?? new()) :
+                    (_popular?.Items?.Take(10).ToList()  ?? new());
 
     string FmtDate(DateTime d)
     {
         var diff = DateTime.UtcNow - d;
         if (diff.TotalHours  < 1)  return $"{(int)diff.TotalMinutes}m ago";
         if (diff.TotalHours  < 24) return $"{(int)diff.TotalHours}h ago";
-        if (diff.TotalDays   < 7)  return $"{(int)diff.TotalDays} days ago";
-        if (diff.TotalDays   < 30) return $"{(int)(diff.TotalDays/7)} weeks ago";
+        if (diff.TotalDays   < 7)  return $"{(int)diff.TotalDays}d ago";
+        if (diff.TotalDays   < 30) return $"{(int)(diff.TotalDays/7)}w ago";
         return d.ToString("MMM d");
     }
 
     string TabBtn(bool on) => on
-        ? "background:#7c3aed;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;border:none;cursor:pointer;"
-        : "background:transparent;color:inherit;font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid rgba(128,128,128,0.3);cursor:pointer;opacity:0.65;";
+        ? $"background:{(Theme.IsDark ? "#1b13be" : "#419fd9")};color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;border:none;cursor:pointer;"
+        : "background:transparent;color:inherit;font-size:11px;padding:3px 8px;border-radius:20px;border:1px solid rgba(128,128,128,0.25);cursor:pointer;opacity:0.65;";
 
     string RankStyle(int r) => r switch {
         1 => "background:#f59e0b;color:#000;",
         2 => "background:#9ca3af;color:#000;",
         3 => "background:#b45309;color:#fff;",
-        _ => "background:rgba(124,58,237,0.12);color:#7c3aed;"
+        _ => "background:rgba(65,159,217,0.15);color:#419fd9;"
     };
 }

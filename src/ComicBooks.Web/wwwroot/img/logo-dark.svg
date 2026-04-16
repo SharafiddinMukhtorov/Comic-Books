@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <defs>
+    <radialGradient id="outerGrad" cx="50%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#5bc8ff"/>
+      <stop offset="100%" stop-color="#030082"/>
+    </radialGradient>
+    <radialGradient id="innerGrad" cx="50%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#c0d8f0"/>
+    </radialGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="rgba(0,0,60,0.4)"/>
+    </filter>
+  </defs>
+  <!-- Outer ring -->
+  <circle cx="100" cy="100" r="95" fill="url(#outerGrad)" filter="url(#shadow)"/>
+  <!-- Gloss highlight on ring -->
+  <ellipse cx="80" cy="30" rx="35" ry="18" fill="rgba(255,255,255,0.22)" transform="rotate(-20,80,30)"/>
+  <!-- Inner white circle -->
+  <circle cx="100" cy="100" r="68" fill="url(#innerGrad)"/>
+  <!-- M shape (negative space cutout) -->
+  <path d="M 60 130 C 60 105, 72 88, 85 88 C 91 88, 96 93, 100 100 C 104 93, 109 88, 115 88 C 128 88, 140 105, 140 130 L 130 130 C 130 110, 122 96, 115 96 C 110 96, 105 102, 100 112 C 95 102, 90 96, 85 96 C 78 96, 70 110, 70 130 Z"
+        fill="url(#outerGrad)" opacity="0.92"/>
+</svg>
