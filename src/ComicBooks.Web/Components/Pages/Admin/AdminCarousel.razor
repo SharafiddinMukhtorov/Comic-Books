@@ -1,0 +1,210 @@
+@page "/admin/carousel"
+@layout AdminLayout
+@inject IMediator Mediator
+@inject ISnackbar Snackbar
+
+<PageTitle>Carousel boshqaruvi - Admin</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">🎠 Carousel boshqaruvi</MudText>
+<MudText Typo="Typo.body2" Style="opacity:0.5;margin-bottom:20px;">
+    Bosh sahifa carousel da ko'rsatiladigan komiklar. Tanlangan komiklar <strong>IsFeatured</strong> bo'ladi.
+</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+}
+else
+{
+    <MudGrid>
+        <!-- LEFT: tanlangan (featured) -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <MudText Typo="Typo.h6" Style="font-weight:700;">
+                        ✅ Carousel da bor (@_featured.Count / 20)
+                    </MudText>
+                    @if (_featured.Count > 0)
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Error"
+                                   OnClick="@RemoveAll" Style="text-transform:none;">
+                            Barchasini olib tashlash
+                        </MudButton>
+                    }
+                </div>
+
+                @if (_featured.Count == 0)
+                {
+                    <MudAlert Severity="Severity.Info" Dense="true">
+                        Hali hech qanday komik tanlanmagan.
+                    </MudAlert>
+                }
+                else
+                {
+                    <div style="display:flex;flex-direction:column;gap:6px;max-height:560px;overflow-y:auto;">
+                        @foreach (var c in _featured)
+                        {
+                            <div style="display:flex;align-items:center;gap:10px;padding:8px;
+                                        border-radius:8px;background:rgba(65,159,217,0.07);
+                                        border:1px solid rgba(65,159,217,0.2);">
+                                <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/50/70")"
+                                     style="width:40px;height:56px;object-fit:cover;border-radius:5px;flex-shrink:0;" />
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                        @c.Title
+                                    </div>
+                                    <div style="font-size:11px;opacity:0.45;">★ @c.AverageRating.ToString("F1") · @c.Type</div>
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.Remove"
+                                               Size="Size.Small" Color="Color.Error"
+                                               OnClick="@(() => ToggleFeatured(c, false))"
+                                               Title="Carousel dan olib tashlash" />
+                            </div>
+                        }
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <!-- RIGHT: tanlash mumkin (not featured) -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                    <MudText Typo="Typo.h6" Style="font-weight:700;">
+                        ➕ Qo'shish mumkin
+                    </MudText>
+                    <MudTextField @bind-Value="_search"
+                                  Placeholder="Qidirish..."
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Style="width:160px;"
+                                  Adornment="Adornment.Start"
+                                  AdornmentIcon="@Icons.Material.Filled.Search" />
+                </div>
+
+                <div style="display:flex;flex-direction:column;gap:6px;max-height:560px;overflow-y:auto;">
+                    @foreach (var c in FilteredNotFeatured())
+                    {
+                        <div style="display:flex;align-items:center;gap:10px;padding:8px;
+                                    border-radius:8px;background:rgba(128,128,128,0.05);
+                                    border:1px solid rgba(128,128,128,0.12);
+                                    opacity:@(_featured.Count >= 20 ? "0.45" : "1");">
+                            <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/50/70")"
+                                 style="width:40px;height:56px;object-fit:cover;border-radius:5px;flex-shrink:0;" />
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                    @c.Title
+                                </div>
+                                <div style="font-size:11px;opacity:0.45;">★ @c.AverageRating.ToString("F1") · @c.Type</div>
+                            </div>
+                            <MudIconButton Icon="@Icons.Material.Filled.Add"
+                                           Size="Size.Small" Color="Color.Primary"
+                                           Disabled="@(_featured.Count >= 20)"
+                                           OnClick="@(() => ToggleFeatured(c, true))"
+                                           Title="@(_featured.Count >= 20 ? "Maksimal 20 ta" : "Carousel ga qo'shish")" />
+                        </div>
+                    }
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    @if (_featured.Count > 0)
+    {
+        <MudPaper Class="pa-4 mt-4" Elevation="1" Style="border-radius:12px;">
+            <MudText Typo="Typo.subtitle2" Class="mb-3">👁️ Carousel ko'rinishi</MudText>
+            <div style="display:flex;gap:8px;overflow-x:auto;padding:8px 0;
+                        background:rgba(5,5,16,0.6);border-radius:8px;padding:12px;">
+                @foreach (var c in _featured)
+                {
+                    <div style="flex:0 0 auto;text-align:center;">
+                        <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/80/120")"
+                             style="width:70px;height:100px;object-fit:cover;border-radius:7px;display:block;" />
+                        <div style="font-size:9px;color:#fff;margin-top:3px;max-width:70px;
+                                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:0.7;">
+                            @c.Title
+                        </div>
+                    </div>
+                }
+            </div>
+        </MudPaper>
+    }
+}
+
+@code {
+    List<ComicDto> _featured    = new();
+    List<ComicDto> _notFeatured = new();
+    bool   _loading = true;
+    string _search  = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAll();
+    }
+
+    async Task LoadAll()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var all = await Mediator.Send(new GetComicsQuery(PageSize: 200, SortBy: "title"));
+        var items = all?.Items ?? new();
+
+        _featured    = items.Where(c => c.IsFeatured).OrderBy(c => c.Title).ToList();
+        _notFeatured = items.Where(c => !c.IsFeatured).OrderBy(c => c.Title).ToList();
+        _loading = false;
+    }
+
+    List<ComicDto> FilteredNotFeatured()
+    {
+        if (string.IsNullOrWhiteSpace(_search)) return _notFeatured;
+        return _notFeatured
+            .Where(c => c.Title.Contains(_search, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    async Task ToggleFeatured(ComicDto comic, bool featured)
+    {
+        try
+        {
+            // Fetch full comic data first
+            var full = await Mediator.Send(new GetComicByIdQuery(comic.Id));
+            if (full is null) return;
+
+            // Get genre IDs from names via all genres list
+            var allGenres = await Mediator.Send(new GetAllGenresQuery());
+            var gMap = allGenres.ToDictionary(g => g.Name, g => g.Id, StringComparer.OrdinalIgnoreCase);
+            var genreIds = full.Genres.Where(n => gMap.ContainsKey(n)).Select(n => gMap[n]).ToList();
+
+            var allTags = await Mediator.Send(new GetAllTagsQuery());
+            var tMap = allTags.ToDictionary(t => t.Name, t => t.Id, StringComparer.OrdinalIgnoreCase);
+            var tagIds = full.Tags.Where(n => tMap.ContainsKey(n)).Select(n => tMap[n]).ToList();
+
+            await Mediator.Send(new UpdateComicCommand(
+                full.Id, full.Title ?? "", full.AlternativeTitles ?? "",
+                full.Description ?? "", full.CoverImageUrl ?? "", full.BannerImageUrl ?? "",
+                full.Status, full.Type, full.Rating,
+                full.Author ?? "", full.Artist ?? "", full.ReleaseYear,
+                featured,
+                full.IsPopular,
+                genreIds, tagIds
+            ));
+
+            Snackbar.Add(
+                featured ? $"✅ '{comic.Title}' carousel ga qo'shildi!" : $"🗑️ '{comic.Title}' olib tashlandi",
+                featured ? Severity.Success : Severity.Normal);
+
+            await LoadAll();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error);
+        }
+    }
+
+    async Task RemoveAll()
+    {
+        foreach (var c in _featured.ToList())
+            await ToggleFeatured(c, false);
+    }
+}
