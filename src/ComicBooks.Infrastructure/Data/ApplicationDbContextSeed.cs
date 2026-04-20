@@ -192,7 +192,7 @@ public static class ApplicationDbContextSeed
                         Desc    = "Vikir, a loyal hunting dog of the empire, is betrayed and executed. Reborn as a child, he will exact cold-blooded revenge against the eight houses that destroyed him.",
                         Rating  = 9.4, Views = 4100000,
                         Status  = ComicStatus.Ongoing,   Type = ComicType.Manhwa,
-                        Featured= false, Popular = true,  Slug = "iron-blooded-sword-hound",    Year = 2022,
+                        Featured= true,  Popular = true,  Slug = "iron-blooded-sword-hound",    Year = 2022,
                         Cover   = "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx138540-DQu4VDzlOEcx.jpg",
                         Genres  = new[]{ action.Id, fantasy.Id }
                     },
@@ -202,7 +202,7 @@ public static class ApplicationDbContextSeed
                         Desc    = "A demon faction elder reincarnates into the righteous sect. With knowledge of both worlds he walks the line between light and darkness to reshape the entire martial world.",
                         Rating  = 9.2, Views = 3600000,
                         Status  = ComicStatus.Ongoing,   Type = ComicType.Manhwa,
-                        Featured= false, Popular = true,  Slug = "chronicles-demon-faction",    Year = 2022,
+                        Featured= true,  Popular = true,  Slug = "chronicles-demon-faction",    Year = 2022,
                         Cover   = "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx143565-2ckzOA6cz5gq.jpg",
                         Genres  = new[]{ action.Id, murim.Id, fantasy.Id }
                     },
@@ -212,7 +212,7 @@ public static class ApplicationDbContextSeed
                         Desc    = "A writer wakes up inside his own unfinished novel as a background extra. He must survive using his authorial knowledge while the plot — and its dangers — unfold around him.",
                         Rating  = 9.0, Views = 2900000,
                         Status  = ComicStatus.Ongoing,   Type = ComicType.Manhwa,
-                        Featured= false, Popular = true,  Slug = "the-novels-extra",            Year = 2021,
+                        Featured= true,  Popular = true,  Slug = "the-novels-extra",            Year = 2021,
                         Cover   = "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx113399-Ft0mLHMcPTXs.jpg",
                         Genres  = new[]{ action.Id, fantasy.Id, isekai.Id }
                     },
@@ -222,7 +222,7 @@ public static class ApplicationDbContextSeed
                         Desc    = "A hero betrayed and left to die in the monster realm returns 20 years later with overwhelming power and an unquenchable hunger for vengeance against those who condemned him.",
                         Rating  = 9.1, Views = 3700000,
                         Status  = ComicStatus.Ongoing,   Type = ComicType.Manhwa,
-                        Featured= false, Popular = true,  Slug = "return-disaster-class-hero",  Year = 2021,
+                        Featured= true,  Popular = true,  Slug = "return-disaster-class-hero",  Year = 2021,
                         Cover   = "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx135228-N8FDtPaZMN82.jpg",
                         Genres  = new[]{ action.Id, fantasy.Id }
                     },
@@ -232,7 +232,7 @@ public static class ApplicationDbContextSeed
                         Desc    = "A descendant from the future injects nanomachines into his ancestor Cheon Yeo-Woon to help him survive the deadly power struggles of the murim world and rise as its absolute master.",
                         Rating  = 9.0, Views = 4100000,
                         Status  = ComicStatus.Ongoing,   Type = ComicType.Manhwa,
-                        Featured= false, Popular = true,  Slug = "nano-machine",                Year = 2020,
+                        Featured= true,  Popular = true,  Slug = "nano-machine",                Year = 2020,
                         Cover   = "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx118056-5Z3MYvdHe7jW.jpg",
                         Genres  = new[]{ action.Id, martialArts.Id, murim.Id }
                     },
@@ -242,7 +242,7 @@ public static class ApplicationDbContextSeed
                         Desc    = "After his twin brother is betrayed and killed inside a brutal tower, Yeon-woo uses the diary left behind to conquer it himself — and exact terrible vengeance on those responsible.",
                         Rating  = 9.1, Views = 4200000,
                         Status  = ComicStatus.Ongoing,   Type = ComicType.Manhwa,
-                        Featured= false, Popular = true,  Slug = "second-life-ranker",          Year = 2020,
+                        Featured= true,  Popular = true,  Slug = "second-life-ranker",          Year = 2020,
                         Cover   = "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx107028-oDUmRPrQzP2U.jpg",
                         Genres  = new[]{ action.Id, fantasy.Id, adventure.Id }
                     },
@@ -252,7 +252,7 @@ public static class ApplicationDbContextSeed
                         Desc    = "The greatest mage of all time is reincarnated after 4000 years of imprisonment as the weakest student at a magic academy. His return reshapes the balance of all power in the world.",
                         Rating  = 9.0, Views = 3100000,
                         Status  = ComicStatus.Ongoing,   Type = ComicType.Manhwa,
-                        Featured= false, Popular = true,  Slug = "great-mage-returns",          Year = 2020,
+                        Featured= true,  Popular = true,  Slug = "great-mage-returns",          Year = 2020,
                         Cover   = "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx114128-v7Ej7IQ4cbXs.jpg",
                         Genres  = new[]{ action.Id, fantasy.Id }
                     },
@@ -262,7 +262,7 @@ public static class ApplicationDbContextSeed
                         Desc    = "Yang Kai discovers a black book and sets off on the solitary and arduous path of martial cultivation. The journey to the peak tests everything he has — and everything he is.",
                         Rating  = 8.7, Views = 5600000,
                         Status  = ComicStatus.Ongoing,   Type = ComicType.Manhua,
-                        Featured= false, Popular = true,  Slug = "martial-peak",               Year = 2019,
+                        Featured= true,  Popular = true,  Slug = "martial-peak",               Year = 2019,
                         Cover   = "https://s4.anilist.co/file/anilistcdn/media/manga/cover/large/bx97648-Hvth7QBkFiBY.jpg",
                         Genres  = new[]{ martialArts.Id, fantasy.Id }
                     },
