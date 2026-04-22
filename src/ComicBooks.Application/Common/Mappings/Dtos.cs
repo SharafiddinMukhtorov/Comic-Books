@@ -38,7 +38,8 @@ public class ChapterDto
     public double ChapterNumber { get; set; }
     public string? Title { get; set; }
     public int ViewCount { get; set; }
-    public bool IsLocked { get; set; }
+    public bool IsLocked  { get; set; }
+    public int  CoinPrice { get; set; }
     public DateTime? PublishedAt { get; set; }
     public string? Slug { get; set; }
     public DateTime CreatedAt { get; set; }
