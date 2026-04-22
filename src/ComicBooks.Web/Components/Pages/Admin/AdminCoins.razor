@@ -1,0 +1,264 @@
+@page "/admin/coins"
+@layout AdminLayout
+@inject ApplicationDbContext Db
+@inject CoinService CoinSvc
+@inject ISnackbar Snackbar
+@inject IConfiguration Config
+
+<PageTitle>Coin boshqaruvi - Admin</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">🪙 Coin boshqaruvi</MudText>
+<MudText Typo="Typo.body2" Style="opacity:0.5;margin-bottom:20px;">
+    Foydalanuvchilarga coin qo'shing va tranzaksiyalarni kuzating.
+</MudText>
+
+<MudGrid>
+    <!-- Coin qo'shish -->
+    <MudItem xs="12" md="5">
+        <MudPaper Class="pa-5" Elevation="2" Style="border-radius:12px;">
+            <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">➕ Coin qo'shish</MudText>
+
+            <!-- Telegram username bilan qidirish -->
+            <MudTextField @bind-Value="_searchUser"
+                          Label="Email yoki Telegram username"
+                          Variant="Variant.Outlined"
+                          Class="mb-2"
+                          Adornment="Adornment.End"
+                          AdornmentIcon="@Icons.Material.Filled.Search"
+                          OnKeyDown="@SearchKeyDown" />
+            <MudButton Variant="Variant.Outlined" Size="Size.Small"
+                       OnClick="@SearchUser" Class="mb-3" Style="text-transform:none;">
+                Qidirish
+            </MudButton>
+
+            @if (_foundUser != null)
+            {
+                <MudPaper Class="pa-3 mb-4" Elevation="0"
+                          Style="border:1px solid rgba(65,159,217,0.3);border-radius:8px;background:rgba(65,159,217,0.06);">
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        @if (!string.IsNullOrEmpty(_foundUser.Picture))
+                        {
+                            <MudAvatar Image="@_foundUser.Picture" Size="Size.Medium" />
+                        }
+                        else
+                        {
+                            <MudAvatar Color="Color.Primary" Size="Size.Medium">
+                                @_foundUser.Name.FirstOrDefault()
+                            </MudAvatar>
+                        }
+                        <div>
+                            <div style="font-weight:700;font-size:14px;">@_foundUser.Name</div>
+                            <div style="font-size:12px;opacity:0.5;">@_foundUser.Email</div>
+                        </div>
+                        <MudSpacer />
+                        <MudChip T="string" Color="Color.Warning" Size="Size.Small" Label="true">
+                            🪙 @_foundUser.CoinBalance coins
+                        </MudChip>
+                    </div>
+                </MudPaper>
+
+                <MudNumericField T="int" @bind-Value="_addAmount"
+                                 Label="Coin miqdori"
+                                 Variant="Variant.Outlined"
+                                 Class="mb-3"
+                                 Min="1" Max="10000"
+                                 Adornment="Adornment.Start"
+                                 AdornmentText="🪙" />
+
+                <MudTextField @bind-Value="_addNote"
+                              Label="Izoh (ixtiyoriy)"
+                              Variant="Variant.Outlined"
+                              Class="mb-3"
+                              Placeholder="Telegram orqali 5000 UZS to'lov" />
+
+                <!-- Tez qo'shish tugmalari -->
+                <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
+                    @foreach (int amt in new[] { 10, 25, 50, 100, 200 })
+                    {
+                        <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                                   OnClick="@(() => _addAmount = amt)"
+                                   Style="text-transform:none;min-width:44px;">
+                            +@amt
+                        </MudButton>
+                    }
+                </div>
+
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           FullWidth="true" OnClick="@AddCoins"
+                           Disabled="@(_addAmount <= 0 || _saving)"
+                           Style="height:46px;text-transform:none;font-weight:700;border-radius:10px;">
+                    @(_saving ? "Qo'shilmoqda..." : $"🪙 {_addAmount} coin qo'shish")
+                </MudButton>
+            }
+            else if (_searched)
+            {
+                <MudAlert Severity="Severity.Warning" Dense="true">
+                    Foydalanuvchi topilmadi: "@_searchUser"
+                </MudAlert>
+            }
+        </MudPaper>
+
+        <!-- Telegram to'lov narxlari -->
+        <MudPaper Class="pa-4 mt-4" Elevation="1" Style="border-radius:12px;">
+            <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight:700;">
+                💬 Telegram to'lov bot
+            </MudText>
+            <MudText Typo="Typo.caption" Style="opacity:0.55;display:block;margin-bottom:8px;">
+                Foydalanuvchilar quyidagi tugmani bosib Telegramga o'tadi va to'lovni amalga oshiradi.
+                Keyin siz bu yerda coin qo'shasiz.
+            </MudText>
+            <div style="display:flex;flex-direction:column;gap:6px;">
+                @foreach (var pkg in CoinPackages)
+                {
+                    <div style="display:flex;justify-content:space-between;align-items:center;
+                                padding:8px 12px;border-radius:8px;
+                                background:rgba(124,58,237,0.07);border:1px solid rgba(124,58,237,0.15);">
+                        <span style="font-weight:700;">🪙 @pkg.Coins coins</span>
+                        <span style="color:#7c3aed;font-weight:700;">@pkg.Price UZS</span>
+                    </div>
+                }
+            </div>
+        </MudPaper>
+    </MudItem>
+
+    <!-- Tranzaksiyalar tarixi -->
+    <MudItem xs="12" md="7">
+        <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <MudText Typo="Typo.h6" Style="font-weight:700;">📋 So'nggi tranzaksiyalar</MudText>
+                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@LoadTransactions"
+                           Style="text-transform:none;">Yangilash</MudButton>
+            </div>
+
+            @if (_loadingTx)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+            }
+            else
+            {
+                <MudTable Items="@_transactions" Dense="true" Hover="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Foydalanuvchi</MudTh>
+                        <MudTh>Miqdor</MudTh>
+                        <MudTh>Tur</MudTh>
+                        <MudTh>Izoh</MudTh>
+                        <MudTh>Sana</MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <div style="font-size:12px;">
+                                @(_userNames.TryGetValue(context.UserId, out var n) ? n : context.UserId.ToString()[..8])
+                            </div>
+                            @if (!string.IsNullOrEmpty(context.TelegramUsername))
+                            {
+                                <div style="font-size:10px;opacity:0.45;">@("@")@context.TelegramUsername</div>
+                            }
+                        </MudTd>
+                        <MudTd>
+                            <span style="color:@(context.Amount > 0 ? "#22c55e" : "#ef4444");font-weight:700;">
+                                @(context.Amount > 0 ? "+" : "")@context.Amount 🪙
+                            </span>
+                        </MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Label="true"
+                                     Color="@(context.Type == CoinTransactionType.Purchase ? Color.Success : Color.Default)">
+                                @(context.Type == CoinTransactionType.Purchase ? "Sotib olindi" :
+                                  context.Type == CoinTransactionType.Spend    ? "Sarflandi"   :
+                                  context.Type == CoinTransactionType.Bonus    ? "Bonus"       : "Qaytarildi")
+                            </MudChip>
+                        </MudTd>
+                        <MudTd><span style="font-size:12px;opacity:0.6;">@context.Description</span></MudTd>
+                        <MudTd><span style="font-size:11px;opacity:0.45;">@context.CreatedAt.ToString("dd.MM HH:mm")</span></MudTd>
+                    </RowTemplate>
+                    <NoRecordsContent>
+                        <MudText Class="pa-4" Style="opacity:0.4;">Hali tranzaksiyalar yo'q.</MudText>
+                    </NoRecordsContent>
+                </MudTable>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    AppUser? _foundUser;
+    string   _searchUser  = "";
+    int      _addAmount   = 50;
+    string   _addNote     = "";
+    bool     _saving      = false;
+    bool     _searched    = false;
+    bool     _loadingTx   = true;
+
+    List<CoinTransaction>        _transactions = new();
+    Dictionary<Guid, string>     _userNames    = new();
+
+    record CoinPackage(int Coins, string Price);
+    readonly List<CoinPackage> CoinPackages = new()
+    {
+        new(10,  "5,000"),
+        new(25,  "10,000"),
+        new(50,  "20,000"),
+        new(100, "35,000"),
+        new(200, "60,000"),
+    };
+
+    protected override async Task OnInitializedAsync() => await LoadTransactions();
+
+    async Task LoadTransactions()
+    {
+        _loadingTx = true;
+        _transactions = await Db.CoinTransactions
+            .Where(t => !t.IsDeleted)
+            .OrderByDescending(t => t.CreatedAt)
+            .Take(50)
+            .ToListAsync();
+
+        var userIds = _transactions.Select(t => t.UserId).Distinct().ToList();
+        var users   = await Db.Users
+            .Where(u => userIds.Contains(u.Id))
+            .Select(u => new { u.Id, u.Name })
+            .ToListAsync();
+        _userNames = users.ToDictionary(u => u.Id, u => u.Name);
+        _loadingTx = false;
+    }
+
+    async Task SearchUser()
+    {
+        _searched  = false;
+        _foundUser = null;
+        if (string.IsNullOrWhiteSpace(_searchUser)) return;
+
+        var q = _searchUser.TrimStart('@').Trim().ToLower();
+        _foundUser = await Db.Users.FirstOrDefaultAsync(u =>
+            u.Email.ToLower().Contains(q) ||
+            (u.TelegramUsername != null && u.TelegramUsername.ToLower().Contains(q)) ||
+            u.Name.ToLower().Contains(q));
+        _searched = true;
+    }
+
+    async Task SearchKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await SearchUser();
+    }
+
+    async Task AddCoins()
+    {
+        if (_foundUser is null || _addAmount <= 0) return;
+        _saving = true;
+        try
+        {
+            var note = string.IsNullOrWhiteSpace(_addNote)
+                ? $"Admin tomonidan qo'shildi"
+                : _addNote;
+            await CoinSvc.AddCoins(_foundUser.Id, _addAmount, note, _foundUser.TelegramUsername);
+
+            // Refresh balance
+            _foundUser = await Db.Users.FindAsync(_foundUser.Id);
+            Snackbar.Add($"✅ {_addAmount} coin qo'shildi!", Severity.Success);
+            _addAmount = 50;
+            _addNote   = "";
+            await LoadTransactions();
+        }
+        catch (Exception ex) { Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error); }
+        finally { _saving = false; }
+    }
+}

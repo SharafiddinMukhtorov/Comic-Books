@@ -1,6 +1,9 @@
 @page "/chapter/{ChapterId:guid}"
 @inject IMediator Mediator
 @inject NavigationManager Nav
+@inject UserSessionService Session
+@inject CoinService CoinSvc
+@inject ISnackbar Snackbar
 
 <PageTitle>@GetTitle()</PageTitle>
 
@@ -166,6 +169,64 @@ else
         </div>
     }
 
+    <!-- LOCKED GATE -->
+    @if (_isLocked && !_hasAccess)
+    {
+        <div style="max-width:600px;margin:40px auto;padding:0 16px;">
+            <MudPaper Class="pa-8" Style="border-radius:16px;text-align:center;">
+                <span style="font-size:3rem;">🔐</span>
+                <MudText Typo="Typo.h5" Style="font-weight:800;margin:12px 0 8px;">
+                    Bu bob qulflangan
+                </MudText>
+                <MudText Style="opacity:0.55;margin-bottom:20px;">
+                    Ushbu bobni o'qish uchun <strong>@_chapter?.CoinPrice 🪙 coin</strong> kerak.
+                </MudText>
+
+                @if (Session.IsAuthenticated)
+                {
+                    <MudText Style="font-size:14px;margin-bottom:16px;">
+                        Sizda: <strong>@_userBalance 🪙 coins</strong>
+                    </MudText>
+
+                    @if (_userBalance >= (_chapter?.CoinPrice ?? 0))
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                                   Size="Size.Large" OnClick="@BuyChapter"
+                                   Disabled="@_buying"
+                                   Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
+                            @(_buying ? "..." : $"🪙 {_chapter?.CoinPrice} coin sarflab o'qish")
+                        </MudButton>
+                    }
+                    else
+                    {
+                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                                   Size="Size.Large" Href="/coins"
+                                   Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
+                            🪙 Coin sotib olish
+                        </MudButton>
+                        <MudText Typo="Typo.caption" Style="display:block;margin-top:8px;opacity:0.45;">
+                            Kerak: @_chapter?.CoinPrice 🪙 · Sizda: @_userBalance 🪙
+                        </MudText>
+                    }
+                }
+                else
+                {
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               Size="Size.Large" Href="/login"
+                               Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;">
+                        Kirish / Ro'yxatdan o'tish
+                    </MudButton>
+                }
+
+                <div style="margin-top:20px;">
+                    <MudButton Href="@($"/comic/{ComicSlug()}")" Variant="Variant.Text"
+                               Style="text-transform:none;opacity:0.6;">← Komikga qaytish</MudButton>
+                </div>
+            </MudPaper>
+        </div>
+    }
+    else
+    {
     <!-- PAGES -->
     <div style="max-width:@(_width)px;margin:0 auto;background:#000;transition:max-width 0.2s;">
         @foreach (var p in _pages.OrderBy(x => x.PageNumber))
@@ -202,6 +263,8 @@ else
         }
     </div>
 
+    }<!-- end locked gate else -->
+
     <!-- FLOATING SETTINGS BUTTON -->
     <div style="position:fixed;bottom:24px;right:24px;z-index:300;">
         <MudFab Color="Color.Primary"
@@ -222,6 +285,10 @@ else
     bool  _loading      = true;
     bool  _showSettings = false;
     int   _width        = 800;
+    bool  _isLocked     = false;
+    bool  _hasAccess    = true;
+    int   _userBalance  = 0;
+    bool  _buying       = false;
 
     // Slider fill percentage
     double FillPct() => (_width - 400.0) / (1400.0 - 400.0) * 100.0;
@@ -263,6 +330,41 @@ else
             _prevId = idx > 0              ? all[idx - 1].Id : Guid.Empty;
             _nextId = idx < all.Count - 1 ? all[idx + 1].Id : Guid.Empty;
         }
+        // Check locked status
+        if (_chapter != null)
+        {
+            _isLocked = _chapter.IsLocked && _chapter.CoinPrice > 0;
+            if (_isLocked)
+            {
+                var user = await Session.GetUserAsync();
+                if (user != null)
+                {
+                    _userBalance = user.CoinBalance;
+                    _hasAccess   = await CoinSvc.HasAccess(user.Id, ChapterId);
+                }
+                else _hasAccess = false;
+            }
+            else _hasAccess = true;
+        }
+
         _loading = false;
+    }
+
+    async Task BuyChapter()
+    {
+        var user = await Session.GetUserAsync();
+        if (user is null) { Nav.NavigateTo("/login"); return; }
+
+        _buying = true;
+        StateHasChanged();
+        var (ok, msg) = await CoinSvc.SpendCoins(user.Id, ChapterId);
+        if (ok)
+        {
+            _hasAccess   = true;
+            _userBalance = await CoinSvc.GetBalance(user.Id);
+            Snackbar.Add("✅ Bob ochildi!", Severity.Success);
+        }
+        else Snackbar.Add($"❌ {msg}", Severity.Error);
+        _buying = false;
     }
 }

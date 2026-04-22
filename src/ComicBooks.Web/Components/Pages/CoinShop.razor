@@ -1,0 +1,125 @@
+@page "/coins"
+@inject IConfiguration Config
+@inject NavigationManager Nav
+@inject UserSessionService Session
+@inject CoinService CoinSvc
+
+<PageTitle>Coin sotib olish - Manga Dunyo</PageTitle>
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="py-8">
+    <div style="text-align:center;margin-bottom:32px;">
+        <span style="font-size:3rem;">🪙</span>
+        <MudText Typo="Typo.h4" Style="font-weight:900;margin-top:8px;">Coin sotib olish</MudText>
+        <MudText Style="opacity:0.5;margin-top:4px;">
+            Qulflangan boblarni o'qish uchun coin sotib oling
+        </MudText>
+        @if (Session.IsAuthenticated)
+        {
+            <MudChip T="string" Color="Color.Warning" Size="Size.Medium" Class="mt-3">
+                Sizda: 🪙 @_balance coins
+            </MudChip>
+        }
+    </div>
+
+    <!-- Coin packages -->
+    <MudGrid Spacing="3">
+        @foreach (var pkg in _packages)
+        {
+            <MudItem xs="12" sm="6">
+                <MudPaper @onclick="@(() => BuyPackage(pkg))"
+                          Elevation="@(pkg.Popular ? 4 : 2)"
+                          Style="@($"border-radius:16px;cursor:pointer;transition:transform 0.2s;padding:24px;text-align:center;{(pkg.Popular ? "border:2px solid #7c3aed;position:relative;" : "")}")">
+
+                    @if (pkg.Popular)
+                    {
+                        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+                                    background:#7c3aed;color:#fff;font-size:11px;font-weight:800;
+                                    padding:3px 14px;border-radius:20px;">
+                            🔥 ENG MASHHUR
+                        </div>
+                    }
+
+                    <div style="font-size:2.5rem;margin-bottom:4px;">🪙</div>
+                    <div style="font-size:2rem;font-weight:900;color:#f59e0b;">@pkg.Coins</div>
+                    <div style="font-size:13px;opacity:0.5;margin-bottom:12px;">coins</div>
+
+                    @if (pkg.BonusCoins > 0)
+                    {
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small" Class="mb-3">
+                            +@pkg.BonusCoins bonus
+                        </MudChip>
+                    }
+
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               FullWidth="true"
+                               Style="border-radius:10px;text-transform:none;font-weight:700;height:44px;">
+                        <MudIcon Icon="@Icons.Brands.Telegram" Class="mr-2" />
+                        @pkg.Price UZS
+                    </MudButton>
+
+                    <div style="font-size:11px;opacity:0.35;margin-top:8px;">
+                        Telegram orqali to'lash
+                    </div>
+                </MudPaper>
+            </MudItem>
+        }
+    </MudGrid>
+
+    <!-- How to buy guide -->
+    <MudPaper Class="pa-5 mt-6" Elevation="1" Style="border-radius:12px;">
+        <MudText Typo="Typo.h6" Class="mb-3" Style="font-weight:700;">📖 Qanday sotib olish kerak?</MudText>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+            @foreach (var (step, i) in Steps.Select((s, i) => (s, i + 1)))
+            {
+                <div style="display:flex;gap:12px;align-items:flex-start;">
+                    <div style="width:28px;height:28px;border-radius:50%;background:#7c3aed;color:#fff;
+                                display:flex;align-items:center;justify-content:center;
+                                font-size:13px;font-weight:800;flex-shrink:0;">@i</div>
+                    <MudText Style="font-size:14px;padding-top:4px;">@step</MudText>
+                </div>
+            }
+        </div>
+    </MudPaper>
+</MudContainer>
+
+@code {
+    int _balance;
+
+    record Package(int Coins, int BonusCoins, string Price, bool Popular = false);
+
+    readonly List<Package> _packages = new()
+    {
+        new(10,  0,  "5,000"),
+        new(25,  0,  "10,000"),
+        new(50,  5,  "20,000", Popular: true),
+        new(100, 15, "35,000"),
+        new(200, 40, "60,000"),
+    };
+
+    readonly List<string> Steps = new()
+    {
+        "Yuqoridagi paketlardan birini tanlang",
+        "Telegram botimizga o'tasiz va to'lov miqdorini ko'rsatasiz",
+        "To'lovni amalga oshiring (Payme / Click / Uzum)",
+        "Admin coin balansini to'ldirib qo'yadi (odatda 5 daqiqada)",
+        "Coin bilan istalgan qulflangan bobni o'qing!"
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Session.IsAuthenticated)
+        {
+            var user = await Session.GetUserAsync();
+            if (user != null) _balance = user.CoinBalance;
+        }
+    }
+
+    void BuyPackage(Package pkg)
+    {
+        var botUsername = "MangaDunyoBot"; // Telegram bot username
+        var msg = Uri.EscapeDataString(
+            $"Coin sotib olmoqchiman: {pkg.Coins + pkg.BonusCoins} coins — {pkg.Price} UZS\n" +
+            $"Email: {(Session.IsAuthenticated ? Session.Email : "login qilmagan")}");
+        Nav.NavigateTo($"https://t.me/{botUsername}?text={msg}", forceLoad: true);
+    }
+}
