@@ -3,7 +3,7 @@
 @inject NavigationManager Nav
 @inject BookmarkService BookmarkSvc
 
-<PageTitle>@(_comic?.Title ?? "Comic") - AsuraComic</PageTitle>
+<PageTitle>@(_comic?.Title ?? "Comic") - Manga Dunyo</PageTitle>
 
 @if (_loading)
 {
@@ -12,65 +12,104 @@
 else if (_comic is null)
 {
     <div style="text-align:center;padding:80px;">
-        <MudText Typo="Typo.h4" Class="mb-4">Comic not found</MudText>
-        <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Style="text-transform:none;">Go Home</MudButton>
+        <MudText Typo="Typo.h4" Class="mb-4">Komik topilmadi</MudText>
+        <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Style="text-transform:none;">Bosh sahifaga</MudButton>
     </div>
 }
 else
 {
-    <!-- ═══ HERO WITH BLUR BACKGROUND ═══ -->
-    <!-- Outer wrapper - fixed height, clips the blur -->
-    <div style="position:relative;min-height:420px;overflow:hidden;">
-
-        <!-- Layer 1: blurred banner/cover image -->
+    <!-- ═══ BLUR BACKGROUND ═══ -->
+    <div style="position:relative;min-height:520px;">
+        <!-- Blurred bg image -->
         <img src="@BgUrl()" crossorigin="anonymous"
              style="position:absolute;top:0;left:0;width:100%;height:100%;
                     object-fit:cover;
-                    filter:blur(1px) brightness(0.6) saturate(1.1);
-                    transform:scale(1.08);
-                    z-index:0;" />
-
-        <!-- Layer 2: gradient overlay — left dark, right lighter, bottom fades to page bg -->
+                    filter:blur(18px) brightness(0.28) saturate(1.4);
+                    transform:scale(1.06);z-index:0;" />
+        <!-- Overlay -->
         <div style="position:absolute;inset:0;z-index:1;
                     background:linear-gradient(
-                        to right,
-                        rgba(13,13,24,0.88) 0%,
-                        rgba(13,13,24,0.6) 45%,
-                        rgba(13,13,24,0.25) 100%
-                    );"></div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:140px;z-index:1;
+                        90deg,
+                        rgba(8,8,20,0.92) 0%,
+                        rgba(8,8,20,0.70) 50%,
+                        rgba(8,8,20,0.40) 100%);"></div>
+        <div style="position:absolute;bottom:0;left:0;right:0;height:180px;z-index:1;
                     background:linear-gradient(transparent, var(--mud-palette-background));"></div>
 
-        <!-- Layer 3: actual content -->
-        <div style="position:relative;z-index:2;
-                    max-width:1100px;margin:0 auto;
-                    padding:36px 24px 52px;
-                    display:flex;gap:32px;align-items:flex-start;">
+        <!-- Content -->
+        <div style="position:relative;z-index:2;max-width:1100px;margin:0 auto;padding:32px 24px 60px;
+                    display:flex;gap:28px;align-items:flex-start;">
 
-            <!-- Cover image — left side -->
-            <div style="flex:0 0 auto;cursor:pointer;"
-                 @onclick="@(() => Nav.NavigateTo($"/comic/{_comic.Slug}"))">
-                <img src="@CoverUrl()"
-                     alt="@_comic.Title"
-                     style="width:230px;height:325px;object-fit:cover;
-                            border-radius:10px;display:block;
-                            box-shadow:0 24px 60px rgba(0,0,0,0.7);"
-                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_comic.Slug)/300/420'" />
+            <!-- LEFT: Cover image -->
+            <div style="flex:0 0 240px;">
+                <div style="border-radius:10px;overflow:hidden;box-shadow:0 20px 56px rgba(0,0,0,0.7);">
+                    <img src="@CoverUrl()" alt="@_comic.Title"
+                         crossorigin="anonymous"
+                         style="width:240px;height:340px;object-fit:cover;display:block;"
+                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_comic.Slug)/300/420'" />
+                </div>
+                <!-- Rating button below cover like AsuraScans -->
+                <div style="margin-top:12px;background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.4);
+                            border-radius:8px;padding:8px 12px;text-align:center;cursor:pointer;">
+                    <span style="color:#f59e0b;font-size:13px;font-weight:700;">★ Rating</span>
+                </div>
+
+                <!-- Stats row -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px;text-align:center;">
+                    <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:8px 4px;">
+                        <div style="color:#f59e0b;font-size:1.1rem;font-weight:900;">@_comic.AverageRating.ToString("F1")</div>
+                        <div style="font-size:10px;opacity:0.45;margin-top:1px;">Rating</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:8px 4px;">
+                        <div style="color:#22c55e;font-size:1.1rem;font-weight:900;">@_comic.ChapterCount</div>
+                        <div style="font-size:10px;opacity:0.45;margin-top:1px;">Chapters</div>
+                    </div>
+                    <div style="background:rgba(255,255,255,0.06);border-radius:8px;padding:8px 4px;">
+                        <div style="color:#60a5fa;font-size:1.1rem;font-weight:900;">@Fmt(_comic.ViewCount)</div>
+                        <div style="font-size:10px;opacity:0.45;margin-top:1px;">Views</div>
+                    </div>
+                </div>
+
+                <!-- Meta: Status, Type, Author, Artist -->
+                <div style="margin-top:12px;font-size:12px;">
+                    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
+                        <span style="opacity:0.45;">Status</span>
+                        <span style="@StatusBadge();padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">@_comic.Status</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
+                        <span style="opacity:0.45;">Type</span>
+                        <span style="color:#7c3aed;font-weight:700;">● @_comic.Type</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_comic.Author))
+                    {
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.07);">
+                            <span style="opacity:0.45;display:flex;align-items:center;gap:4px;">
+                                <MudIcon Icon="@Icons.Material.Outlined.Edit" Style="font-size:13px;" /> Author
+                            </span>
+                            <span>@_comic.Author</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(_comic.Artist))
+                    {
+                        <div style="display:flex;justify-content:space-between;padding:6px 0;">
+                            <span style="opacity:0.45;display:flex;align-items:center;gap:4px;">
+                                <MudIcon Icon="@Icons.Material.Outlined.Brush" Style="font-size:13px;" /> Artist
+                            </span>
+                            <span>@_comic.Artist</span>
+                        </div>
+                    }
+                </div>
             </div>
 
-            <!-- Right info -->
-            <div style="flex:1;min-width:0;padding-top:8px;">
-
-                <!-- Title -->
-                <h1 style="font-size:1.85rem;font-weight:900;color:#fff;
-                            margin:0 0 8px;line-height:1.2;">
+            <!-- RIGHT: Info -->
+            <div style="flex:1;min-width:0;padding-top:4px;">
+                <h1 style="font-size:1.8rem;font-weight:900;color:#fff;margin:0 0 6px;line-height:1.2;">
                     @_comic.Title
                 </h1>
 
-                <!-- Alt titles -->
                 @if (!string.IsNullOrEmpty(_comic.AlternativeTitles))
                 {
-                    <div style="font-size:12px;color:rgba(255,255,255,0.38);margin-bottom:14px;">
+                    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:14px;">
                         @_comic.AlternativeTitles
                     </div>
                 }
@@ -78,89 +117,59 @@ else
                 <!-- Description -->
                 @if (!string.IsNullOrEmpty(_comic.Description))
                 {
-                    <div style="font-size:14px;line-height:1.8;color:rgba(255,255,255,0.78);
-                                margin-bottom:6px;
+                    <div style="font-size:14px;line-height:1.8;color:rgba(255,255,255,0.78);margin-bottom:6px;
                                 @(!_showMore ? "display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;" : "")">
                         @_comic.Description
                     </div>
                     <div style="margin-bottom:22px;">
-                        <span style="color:#7c3aed;font-size:13px;font-weight:600;cursor:pointer;"
+                        <span style="color:#7c3aed;font-size:13px;cursor:pointer;"
                               @onclick="@(() => _showMore = !_showMore)">
                             @(_showMore ? "Show less ↑" : "Show more ↓")
                         </span>
                     </div>
                 }
-                else { <div style="margin-bottom:22px;"></div> }
 
-                <!-- 3 action buttons -->
-                <div style="display:flex;gap:10px;margin-bottom:22px;flex-wrap:wrap;">
+                <!-- 3 Buttons — Bookmark, First Chapter, Latest Chapter -->
+                <div style="display:flex;gap:10px;margin-bottom:20px;">
                     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                StartIcon="@Icons.Material.Filled.Bookmark"
                                OnClick="@(() => BookmarkSvc.Toggle(_comic.Id))"
-                               Style="border-radius:8px;text-transform:none;font-weight:700;
-                                      height:44px;padding:0 20px;flex:1;min-width:130px;">
-                        @(IsBookmarked ? "✓ Bookmarked" : "Bookmark")
+                               Style="border-radius:6px;text-transform:none;font-weight:700;height:44px;flex:1;">
+                        @(IsBookmarked ? "Bookmarked" : "Bookmark")
                     </MudButton>
-
                     @if (FirstId != Guid.Empty)
                     {
                         <MudButton Href="@($"/chapter/{FirstId}")" Variant="Variant.Outlined"
                                    StartIcon="@Icons.Material.Outlined.MenuBook"
-                                   Style="border-radius:8px;text-transform:none;font-weight:600;
-                                          height:44px;padding:0 16px;flex:1;min-width:120px;
-                                          border-color:rgba(255,255,255,0.22);color:#fff;">
+                                   Style="border-radius:6px;text-transform:none;font-weight:600;height:44px;flex:1;
+                                          border-color:rgba(255,255,255,0.2);color:#fff;">
                             First Chapter
                         </MudButton>
                         <MudButton Href="@($"/chapter/{LastId}")" Variant="Variant.Outlined"
                                    StartIcon="@Icons.Material.Filled.SkipNext"
-                                   Style="border-radius:8px;text-transform:none;font-weight:600;
-                                          height:44px;padding:0 16px;flex:1;min-width:120px;
-                                          border-color:rgba(255,255,255,0.22);color:#fff;">
+                                   Style="border-radius:6px;text-transform:none;font-weight:600;height:44px;flex:1;
+                                          border-color:rgba(255,255,255,0.2);color:#fff;">
                             Latest Chapter
                         </MudButton>
                     }
                 </div>
 
-                <!-- Meta row -->
-                <div style="display:flex;gap:20px;flex-wrap:wrap;margin-bottom:12px;font-size:13px;color:rgba(255,255,255,0.82);">
-                    <div>
-                        <span style="opacity:0.42;margin-right:6px;">Status</span>
-                        <span style="@StatusBadge();padding:2px 9px;border-radius:6px;font-size:11px;font-weight:700;">
-                            @_comic.Status
-                        </span>
-                    </div>
-                    <div>
-                        <span style="opacity:0.42;margin-right:6px;">Type</span>
-                        <span style="color:#7c3aed;font-weight:700;">● @_comic.Type</span>
-                    </div>
-                    @if (!string.IsNullOrEmpty(_comic.Author))
+                <!-- Genres -->
+                <div style="display:flex;flex-wrap:wrap;gap:6px;">
+                    @foreach (var g in _comic.Genres)
                     {
-                        <div>
-                            <MudIcon Icon="@Icons.Material.Outlined.Edit" Style="font-size:13px;opacity:0.4;vertical-align:middle;" />
-                            <span style="margin-left:3px;">@_comic.Author</span>
-                        </div>
+                        <MudChip T="string" Size="Size.Small" Label="true"
+                                 Style="background:rgba(124,58,237,0.15);color:#a78bfa;font-weight:600;">
+                            @g
+                        </MudChip>
                     }
-                    @if (!string.IsNullOrEmpty(_comic.Artist))
-                    {
-                        <div>
-                            <MudIcon Icon="@Icons.Material.Outlined.Brush" Style="font-size:13px;opacity:0.4;vertical-align:middle;" />
-                            <span style="margin-left:3px;">@_comic.Artist</span>
-                        </div>
-                    }
-                </div>
-
-                <!-- Stats -->
-                <div style="display:flex;gap:20px;font-size:13px;color:rgba(255,255,255,0.55);">
-                    <span>⭐ <strong style="color:#f59e0b;">@_comic.AverageRating.ToString("F1")</strong> Rating</span>
-                    <span>📖 <strong>@_comic.ChapterCount</strong> Chapters</span>
-                    <span>👁 <strong>@Fmt(_comic.ViewCount)</strong> Views</span>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- ═══ CHAPTER LIST ═══ -->
-    <div style="max-width:1100px;margin:0 auto;padding:8px 24px 60px;">
+    <!-- ═══ CHAPTERS ═══ -->
+    <div style="max-width:1100px;margin:0 auto;padding:0 24px 60px;">
 
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
             <span style="font-size:1rem;font-weight:800;">@_chapters.Count Chapters</span>
@@ -175,13 +184,13 @@ else
         <div style="display:flex;align-items:center;gap:8px;padding:8px 14px;margin-bottom:4px;
                     background:var(--mud-palette-surface);border-radius:8px;
                     border:1px solid rgba(128,128,128,0.14);">
-            <MudIcon Icon="@Icons.Material.Filled.Search" Style="opacity:0.32;font-size:18px;" />
+            <MudIcon Icon="@Icons.Material.Filled.Search" Style="opacity:0.3;font-size:18px;" />
             <input @bind="_chapSearch" @bind:event="oninput" placeholder="Search chapters..."
                    style="background:transparent;border:none;outline:none;flex:1;font-size:14px;
                           color:var(--mud-palette-text-primary);" />
         </div>
 
-        <!-- Chapter rows -->
+        <!-- Chapter list -->
         <div style="border:1px solid rgba(128,128,128,0.1);border-radius:8px;
                     background:var(--mud-palette-surface);max-height:520px;overflow-y:auto;">
             @foreach (var ch in Filtered())
@@ -192,16 +201,23 @@ else
                          style="display:flex;justify-content:space-between;align-items:center;
                                 padding:13px 16px;cursor:pointer;transition:background 0.15s;
                                 border-bottom:1px solid rgba(128,128,128,0.07);
-                                background:@(_chapHover==ch.Id ? "rgba(124,58,237,0.07)" : "transparent");">
+                                background:@(_chapHover==ch.Id?"rgba(124,58,237,0.07)":"transparent");">
                         <div style="display:flex;align-items:center;gap:8px;">
-                            @if (ch.IsLocked)
+                            @if (ch.IsLocked && ch.CoinPrice > 0)
                             {
                                 <MudIcon Icon="@Icons.Material.Filled.Lock" Size="Size.Small" Style="color:#f59e0b;" />
                             }
-                            <span style="font-weight:600;font-size:14px;">Chapter @ch.ChapterNumber</span>
-                            @if (!string.IsNullOrEmpty(ch.Title))
+                            <div>
+                                <span style="font-weight:600;font-size:14px;">Chapter @ch.ChapterNumber</span>
+                                @if (!string.IsNullOrEmpty(ch.Title))
+                                { <span style="font-size:13px;opacity:0.45;margin-left:6px;">- @ch.Title</span> }
+                            </div>
+                            @if (ch.IsLocked && ch.CoinPrice > 0)
                             {
-                                <span style="font-size:13px;opacity:0.45;">- @ch.Title</span>
+                                <span style="font-size:11px;background:rgba(245,158,11,0.15);color:#f59e0b;
+                                            padding:1px 7px;border-radius:8px;font-weight:700;">
+                                    🪙 @ch.CoinPrice
+                                </span>
                             }
                         </div>
                         <span style="font-size:12px;opacity:0.38;white-space:nowrap;">@FmtDate(ch.PublishedAt)</span>
@@ -217,9 +233,7 @@ else
 
     ComicDto?        _comic;
     List<ChapterDto> _chapters    = new();
-    bool  _loading     = true;
-    bool  _desc        = true;
-    bool  _showMore    = false;
+    bool  _loading = true, _desc = true, _showMore = false;
     string _chapSearch = "";
     Guid  _chapHover;
 
@@ -227,14 +241,8 @@ else
     Guid FirstId => _chapters.OrderBy(c => c.ChapterNumber).FirstOrDefault()?.Id ?? Guid.Empty;
     Guid LastId  => _chapters.OrderByDescending(c => c.ChapterNumber).FirstOrDefault()?.Id ?? Guid.Empty;
 
-    string CoverUrl() => !string.IsNullOrEmpty(_comic?.CoverImageUrl) ? _comic.CoverImageUrl
-                       : $"https://picsum.photos/seed/{_comic?.Slug}/300/420";
-
-    // Banner for blur bg: prefer BannerImageUrl, else CoverImageUrl
-    string BgUrl() => !string.IsNullOrEmpty(_comic?.BannerImageUrl) ? _comic.BannerImageUrl
-                    : !string.IsNullOrEmpty(_comic?.CoverImageUrl)  ? _comic.CoverImageUrl
-                    : $"https://picsum.photos/seed/{_comic?.Slug}bg/1400/500";
-
+    string CoverUrl() => !string.IsNullOrEmpty(_comic?.CoverImageUrl) ? _comic.CoverImageUrl : $"https://picsum.photos/seed/{_comic?.Slug}/300/420";
+    string BgUrl()    => !string.IsNullOrEmpty(_comic?.BannerImageUrl) ? _comic.BannerImageUrl : CoverUrl();
     string Fmt(int v) => v >= 1_000_000 ? $"{v/1_000_000.0:F1}M" : v >= 1_000 ? $"{v/1_000}K" : v.ToString();
 
     string FmtDate(DateTime? d)
@@ -264,7 +272,7 @@ else
         _comic    = await Mediator.Send(new GetComicBySlugQuery(Slug));
         if (_comic != null)
             _chapters = await Mediator.Send(new GetChaptersByComicQuery(_comic.Id));
-        _loading  = false;
+        _loading = false;
     }
 
     string StatusBadge() => _comic?.Status switch
