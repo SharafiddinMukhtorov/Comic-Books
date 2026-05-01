@@ -27,6 +27,7 @@ public static class DependencyInjection
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
         services.AddScoped<ICoinService, CoinService>();
         services.AddScoped<IChapterPricingService, ChapterPricingService>();
+        services.AddScoped<ICoinPackageService, CoinPackageService>();
 
         return services;
     }

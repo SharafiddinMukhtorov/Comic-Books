@@ -103,3 +103,14 @@ public class ChapterPriceItemDto
     public bool    IsLocked      { get; set; }
     public int     CoinPrice     { get; set; }
 }
+
+public class CoinPackageDto
+{
+    public Guid   Id         { get; set; }
+    public string Name       { get; set; } = "";
+    public int    CoinAmount { get; set; }
+    public int    BonusCoins { get; set; }
+    public string Price      { get; set; } = "";
+    public bool   IsPopular  { get; set; }
+    public int    SortOrder  { get; set; }
+}

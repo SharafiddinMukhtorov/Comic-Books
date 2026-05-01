@@ -15,6 +15,7 @@ public interface IApplicationDbContext
     DbSet<AppUser> Users { get; }
     DbSet<CoinTransaction> CoinTransactions { get; }
     DbSet<UserChapterAccess> ChapterAccesses { get; }
+    DbSet<CoinPackage> CoinPackages { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

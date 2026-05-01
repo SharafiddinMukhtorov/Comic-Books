@@ -12,3 +12,5 @@ public interface ICoinService
     Task<AppUserDto?> FindUserAsync(string searchTerm, CancellationToken cancellationToken = default);
     Task<List<CoinTransactionDto>> GetRecentTransactionsAsync(int take = 50, CancellationToken cancellationToken = default);
 }
+
+// NOTE: CoinPackage CRUD uchun IApplicationDbContext ishlatiladi (Admin handler orqali)

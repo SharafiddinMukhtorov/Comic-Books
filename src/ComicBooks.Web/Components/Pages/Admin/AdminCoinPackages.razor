@@ -1,0 +1,218 @@
+@page "/admin/coin-packages"
+@layout AdminLayout
+@inject ICoinPackageService PackageSvc
+@inject ISnackbar Snackbar
+@inject IDialogService DialogSvc
+
+<PageTitle>Coin paketlari - Admin</PageTitle>
+<MudText Typo="Typo.h5" Class="mb-1">🪙 Coin paketlari</MudText>
+<MudText Typo="Typo.body2" Style="opacity:0.5;margin-bottom:24px;">
+    Foydalanuvchilar sotib oladigan coin paketlarini boshqaring.
+</MudText>
+
+<MudGrid>
+    <!-- Qo'shish / Tahrirlash formasi -->
+    <MudItem xs="12" md="4">
+        <MudPaper Class="pa-5" Elevation="2" Style="border-radius:12px;">
+            <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">
+                @(_editId.HasValue ? "✏️ Tahrirlash" : "➕ Yangi paket")
+            </MudText>
+
+            <MudTextField @bind-Value="_form.Name" Label="Paket nomi" Variant="Variant.Outlined" Class="mb-3"
+                          Placeholder="Starter, Popular, Best Value..." />
+
+            <MudNumericField T="int" @bind-Value="_form.CoinAmount" Label="Coin miqdori 🪙"
+                             Variant="Variant.Outlined" Class="mb-3" Min="1" Max="10000" />
+
+            <MudNumericField T="int" @bind-Value="_form.BonusCoins" Label="Bonus coinlar 🎁"
+                             Variant="Variant.Outlined" Class="mb-3" Min="0" Max="5000"
+                             HelperText="0 bo'lsa bonus ko'rsatilmaydi" />
+
+            <MudTextField @bind-Value="_form.Price" Label="Narx" Variant="Variant.Outlined" Class="mb-3"
+                          Placeholder="20,000 UZS" />
+
+            <MudNumericField T="int" @bind-Value="_form.SortOrder" Label="Tartib raqami"
+                             Variant="Variant.Outlined" Class="mb-3" Min="0" />
+
+            <MudCheckBox T="bool" @bind-Checked="_form.IsPopular"
+                         Label="⭐ Mashhur (highlighted)" Color="Color.Warning" Class="mb-4" />
+
+            <div style="display:flex;gap:8px;">
+                <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                           FullWidth="true" OnClick="@Save" Disabled="@_saving"
+                           Style="text-transform:none;font-weight:700;height:44px;">
+                    @(_saving ? "..." : (_editId.HasValue ? "Saqlash" : "Qo'shish"))
+                </MudButton>
+                @if (_editId.HasValue)
+                {
+                    <MudButton Variant="Variant.Outlined" OnClick="@CancelEdit"
+                               Style="text-transform:none;height:44px;">Bekor</MudButton>
+                }
+            </div>
+        </MudPaper>
+
+        <!-- Preview -->
+        @if (_form.CoinAmount > 0)
+        {
+            <MudPaper Class="pa-4 mt-4" Elevation="1" Style="border-radius:12px;">
+                <MudText Typo="Typo.subtitle2" Class="mb-3">👁 Ko'rinishi</MudText>
+                <div style="@(_form.IsPopular ? "border:2px solid #7c3aed;" : "border:1px solid rgba(128,128,128,0.2);")
+                            border-radius:14px;padding:20px;text-align:center;position:relative;">
+                    @if (_form.IsPopular)
+                    {
+                        <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);
+                                    background:#7c3aed;color:#fff;font-size:10px;font-weight:800;
+                                    padding:2px 12px;border-radius:20px;">⭐ ENG MASHHUR</div>
+                    }
+                    <div style="font-size:2.2rem;">🪙</div>
+                    <div style="font-size:1.8rem;font-weight:900;color:#f59e0b;">@_form.CoinAmount</div>
+                    @if (_form.BonusCoins > 0)
+                    {
+                        <div style="font-size:12px;color:#22c55e;font-weight:700;">+@_form.BonusCoins bonus</div>
+                    }
+                    <div style="font-size:13px;opacity:0.5;margin:4px 0 12px;">coins</div>
+                    <div style="background:#7c3aed;color:#fff;border-radius:8px;padding:8px;
+                                font-weight:700;font-size:14px;">
+                        @(string.IsNullOrEmpty(_form.Price) ? "—" : _form.Price)
+                    </div>
+                </div>
+            </MudPaper>
+        }
+    </MudItem>
+
+    <!-- Paketlar ro'yxati -->
+    <MudItem xs="12" md="8">
+        <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <MudText Typo="Typo.h6" Style="font-weight:700;">📦 Mavjud paketlar</MudText>
+                <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@Load"
+                           Style="text-transform:none;">Yangilash</MudButton>
+            </div>
+
+            @if (_loading)
+            {
+                <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+            }
+            else if (!_packages.Any())
+            {
+                <MudAlert Severity="Severity.Info">Hali paketlar qo'shilmagan.</MudAlert>
+            }
+            else
+            {
+                <MudTable Items="@_packages" Dense="true" Hover="true" Elevation="0">
+                    <HeaderContent>
+                        <MudTh>Nomi</MudTh>
+                        <MudTh>Coin</MudTh>
+                        <MudTh>Bonus</MudTh>
+                        <MudTh>Narx</MudTh>
+                        <MudTh>Mashhur</MudTh>
+                        <MudTh>Tartib</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd><strong>@context.Name</strong></MudTd>
+                        <MudTd><span style="color:#f59e0b;font-weight:700;">🪙 @context.CoinAmount</span></MudTd>
+                        <MudTd>
+                            @if (context.BonusCoins > 0)
+                            {
+                                <span style="color:#22c55e;font-weight:700;">+@context.BonusCoins</span>
+                            }
+                            else { <text>—</text> }
+                        </MudTd>
+                        <MudTd>@context.Price</MudTd>
+                        <MudTd>
+                            @if (context.IsPopular)
+                            {
+                                <MudIcon Icon="@Icons.Material.Filled.Star" Style="color:#f59e0b;font-size:18px;" />
+                            }
+                        </MudTd>
+                        <MudTd>@context.SortOrder</MudTd>
+                        <MudTd>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit"
+                                           Size="Size.Small" Color="Color.Primary"
+                                           OnClick="@(() => StartEdit(context))" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Delete"
+                                           Size="Size.Small" Color="Color.Error"
+                                           OnClick="@(() => DeletePkg(context))" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            }
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    List<CoinPackageDto> _packages = new();
+    bool  _loading = true;
+    bool  _saving  = false;
+    Guid? _editId;
+
+    CoinPackageDto _form = new() { SortOrder = 0 };
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    async Task Load()
+    {
+        _loading  = true;
+        _packages = await PackageSvc.GetAllAsync();
+        _loading  = false;
+    }
+
+    async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(_form.Name) || _form.CoinAmount <= 0)
+        {
+            Snackbar.Add("Nomi va coin miqdorini kiriting!", Severity.Warning);
+            return;
+        }
+        _saving = true;
+        try
+        {
+            if (_editId.HasValue)
+            {
+                _form.Id = _editId.Value;
+                await PackageSvc.UpdateAsync(_form);
+                Snackbar.Add("✅ Yangilandi!", Severity.Success);
+            }
+            else
+            {
+                await PackageSvc.CreateAsync(_form);
+                Snackbar.Add("✅ Paket qo'shildi!", Severity.Success);
+            }
+            CancelEdit();
+            await Load();
+        }
+        catch (Exception ex) { Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error); }
+        finally { _saving = false; }
+    }
+
+    void StartEdit(CoinPackageDto pkg)
+    {
+        _editId = pkg.Id;
+        _form   = new CoinPackageDto
+        {
+            Id = pkg.Id, Name = pkg.Name, CoinAmount = pkg.CoinAmount,
+            BonusCoins = pkg.BonusCoins, Price = pkg.Price,
+            IsPopular = pkg.IsPopular, SortOrder = pkg.SortOrder
+        };
+    }
+
+    void CancelEdit()
+    {
+        _editId = null;
+        _form   = new CoinPackageDto { SortOrder = 0 };
+    }
+
+    async Task DeletePkg(CoinPackageDto pkg)
+    {
+        var ok = await DialogSvc.ShowMessageBox("O'chirish",
+            $"'{pkg.Name}' paketini o'chirasizmi?", yesText: "Ha", cancelText: "Yo'q");
+        if (ok == true)
+        {
+            await PackageSvc.DeleteAsync(pkg.Id);
+            Snackbar.Add("O'chirildi", Severity.Success);
+            await Load();
+        }
+    }
+}

@@ -23,10 +23,16 @@
             <MudText Style="color:#7c3aed;font-weight:800;">⚙️ Admin</MudText>
         </MudDrawerHeader>
         <MudNavMenu>
-            <MudNavLink Href="/admin"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Dashboard">Boshqaruv paneli</MudNavLink>
-            <MudNavLink Href="/admin/comics"   Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook">Komiklar</MudNavLink>
-            <MudNavLink Href="/admin/chapters" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AutoStories">Boblar</MudNavLink>
-            <MudNavLink Href="/admin/genres"   Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label">Janrlar & Teglar</MudNavLink>
+            <MudNavLink Href="/admin"                Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Dashboard">Boshqaruv paneli</MudNavLink>
+            <MudNavLink Href="/admin/comics"         Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook">Komiklar</MudNavLink>
+            <MudNavLink Href="/admin/chapters"       Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AutoStories">Boblar</MudNavLink>
+            <MudNavLink Href="/admin/chapter-pricing" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Lock">Bob narxlari</MudNavLink>
+            <MudNavLink Href="/admin/genres"         Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label">Janrlar & Teglar</MudNavLink>
+            <MudDivider Class="my-2" />
+            <MudNavGroup Title="🪙 Coin boshqaruvi" Icon="@Icons.Material.Filled.MonetizationOn" Expanded="true">
+                <MudNavLink Href="/admin/coins"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.People">Foydalanuvchi coinlar</MudNavLink>
+                <MudNavLink Href="/admin/coin-packages"  Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory">Coin paketlari</MudNavLink>
+            </MudNavGroup>
         </MudNavMenu>
     </MudDrawer>
 

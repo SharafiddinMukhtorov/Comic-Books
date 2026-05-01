@@ -17,9 +17,7 @@
                        Variant="Variant.Outlined" Class="mb-3">
                 @foreach (var c in _comics)
                 {
-                    <MudSelectItem T="Guid" Value="@c.Id">
-                        @c.Title (@c.ChapterCount bob)
-                    </MudSelectItem>
+                    <MudSelectItem T="Guid" Value="@c.Id">@c.Title (@c.ChapterCount bob)</MudSelectItem>
                 }
             </MudSelect>
 
@@ -36,19 +34,87 @@
                          Color="Color.Warning" Class="mb-3" />
 
             <MudDivider Class="mb-3" />
-            <MudText Typo="Typo.subtitle2" Class="mb-1">
-                📄 Sahifa rasmlari (har qatorda 1 ta URL)
-            </MudText>
-            <MudText Typo="Typo.caption" Style="opacity:0.5;" Class="mb-2">
-                Bo'sh qoldirsangiz — 20 ta test rasm avtomatik qo'shiladi
-            </MudText>
-            <MudTextField @bind-Value="_pageUrls"
-                          Lines="8" Variant="Variant.Outlined" Class="mb-3"
-                          Placeholder="https://example.com/page1.jpg&#10;https://example.com/page2.jpg&#10;https://example.com/page3.jpg" />
+
+            <!-- PDF yoki URL tab -->
+            <div style="display:flex;gap:0;margin-bottom:12px;border:1px solid rgba(128,128,128,0.2);border-radius:8px;overflow:hidden;">
+                <button @onclick="@(()=>_inputMode=0)"
+                        style="flex:1;padding:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;
+                               background:@(_inputMode==0?"#7c3aed":"transparent");
+                               color:@(_inputMode==0?"#fff":"inherit");">
+                    📄 PDF yuklash
+                </button>
+                <button @onclick="@(()=>_inputMode=1)"
+                        style="flex:1;padding:8px;font-size:13px;font-weight:700;border:none;cursor:pointer;
+                               background:@(_inputMode==1?"#7c3aed":"transparent");
+                               color:@(_inputMode==1?"#fff":"inherit");">
+                    🔗 URL kiritish
+                </button>
+            </div>
+
+            @if (_inputMode == 0)
+            {
+                <!-- PDF upload -->
+                <div style="border:2px dashed rgba(124,58,237,0.4);border-radius:10px;
+                            padding:20px;text-align:center;margin-bottom:12px;
+                            background:rgba(124,58,237,0.04);cursor:pointer;position:relative;"
+                     @onclick="@TriggerFilePicker">
+                    <InputFile id="pdfInput" OnChange="@OnPdfSelected" accept=".pdf"
+                               style="position:absolute;inset:0;opacity:0;cursor:pointer;" />
+                    @if (_pdfFile is null)
+                    {
+                        <div>
+                            <div style="font-size:2rem;margin-bottom:6px;">📄</div>
+                            <div style="font-size:14px;font-weight:600;margin-bottom:4px;">
+                                PDF faylni shu yerga tashlang
+                            </div>
+                            <div style="font-size:12px;opacity:0.45;">
+                                Har bir sahifa avtomatik rasm sifatida saqlanadi
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div>
+                            <div style="font-size:2rem;margin-bottom:6px;">✅</div>
+                            <div style="font-size:14px;font-weight:700;color:#a78bfa;">@_pdfFile.Name</div>
+                            <div style="font-size:12px;opacity:0.5;margin-top:4px;">
+                                @(_pdfFile.Size / 1024 / 1024.0:F1) MB
+                                @if (_pdfPageCount > 0)
+                                {
+                                    <text> • @_pdfPageCount sahifa aniqlandi</text>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                @if (_pdfProcessing)
+                {
+                    <div style="text-align:center;padding:8px 0;">
+                        <MudProgressLinear Color="Color.Primary" Indeterminate="true" />
+                        <div style="font-size:12px;opacity:0.5;margin-top:4px;">
+                            PDF sahifalar saqlanmoqda... @_pdfProgress%
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <!-- URL mode -->
+                <MudText Typo="Typo.subtitle2" Class="mb-1">
+                    📄 Sahifa rasmlari (har qatorda 1 ta URL)
+                </MudText>
+                <MudText Typo="Typo.caption" Style="opacity:0.5;" Class="mb-2">
+                    Bo'sh qoldirsangiz — 20 ta test rasm avtomatik qo'shiladi
+                </MudText>
+                <MudTextField @bind-Value="_pageUrls"
+                              Lines="8" Variant="Variant.Outlined" Class="mb-3"
+                              Placeholder="https://example.com/page1.jpg&#10;https://example.com/page2.jpg" />
+            }
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        FullWidth="true" OnClick="@AddChapter"
-                       Disabled="@_saving"
+                       Disabled="@(_saving || _pdfProcessing)"
                        Style="text-transform:none;height:46px;font-weight:700;">
                 @(_saving ? "Qo'shilmoqda..." : "✅ Bobni saqlash")
             </MudButton>
@@ -57,20 +123,12 @@
         <!-- YORDAM -->
         <MudPaper Class="pa-4">
             <MudText Typo="Typo.subtitle2" Class="mb-2">💡 Qo'llanma</MudText>
-            <MudList T="string" Dense="true">
-                <MudListItem T="string" Icon="@Icons.Material.Filled.Circle" IconSize="Size.Small">
-                    <MudText Typo="Typo.body2">Har qatorda bitta rasm URL kiriting</MudText>
-                </MudListItem>
-                <MudListItem T="string" Icon="@Icons.Material.Filled.Circle" IconSize="Size.Small">
-                    <MudText Typo="Typo.body2">URL http:// yoki https:// bilan boshlansin</MudText>
-                </MudListItem>
-                <MudListItem T="string" Icon="@Icons.Material.Filled.Circle" IconSize="Size.Small">
-                    <MudText Typo="Typo.body2">Bob raqami kasr bo'lishi mumkin (1.5)</MudText>
-                </MudListItem>
-                <MudListItem T="string" Icon="@Icons.Material.Filled.Circle" IconSize="Size.Small">
-                    <MudText Typo="Typo.body2">Bo'sh qoldirilsa mock rasmlar qo'shiladi</MudText>
-                </MudListItem>
-            </MudList>
+            <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;opacity:0.7;">
+                <div>📄 PDF yuklaganda har bir sahifa rasm sifatida saqlanadi</div>
+                <div>🔗 URL rejimida har qatorda bitta rasm linki kiriting</div>
+                <div>🔢 Bob raqami kasr bo'lishi mumkin (1.5, 2.5)</div>
+                <div>🔒 Premium qulflangan boblar coin talab qiladi</div>
+            </div>
         </MudPaper>
     </MudItem>
 
@@ -156,6 +214,14 @@
     string           _pageUrls         = "";
     bool             _saving;
     bool             _loadingChapters;
+    int              _inputMode        = 0; // 0=PDF, 1=URL
+
+    // PDF related
+    IBrowserFile?    _pdfFile;
+    int              _pdfPageCount     = 0;
+    bool             _pdfProcessing    = false;
+    int              _pdfProgress      = 0;
+    List<string>     _pdfPageUrls      = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -176,6 +242,87 @@
         }
     }
 
+    void TriggerFilePicker() { } // InputFile handles click natively
+
+    async Task OnPdfSelected(InputFileChangeEventArgs e)
+    {
+        _pdfFile      = e.File;
+        _pdfPageUrls  = new();
+        _pdfPageCount = 0;
+        _pdfProgress  = 0;
+
+        if (_pdfFile is null) return;
+
+        // PDF'dan sahifalar sonini aniqlash uchun o'qib olamiz
+        // Sahifalar server-side rasm sifatida saqlanadi
+        try
+        {
+            _pdfProcessing = true;
+            StateHasChanged();
+
+            // PDF faylni temp papkaga saqlaymiz
+            var tempPath = Path.Combine(Path.GetTempPath(), $"pdf_{Guid.NewGuid()}.pdf");
+            await using (var stream = new FileStream(tempPath, FileMode.Create))
+            {
+                await _pdfFile.OpenReadStream(maxAllowedSize: 100 * 1024 * 1024).CopyToAsync(stream);
+            }
+
+            // pdftoppm bilan rasm ga o'tkazamiz
+            var outDir = Path.Combine(Path.GetTempPath(), $"pdfpages_{Guid.NewGuid()}");
+            Directory.CreateDirectory(outDir);
+            var prefix = Path.Combine(outDir, "page");
+
+            var psi = new System.Diagnostics.ProcessStartInfo("pdftoppm")
+            {
+                Arguments      = $"-jpeg -r 150 \"{tempPath}\" \"{prefix}\"",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError  = true,
+            };
+            var proc = System.Diagnostics.Process.Start(psi);
+            await proc!.WaitForExitAsync();
+
+            var jpgs = Directory.GetFiles(outDir, "*.jpg").OrderBy(f => f).ToList();
+            _pdfPageCount = jpgs.Count;
+
+            if (_pdfPageCount == 0)
+            {
+                Snackbar.Add("PDF sahifalarni rasmlarga o'girib bo'lmadi. pdftoppm o'rnatilganligini tekshiring.", Severity.Error);
+                _pdfProcessing = false;
+                File.Delete(tempPath);
+                return;
+            }
+
+            // Rasmlarni wwwroot/uploads ga ko'chiramiz
+            var wwwUploads = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "chapters");
+            Directory.CreateDirectory(wwwUploads);
+
+            for (int i = 0; i < jpgs.Count; i++)
+            {
+                var fileName  = $"ch_{Guid.NewGuid():N}.jpg";
+                var destPath  = Path.Combine(wwwUploads, fileName);
+                File.Copy(jpgs[i], destPath);
+                _pdfPageUrls.Add($"/uploads/chapters/{fileName}");
+                _pdfProgress = (int)((i + 1) * 100.0 / jpgs.Count);
+                StateHasChanged();
+            }
+
+            // Temp temizlash
+            File.Delete(tempPath);
+            Directory.Delete(outDir, true);
+
+            Snackbar.Add($"✅ PDF muvaffaqiyatli o'girildi: {_pdfPageCount} ta sahifa", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"PDF xatosi: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _pdfProcessing = false;
+        }
+    }
+
     async Task AddChapter()
     {
         if (_comicId == Guid.Empty)
@@ -189,38 +336,53 @@
             return;
         }
 
-        // Parse page URLs
-        var urls = _pageUrls
-            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Where(u => u.StartsWith("http"))
-            .ToList();
+        List<string> urls;
 
-        // If empty — add 20 mock images automatically
-        if (!urls.Any())
-            urls = Enumerable.Range(1, 20)
-                .Select(i => $"https://picsum.photos/seed/{_comicId}-{(int)_chapNum}-{i}/800/1200")
+        if (_inputMode == 0)
+        {
+            // PDF mode
+            if (_pdfPageUrls.Count == 0 && _pdfFile is not null)
+            {
+                Snackbar.Add("PDF hali qayta ishlanmagan!", Severity.Warning);
+                return;
+            }
+            urls = _pdfPageUrls.Count > 0 ? _pdfPageUrls :
+                   Enumerable.Range(1, 20)
+                       .Select(i => $"https://picsum.photos/seed/{_comicId}-{(int)_chapNum}-{i}/800/1200")
+                       .ToList();
+        }
+        else
+        {
+            // URL mode
+            urls = _pageUrls
+                .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Where(u => u.StartsWith("http"))
                 .ToList();
+            if (!urls.Any())
+                urls = Enumerable.Range(1, 20)
+                    .Select(i => $"https://picsum.photos/seed/{_comicId}-{(int)_chapNum}-{i}/800/1200")
+                    .ToList();
+        }
 
         _saving = true;
         try
         {
-            var pages = urls
-                .Select((url, i) => new CreateChapterPageDto(i + 1, url, null, null))
-                .ToList();
+            var pages = urls.Select((url, i) => new CreateChapterPageDto(i + 1, url, null, null)).ToList();
 
             await Mediator.Send(new CreateChapterCommand(
-                _comicId, _chapNum, _chapTitle,
-                null, _locked, DateTime.UtcNow, pages));
+                _comicId, _chapNum, _chapTitle, null, _locked, DateTime.UtcNow, pages));
 
             Snackbar.Add($"✅ {(int)_chapNum}-bob muvaffaqiyatli qo'shildi! ({urls.Count} ta bet)", Severity.Success);
 
-            // Reset form
-            _chapTitle = null;
-            _chapNum   = _chapNum + 1; // auto-increment for next chapter
-            _locked    = false;
-            _pageUrls  = "";
+            // Reset
+            _chapTitle   = null;
+            _chapNum     = _chapNum + 1;
+            _locked      = false;
+            _pageUrls    = "";
+            _pdfFile     = null;
+            _pdfPageUrls = new();
+            _pdfPageCount = 0;
 
-            // Refresh chapter list if same comic is selected
             if (_filterComicId == _comicId)
                 _chapters = await Mediator.Send(new GetChaptersByComicQuery(_comicId));
         }
@@ -239,8 +401,7 @@
         var ok = await DialogSvc.ShowMessageBox(
             "O'chirishni tasdiqlash",
             $"{ch.ChapterNumber}-bobni o'chirasizmi?",
-            yesText: "Ha, o'chir",
-            cancelText: "Bekor qilish");
+            yesText: "Ha, o'chir", cancelText: "Bekor qilish");
 
         if (ok == true)
         {
