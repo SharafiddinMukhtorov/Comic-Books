@@ -12,6 +12,9 @@ public interface IApplicationDbContext
     DbSet<Tag> Tags { get; }
     DbSet<ComicGenre> ComicGenres { get; }
     DbSet<ComicTag> ComicTags { get; }
+    DbSet<AppUser> Users { get; }
+    DbSet<CoinTransaction> CoinTransactions { get; }
+    DbSet<UserChapterAccess> ChapterAccesses { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

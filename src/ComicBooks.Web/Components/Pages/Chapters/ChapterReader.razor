@@ -1,22 +1,43 @@
 @page "/chapter/{ChapterId:guid}"
 @inject IMediator Mediator
 @inject NavigationManager Nav
-@inject UserSessionService Session
-@inject CoinService CoinSvc
 @inject ISnackbar Snackbar
 
 <PageTitle>@GetTitle()</PageTitle>
 
 <style>
     .reader-page { background: #000; }
-    .settings-panel {
+
+    /* Settings popup */
+    .settings-popup {
+        position: fixed;
+        z-index: 9999;
         background: var(--mud-palette-surface);
-        border: 1px solid rgba(128,128,128,0.15);
-        border-radius: 12px;
-        padding: 20px 24px;
-        max-width: 520px;
-        box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        border: 1px solid rgba(128,128,128,0.18);
+        border-radius: 14px;
+        padding: 20px 22px 16px;
+        width: 340px;
+        box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.2);
+        animation: popup-in 0.18s cubic-bezier(0.34,1.56,0.64,1);
     }
+    @@keyframes popup-in {
+        from { opacity:0; transform: translateY(10px) scale(0.96); }
+        to   { opacity:1; transform: translateY(0)   scale(1);    }
+    }
+    /* Arrow pointing down to button */
+    .settings-popup::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        right: 18px;
+        width: 14px;
+        height: 14px;
+        background: var(--mud-palette-surface);
+        border-right: 1px solid rgba(128,128,128,0.18);
+        border-bottom: 1px solid rgba(128,128,128,0.18);
+        transform: rotate(45deg);
+    }
+
     .px-slider-track {
         height: 6px;
         background: rgba(124,58,237,0.2);
@@ -24,23 +45,6 @@
         position: relative;
         flex: 1;
         cursor: pointer;
-    }
-    .px-slider-fill {
-        height: 100%;
-        background: #7c3aed;
-        border-radius: 3px;
-        transition: width 0.1s;
-    }
-    .px-slider-thumb {
-        width: 18px;
-        height: 18px;
-        background: #7c3aed;
-        border-radius: 50%;
-        position: absolute;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        cursor: grab;
-        box-shadow: 0 0 0 3px rgba(124,58,237,0.3);
     }
 </style>
 
@@ -89,85 +93,13 @@ else
                        Style="border-radius:20px;text-transform:none;flex-shrink:0;">Next →</MudButton>
         }
 
-        <MudIconButton Icon="@Icons.Material.Filled.Tune"
-                       Size="Size.Small" Color="Color.Inherit"
-                       OnClick="@(() => _showSettings = !_showSettings)" />
-    </div>
-
-    <!-- SETTINGS PANEL (inline, not modal) -->
-    @if (_showSettings)
-    {
-        <div style="display:flex;justify-content:center;padding:12px 16px;
-                    background:var(--mud-palette-background);
-                    border-bottom:1px solid rgba(128,128,128,0.1);">
-            <div class="settings-panel" style="width:100%;">
-                <!-- Header -->
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                    <span style="font-size:15px;font-weight:700;">O'qish moslamasi</span>
-                    <MudIconButton Icon="@Icons.Material.Filled.Close"
-                                   Size="Size.Small" OnClick="@(() => _showSettings=false)" />
-                </div>
-                <div style="font-size:12px;opacity:0.45;margin-bottom:20px;">
-                    Reader eni shu brauzerda saqlanadi.
-                </div>
-
-                <!-- Width control row -->
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-                    <!-- Minus button -->
-                    <button @onclick="@(() => SetWidth(_width - 40))"
-                            style="width:36px;height:36px;border-radius:8px;border:none;
-                                   background:#7c3aed;color:#fff;font-size:18px;
-                                   cursor:pointer;display:flex;align-items:center;justify-content:center;
-                                   flex-shrink:0;">−</button>
-
-                    <!-- Custom slider track (visual like AsuraScans) -->
-                    <div style="flex:1;position:relative;height:6px;
-                                background:rgba(124,58,237,0.2);border-radius:3px;cursor:pointer;">
-                        <!-- Fill -->
-                        <div style="position:absolute;left:0;top:0;height:100%;border-radius:3px;
-                                    background:#7c3aed;width:@(FillPct())%;transition:width 0.1s;"></div>
-                        <!-- Thumb -->
-                        <div style="position:absolute;top:50%;
-                                    left:calc(@(FillPct())% - 9px);
-                                    transform:translateY(-50%);
-                                    width:18px;height:18px;border-radius:50%;
-                                    background:#7c3aed;cursor:pointer;
-                                    box-shadow:0 0 0 3px rgba(124,58,237,0.3);">
-                        </div>
-                        <!-- Invisible range input for interaction -->
-                        <input type="range" min="400" max="1400" step="40" value="@_width"
-                               @oninput="@(e => SetWidth(int.Parse(e.Value?.ToString() ?? "800")))"
-                               style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;margin:0;" />
-                    </div>
-
-                    <!-- Plus button -->
-                    <button @onclick="@(() => SetWidth(_width + 40))"
-                            style="width:36px;height:36px;border-radius:8px;border:none;
-                                   background:#7c3aed;color:#fff;font-size:18px;
-                                   cursor:pointer;display:flex;align-items:center;justify-content:center;
-                                   flex-shrink:0;">+</button>
-
-                    <!-- Reset button -->
-                    <button @onclick="@(() => SetWidth(800))"
-                            style="width:36px;height:36px;border-radius:8px;border:none;
-                                   background:rgba(124,58,237,0.15);color:#7c3aed;font-size:16px;
-                                   cursor:pointer;display:flex;align-items:center;justify-content:center;
-                                   flex-shrink:0;">↺</button>
-                </div>
-
-                <!-- PX label -->
-                <div style="text-align:center;font-size:13px;font-weight:700;
-                            color:#7c3aed;margin-bottom:12px;">
-                    @_width px
-                </div>
-
-                <!-- Hint -->
-                <div style="font-size:12px;opacity:0.45;">
-                    Qisqa tugmalar: +/−, 0 (oldingi holiga qaytish), P (panel), Esc (yopish).
-                </div>
-            </div>
+        <!-- Settings button in toolbar — popup opens above FAB, so toolbar button stays simple -->
+        <div style="position:relative;">
+            <MudIconButton Icon="@Icons.Material.Filled.Tune"
+                           Size="Size.Small" Color="Color.Inherit"
+                           OnClick="@ToggleSettings" />
         </div>
-    }
+    </div>
 
     <!-- LOCKED GATE -->
     @if (_isLocked && !_hasAccess)
@@ -181,43 +113,26 @@ else
                 <MudText Style="opacity:0.55;margin-bottom:20px;">
                     Ushbu bobni o'qish uchun <strong>@_chapter?.CoinPrice 🪙 coin</strong> kerak.
                 </MudText>
-
-                @if (Session.IsAuthenticated)
+                <MudText Style="font-size:14px;margin-bottom:16px;">
+                    Sizda: <strong>@_userBalance 🪙 coins</strong>
+                </MudText>
+                @if (_userBalance >= (_chapter?.CoinPrice ?? 0))
                 {
-                    <MudText Style="font-size:14px;margin-bottom:16px;">
-                        Sizda: <strong>@_userBalance 🪙 coins</strong>
-                    </MudText>
-
-                    @if (_userBalance >= (_chapter?.CoinPrice ?? 0))
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Warning"
-                                   Size="Size.Large" OnClick="@BuyChapter"
-                                   Disabled="@_buying"
-                                   Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
-                            @(_buying ? "..." : $"🪙 {_chapter?.CoinPrice} coin sarflab o'qish")
-                        </MudButton>
-                    }
-                    else
-                    {
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                                   Size="Size.Large" Href="/coins"
-                                   Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
-                            🪙 Coin sotib olish
-                        </MudButton>
-                        <MudText Typo="Typo.caption" Style="display:block;margin-top:8px;opacity:0.45;">
-                            Kerak: @_chapter?.CoinPrice 🪙 · Sizda: @_userBalance 🪙
-                        </MudText>
-                    }
+                    <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                               Size="Size.Large" OnClick="@BuyChapter"
+                               Disabled="@_buying"
+                               Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
+                        @(_buying ? "..." : $"🪙 {_chapter?.CoinPrice} coin sarflab o'qish")
+                    </MudButton>
                 }
                 else
                 {
                     <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                               Size="Size.Large" Href="/login"
-                               Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;">
-                        Kirish / Ro'yxatdan o'tish
+                               Size="Size.Large" Href="/coins"
+                               Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
+                        🪙 Coin sotib olish
                     </MudButton>
                 }
-
                 <div style="margin-top:20px;">
                     <MudButton Href="@($"/comic/{ComicSlug()}")" Variant="Variant.Text"
                                Style="text-transform:none;opacity:0.6;">← Komikga qaytish</MudButton>
@@ -227,53 +142,122 @@ else
     }
     else
     {
-    <!-- PAGES -->
-    <div style="max-width:@(_width)px;margin:0 auto;background:#000;transition:max-width 0.2s;">
-        @foreach (var p in _pages.OrderBy(x => x.PageNumber))
-        {
-            <img src="@p.ImageUrl"
-                 alt="Page @p.PageNumber"
-                 style="width:100%;display:block;margin-bottom:1px;"
-                 loading="lazy"
-                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/pg@(p.PageNumber)/800/1200'" />
-        }
-    </div>
+        <!-- PAGES -->
+        <div style="max-width:@(_width)px;margin:0 auto;background:#000;transition:max-width 0.2s;">
+            @foreach (var p in _pages.OrderBy(x => x.PageNumber))
+            {
+                <img src="@p.ImageUrl"
+                     alt="Page @p.PageNumber"
+                     style="width:100%;display:block;margin-bottom:1px;"
+                     loading="lazy"
+                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/pg@(p.PageNumber)/800/1200'" />
+            }
+        </div>
 
-    <!-- BOTTOM NAV -->
-    <div style="display:flex;justify-content:center;gap:12px;
-                padding:32px 16px 48px;flex-wrap:wrap;
-                background:var(--mud-palette-background);">
-        @if (_prevId != Guid.Empty)
-        {
-            <MudButton Href="@($"/chapter/{_prevId}")" Variant="Variant.Outlined"
-                       Color="Color.Primary" Size="Size.Large"
-                       Style="border-radius:10px;text-transform:none;font-weight:700;">
-                ← Previous Chapter
-            </MudButton>
-        }
-        <MudButton Href="@($"/comic/{ComicSlug()}")" Variant="Variant.Text"
-                   Size="Size.Large" Style="text-transform:none;">Comic Page</MudButton>
-        @if (_nextId != Guid.Empty)
-        {
-            <MudButton Href="@($"/chapter/{_nextId}")" Variant="Variant.Filled"
-                       Color="Color.Primary" Size="Size.Large"
-                       Style="border-radius:10px;text-transform:none;font-weight:700;">
-                Next Chapter →
-            </MudButton>
-        }
-    </div>
+        <!-- BOTTOM NAV -->
+        <div style="display:flex;justify-content:center;gap:12px;
+                    padding:32px 16px 100px;flex-wrap:wrap;
+                    background:var(--mud-palette-background);">
+            @if (_prevId != Guid.Empty)
+            {
+                <MudButton Href="@($"/chapter/{_prevId}")" Variant="Variant.Outlined"
+                           Color="Color.Primary" Size="Size.Large"
+                           Style="border-radius:10px;text-transform:none;font-weight:700;">
+                    ← Previous Chapter
+                </MudButton>
+            }
+            <MudButton Href="@($"/comic/{ComicSlug()}")" Variant="Variant.Text"
+                       Size="Size.Large" Style="text-transform:none;">Comic Page</MudButton>
+            @if (_nextId != Guid.Empty)
+            {
+                <MudButton Href="@($"/chapter/{_nextId}")" Variant="Variant.Filled"
+                           Color="Color.Primary" Size="Size.Large"
+                           Style="border-radius:10px;text-transform:none;font-weight:700;">
+                    Next Chapter →
+                </MudButton>
+            }
+        </div>
+    }
 
-    }<!-- end locked gate else -->
-
-    <!-- FLOATING SETTINGS BUTTON -->
-    <div style="position:fixed;bottom:24px;right:24px;z-index:300;">
+    <!-- FLOATING SETTINGS BUTTON (anchor for popup) -->
+    <div id="fab-settings" style="position:fixed;bottom:24px;right:24px;z-index:300;">
         <MudFab Color="Color.Primary"
                 StartIcon="@Icons.Material.Filled.Tune"
                 Label="O'qish moslamasi"
                 Size="Size.Medium"
-                OnClick="@(() => _showSettings = !_showSettings)"
+                OnClick="@ToggleSettings"
                 Style="box-shadow:0 4px 20px rgba(124,58,237,0.5);" />
     </div>
+
+    <!-- SETTINGS POPUP — tugma tepasida -->
+    @if (_showSettings)
+    {
+        <!-- Backdrop (click outside = close) -->
+        <div style="position:fixed;inset:0;z-index:998;"
+             @onclick="@(() => _showSettings = false)"></div>
+
+        <!-- Popup positioned above FAB -->
+        <div class="settings-popup"
+             style="bottom:88px;right:24px;"
+             @onclick:stopPropagation="true">
+
+            <!-- Header -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+                <span style="font-size:15px;font-weight:700;">O'qish moslamasi</span>
+                <MudIconButton Icon="@Icons.Material.Filled.Close"
+                               Size="Size.Small" OnClick="@(() => _showSettings = false)" />
+            </div>
+            <div style="font-size:12px;opacity:0.45;margin-bottom:18px;">
+                Reader eni shu brauzerda saqlanadi.
+            </div>
+
+            <!-- Width control row -->
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+                <button @onclick="@(() => SetWidth(_width - 40))"
+                        style="width:34px;height:34px;border-radius:8px;border:none;
+                               background:#7c3aed;color:#fff;font-size:18px;
+                               cursor:pointer;display:flex;align-items:center;justify-content:center;
+                               flex-shrink:0;">−</button>
+
+                <div style="flex:1;position:relative;height:6px;
+                            background:rgba(124,58,237,0.2);border-radius:3px;cursor:pointer;">
+                    <div style="position:absolute;left:0;top:0;height:100%;border-radius:3px;
+                                background:#7c3aed;width:@(FillPct())%;transition:width 0.1s;"></div>
+                    <div style="position:absolute;top:50%;
+                                left:calc(@(FillPct())% - 9px);
+                                transform:translateY(-50%);
+                                width:18px;height:18px;border-radius:50%;
+                                background:#7c3aed;cursor:pointer;
+                                box-shadow:0 0 0 3px rgba(124,58,237,0.3);">
+                    </div>
+                    <input type="range" min="400" max="1400" step="40" value="@_width"
+                           @oninput="@(e => SetWidth(int.Parse(e.Value?.ToString() ?? "800")))"
+                           style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;margin:0;" />
+                </div>
+
+                <button @onclick="@(() => SetWidth(_width + 40))"
+                        style="width:34px;height:34px;border-radius:8px;border:none;
+                               background:#7c3aed;color:#fff;font-size:18px;
+                               cursor:pointer;display:flex;align-items:center;justify-content:center;
+                               flex-shrink:0;">+</button>
+
+                <button @onclick="@(() => SetWidth(800))"
+                        style="width:34px;height:34px;border-radius:8px;border:none;
+                               background:rgba(124,58,237,0.15);color:#7c3aed;font-size:16px;
+                               cursor:pointer;display:flex;align-items:center;justify-content:center;
+                               flex-shrink:0;">↺</button>
+            </div>
+
+            <div style="text-align:center;font-size:14px;font-weight:700;
+                        color:#7c3aed;margin-bottom:10px;">
+                @_width px
+            </div>
+
+            <div style="font-size:11px;opacity:0.4;">
+                Qisqa tugmalar: +/−, 0 (reset), Esc (yopish).
+            </div>
+        </div>
+    }
 }
 
 @code {
@@ -290,7 +274,9 @@ else
     int   _userBalance  = 0;
     bool  _buying       = false;
 
-    // Slider fill percentage
+    // Hozircha userId placeholder — UserSession tayyor bo'lguncha
+    Guid _currentUserId = Guid.Empty;
+
     double FillPct() => (_width - 400.0) / (1400.0 - 400.0) * 100.0;
 
     string GetTitle() => _chapter != null
@@ -303,6 +289,8 @@ else
         : "";
 
     void SetWidth(int w) => _width = Math.Clamp(w, 400, 1400);
+
+    void ToggleSettings() => _showSettings = !_showSettings;
 
     protected override async Task OnInitializedAsync() => await Load();
     protected override async Task OnParametersSetAsync() { if (!_loading) await Load(); }
@@ -329,22 +317,17 @@ else
             var idx = all.FindIndex(c => c.Id == ChapterId);
             _prevId = idx > 0              ? all[idx - 1].Id : Guid.Empty;
             _nextId = idx < all.Count - 1 ? all[idx + 1].Id : Guid.Empty;
-        }
-        // Check locked status
-        if (_chapter != null)
-        {
+
             _isLocked = _chapter.IsLocked && _chapter.CoinPrice > 0;
-            if (_isLocked)
+            if (_isLocked && _currentUserId != Guid.Empty)
             {
-                var user = await Session.GetUserAsync();
-                if (user != null)
-                {
-                    _userBalance = user.CoinBalance;
-                    _hasAccess   = await CoinSvc.HasAccess(user.Id, ChapterId);
-                }
-                else _hasAccess = false;
+                _hasAccess   = await Mediator.Send(new ComicBooks.Application.Features.Coins.Queries.CheckChapterAccessQuery(_currentUserId, ChapterId));
+                _userBalance = await Mediator.Send(new ComicBooks.Application.Features.Coins.Queries.GetCoinBalanceQuery(_currentUserId));
             }
-            else _hasAccess = true;
+            else
+            {
+                _hasAccess = !_isLocked;
+            }
         }
 
         _loading = false;
@@ -352,16 +335,15 @@ else
 
     async Task BuyChapter()
     {
-        var user = await Session.GetUserAsync();
-        if (user is null) { Nav.NavigateTo("/login"); return; }
+        if (_currentUserId == Guid.Empty) { Nav.NavigateTo("/login"); return; }
 
         _buying = true;
         StateHasChanged();
-        var (ok, msg) = await CoinSvc.SpendCoins(user.Id, ChapterId);
+        var (ok, msg) = await Mediator.Send(new ComicBooks.Application.Features.Coins.Commands.SpendCoinsCommand(_currentUserId, ChapterId));
         if (ok)
         {
             _hasAccess   = true;
-            _userBalance = await CoinSvc.GetBalance(user.Id);
+            _userBalance = await Mediator.Send(new ComicBooks.Application.Features.Coins.Queries.GetCoinBalanceQuery(_currentUserId));
             Snackbar.Add("✅ Bob ochildi!", Severity.Success);
         }
         else Snackbar.Add($"❌ {msg}", Severity.Error);

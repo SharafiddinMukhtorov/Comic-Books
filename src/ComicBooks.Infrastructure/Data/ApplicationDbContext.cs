@@ -15,6 +15,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<Tag> Tags => Set<Tag>();
     public DbSet<ComicGenre> ComicGenres => Set<ComicGenre>();
     public DbSet<ComicTag> ComicTags => Set<ComicTag>();
+    public DbSet<AppUser> Users => Set<AppUser>();
+    public DbSet<CoinTransaction> CoinTransactions => Set<CoinTransaction>();
+    public DbSet<UserChapterAccess> ChapterAccesses => Set<UserChapterAccess>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

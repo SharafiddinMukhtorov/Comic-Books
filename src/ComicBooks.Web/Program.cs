@@ -12,6 +12,7 @@ builder.Services.AddMudServices();
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
 builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<BookmarkService>();
+// CoinService olib tashlandi — barcha logika MediatR Commands/Queries orqali ishlaydi
 
 var app = builder.Build();
 using (var scope = app.Services.CreateScope())
