@@ -1,9 +1,7 @@
 @page "/admin/coins"
 @layout AdminLayout
-@inject ApplicationDbContext Db
-@inject CoinService CoinSvc
+@inject ICoinService CoinSvc
 @inject ISnackbar Snackbar
-@inject IConfiguration Config
 
 <PageTitle>Coin boshqaruvi - Admin</PageTitle>
 
@@ -18,7 +16,6 @@
         <MudPaper Class="pa-5" Elevation="2" Style="border-radius:12px;">
             <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">➕ Coin qo'shish</MudText>
 
-            <!-- Telegram username bilan qidirish -->
             <MudTextField @bind-Value="_searchUser"
                           Label="Email yoki Telegram username"
                           Variant="Variant.Outlined"
@@ -71,7 +68,6 @@
                               Class="mb-3"
                               Placeholder="Telegram orqali 5000 UZS to'lov" />
 
-                <!-- Tez qo'shish tugmalari -->
                 <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">
                     @foreach (int amt in new[] { 10, 25, 50, 100, 200 })
                     {
@@ -105,7 +101,6 @@
             </MudText>
             <MudText Typo="Typo.caption" Style="opacity:0.55;display:block;margin-bottom:8px;">
                 Foydalanuvchilar quyidagi tugmani bosib Telegramga o'tadi va to'lovni amalga oshiradi.
-                Keyin siz bu yerda coin qo'shasiz.
             </MudText>
             <div style="display:flex;flex-direction:column;gap:6px;">
                 @foreach (var pkg in CoinPackages)
@@ -146,12 +141,10 @@
                     </HeaderContent>
                     <RowTemplate>
                         <MudTd>
-                            <div style="font-size:12px;">
-                                @(_userNames.TryGetValue(context.UserId, out var n) ? n : context.UserId.ToString()[..8])
-                            </div>
+                            <div style="font-size:12px;">@context.UserName</div>
                             @if (!string.IsNullOrEmpty(context.TelegramUsername))
                             {
-                                <div style="font-size:10px;opacity:0.45;">@("@")@context.TelegramUsername</div>
+                                <div style="font-size:10px;opacity:0.45;">@@context.TelegramUsername</div>
                             }
                         </MudTd>
                         <MudTd>
@@ -161,10 +154,10 @@
                         </MudTd>
                         <MudTd>
                             <MudChip T="string" Size="Size.Small" Label="true"
-                                     Color="@(context.Type == CoinTransactionType.Purchase ? Color.Success : Color.Default)">
-                                @(context.Type == CoinTransactionType.Purchase ? "Sotib olindi" :
-                                  context.Type == CoinTransactionType.Spend    ? "Sarflandi"   :
-                                  context.Type == CoinTransactionType.Bonus    ? "Bonus"       : "Qaytarildi")
+                                     Color="@(context.Type == "Purchase" ? Color.Success : Color.Default)">
+                                @(context.Type == "Purchase" ? "Sotib olindi" :
+                                  context.Type == "Spend"    ? "Sarflandi"   :
+                                  context.Type == "Bonus"    ? "Bonus"       : "Qaytarildi")
                             </MudChip>
                         </MudTd>
                         <MudTd><span style="font-size:12px;opacity:0.6;">@context.Description</span></MudTd>
@@ -180,7 +173,7 @@
 </MudGrid>
 
 @code {
-    AppUser? _foundUser;
+    AppUserDto? _foundUser;
     string   _searchUser  = "";
     int      _addAmount   = 50;
     string   _addNote     = "";
@@ -188,8 +181,7 @@
     bool     _searched    = false;
     bool     _loadingTx   = true;
 
-    List<CoinTransaction>        _transactions = new();
-    Dictionary<Guid, string>     _userNames    = new();
+    List<CoinTransactionDto> _transactions = new();
 
     record CoinPackage(int Coins, string Price);
     readonly List<CoinPackage> CoinPackages = new()
@@ -206,18 +198,7 @@
     async Task LoadTransactions()
     {
         _loadingTx = true;
-        _transactions = await Db.CoinTransactions
-            .Where(t => !t.IsDeleted)
-            .OrderByDescending(t => t.CreatedAt)
-            .Take(50)
-            .ToListAsync();
-
-        var userIds = _transactions.Select(t => t.UserId).Distinct().ToList();
-        var users   = await Db.Users
-            .Where(u => userIds.Contains(u.Id))
-            .Select(u => new { u.Id, u.Name })
-            .ToListAsync();
-        _userNames = users.ToDictionary(u => u.Id, u => u.Name);
+        _transactions = await CoinSvc.GetRecentTransactionsAsync(50);
         _loadingTx = false;
     }
 
@@ -226,13 +207,8 @@
         _searched  = false;
         _foundUser = null;
         if (string.IsNullOrWhiteSpace(_searchUser)) return;
-
-        var q = _searchUser.TrimStart('@').Trim().ToLower();
-        _foundUser = await Db.Users.FirstOrDefaultAsync(u =>
-            u.Email.ToLower().Contains(q) ||
-            (u.TelegramUsername != null && u.TelegramUsername.ToLower().Contains(q)) ||
-            u.Name.ToLower().Contains(q));
-        _searched = true;
+        _foundUser = await CoinSvc.FindUserAsync(_searchUser);
+        _searched  = true;
     }
 
     async Task SearchKeyDown(KeyboardEventArgs e)
@@ -246,17 +222,17 @@
         _saving = true;
         try
         {
-            var note = string.IsNullOrWhiteSpace(_addNote)
-                ? $"Admin tomonidan qo'shildi"
-                : _addNote;
-            await CoinSvc.AddCoins(_foundUser.Id, _addAmount, note, _foundUser.TelegramUsername);
-
-            // Refresh balance
-            _foundUser = await Db.Users.FindAsync(_foundUser.Id);
-            Snackbar.Add($"✅ {_addAmount} coin qo'shildi!", Severity.Success);
-            _addAmount = 50;
-            _addNote   = "";
-            await LoadTransactions();
+            var note = string.IsNullOrWhiteSpace(_addNote) ? "Admin tomonidan qo'shildi" : _addNote;
+            var ok = await CoinSvc.AddCoinsAsync(_foundUser.Id, _addAmount, note, _foundUser.TelegramUsername);
+            if (ok)
+            {
+                // Balansni yangilash
+                _foundUser = await CoinSvc.FindUserAsync(_foundUser.Email);
+                Snackbar.Add($"✅ {_addAmount} coin qo'shildi!", Severity.Success);
+                _addAmount = 50;
+                _addNote   = "";
+                await LoadTransactions();
+            }
         }
         catch (Exception ex) { Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error); }
         finally { _saving = false; }

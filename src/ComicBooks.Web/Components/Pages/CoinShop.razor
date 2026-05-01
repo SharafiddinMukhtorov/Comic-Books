@@ -1,8 +1,5 @@
 @page "/coins"
-@inject IConfiguration Config
 @inject NavigationManager Nav
-@inject UserSessionService Session
-@inject CoinService CoinSvc
 
 <PageTitle>Coin sotib olish - Manga Dunyo</PageTitle>
 
@@ -13,12 +10,6 @@
         <MudText Style="opacity:0.5;margin-top:4px;">
             Qulflangan boblarni o'qish uchun coin sotib oling
         </MudText>
-        @if (Session.IsAuthenticated)
-        {
-            <MudChip T="string" Color="Color.Warning" Size="Size.Medium" Class="mt-3">
-                Sizda: 🪙 @_balance coins
-            </MudChip>
-        }
     </div>
 
     <!-- Coin packages -->
@@ -53,7 +44,6 @@
                     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                FullWidth="true"
                                Style="border-radius:10px;text-transform:none;font-weight:700;height:44px;">
-                        <MudIcon Icon="@Icons.Brands.Telegram" Class="mr-2" />
                         @pkg.Price UZS
                     </MudButton>
 
@@ -83,8 +73,6 @@
 </MudContainer>
 
 @code {
-    int _balance;
-
     record Package(int Coins, int BonusCoins, string Price, bool Popular = false);
 
     readonly List<Package> _packages = new()
@@ -105,21 +93,10 @@
         "Coin bilan istalgan qulflangan bobni o'qing!"
     };
 
-    protected override async Task OnInitializedAsync()
-    {
-        if (Session.IsAuthenticated)
-        {
-            var user = await Session.GetUserAsync();
-            if (user != null) _balance = user.CoinBalance;
-        }
-    }
-
     void BuyPackage(Package pkg)
     {
-        var botUsername = "MangaDunyoBot"; // Telegram bot username
-        var msg = Uri.EscapeDataString(
-            $"Coin sotib olmoqchiman: {pkg.Coins + pkg.BonusCoins} coins — {pkg.Price} UZS\n" +
-            $"Email: {(Session.IsAuthenticated ? Session.Email : "login qilmagan")}");
+        var botUsername = "MangaDunyoBot";
+        var msg = Uri.EscapeDataString($"Coin sotib olmoqchiman: {pkg.Coins + pkg.BonusCoins} coins — {pkg.Price} UZS");
         Nav.NavigateTo($"https://t.me/{botUsername}?text={msg}", forceLoad: true);
     }
 }

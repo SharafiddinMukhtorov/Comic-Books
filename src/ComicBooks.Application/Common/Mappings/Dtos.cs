@@ -72,3 +72,25 @@ public class TagDto
     public string? Slug { get; set; }
     public int ComicCount { get; set; }
 }
+
+public class AppUserDto
+{
+    public Guid   Id               { get; set; }
+    public string Name             { get; set; } = "";
+    public string Email            { get; set; } = "";
+    public string? Picture         { get; set; }
+    public int    CoinBalance      { get; set; }
+    public string? TelegramUsername { get; set; }
+    public bool   IsAdmin          { get; set; }
+}
+
+public class CoinTransactionDto
+{
+    public Guid   UserId           { get; set; }
+    public string UserName         { get; set; } = "";
+    public int    Amount           { get; set; }
+    public string Type             { get; set; } = "";
+    public string? Description     { get; set; }
+    public string? TelegramUsername { get; set; }
+    public DateTime CreatedAt      { get; set; }
+}
