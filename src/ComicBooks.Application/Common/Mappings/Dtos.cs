@@ -94,3 +94,12 @@ public class CoinTransactionDto
     public string? TelegramUsername { get; set; }
     public DateTime CreatedAt      { get; set; }
 }
+
+public class ChapterPriceItemDto
+{
+    public Guid    Id            { get; set; }
+    public double  ChapterNumber { get; set; }
+    public string? Title         { get; set; }
+    public bool    IsLocked      { get; set; }
+    public int     CoinPrice     { get; set; }
+}
