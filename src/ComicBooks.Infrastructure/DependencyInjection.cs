@@ -25,6 +25,7 @@ public static class DependencyInjection
             provider.GetRequiredService<ApplicationDbContext>());
 
         services.AddScoped<IFileStorageService, LocalFileStorageService>();
+        services.AddScoped<ICoinService, CoinService>();
 
         return services;
     }
