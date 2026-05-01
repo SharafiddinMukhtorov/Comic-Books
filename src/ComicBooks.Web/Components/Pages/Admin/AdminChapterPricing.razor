@@ -1,4 +1,6 @@
 @page "/admin/chapter-pricing"
+@using ComicBooks.Infrastructure.Data
+@using Microsoft.EntityFrameworkCore
 @layout AdminLayout
 @inject IMediator Mediator
 @inject ApplicationDbContext Db
@@ -12,11 +14,11 @@
 </MudText>
 
 <MudPaper Class="pa-4 mb-4" Elevation="1" Style="border-radius:12px;">
-    <MudSelect T="Guid?" Value="@_comicId" ValueChanged="@ComicChanged"
+    <MudSelect T="Guid?" Value="@_comicId" ValueChanged="ComicChanged"
                Label="Komik tanlang" Variant="Variant.Outlined" Clearable="true">
         @foreach (var c in _comics)
         {
-            <MudSelectItem T="Guid?" Value="@((Guid?)c.Id)">
+            <MudSelectItem T="Guid?" Value="@c.Id">
                 @c.Title (@c.ChapterCount bob)
             </MudSelectItem>
         }
@@ -26,81 +28,108 @@
 @if (_comicId.HasValue && _chapters.Any())
 {
     <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
-        <!-- Quick set all -->
+
+        <!-- Quick Actions -->
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
             <span style="font-size:13px;opacity:0.6;">Barchasiga:</span>
-            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Default"
-                       OnClick="@SetAllFree" Style="text-transform:none;">Bepul</MudButton>
-            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning"
-                       OnClick="@(() => SetAllPrice(5))" Style="text-transform:none;">5 🪙</MudButton>
-            <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning"
-                       OnClick="@(() => SetAllPrice(10))" Style="text-transform:none;">10 🪙</MudButton>
-            <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary"
-                       OnClick="@SaveAll" Disabled="@_saving" Style="text-transform:none;margin-left:auto;">
+
+            <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                       OnClick="SetAllFree">
+                Bepul
+            </MudButton>
+
+            <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                       Color="Color.Warning"
+                       OnClick="@(() => SetAllPrice(5))">
+                5 🪙
+            </MudButton>
+
+            <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                       Color="Color.Warning"
+                       OnClick="@(() => SetAllPrice(10))">
+                10 🪙
+            </MudButton>
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="SaveAll"
+                       Disabled="@_saving"
+                       Style="margin-left:auto;">
                 @(_saving ? "Saqlanmoqda..." : "Hammasini saqlash")
             </MudButton>
         </div>
 
-        <MudTable Items="@_chapters" Dense="true" Hover="true" Elevation="0">
+        <MudTable Items="@_chapters" Dense Hover Elevation="0">
             <HeaderContent>
                 <MudTh>Bob</MudTh>
                 <MudTh>Sarlavha</MudTh>
-                <MudTh style="width:100px;">Qulflangan</MudTh>
-                <MudTh style="width:140px;">Narx (coin)</MudTh>
+                <MudTh>Qulflangan</MudTh>
+                <MudTh>Narx (coin)</MudTh>
             </HeaderContent>
-            <RowTemplate>
+
+            <RowTemplate Context="ch">
                 <MudTd>
-                    <MudChip T="string" Size="Size.Small" Color="Color.Primary" Label="true">
-                        Ch.@context.ChapterNumber
+                    <MudChip T="string" Size="Size.Small" Color="Color.Primary">
+                        Ch.@ch.ChapterNumber
                     </MudChip>
                 </MudTd>
-                <MudTd><span style="font-size:13px;opacity:0.6;">@(context.Title ?? "—")</span></MudTd>
+
+                <MudTd>
+                    <span style="opacity:0.6;">
+                        @(ch.Title ?? "—")
+                    </span>
+                </MudTd>
+
                 <MudTd>
                     <MudSwitch T="bool"
-                               Checked="@context.IsLocked"
-                               CheckedChanged="@((v) => { context.IsLocked = v; if(!v) context.CoinPrice = 0; })"
+                               Checked="@ch.IsLocked"
+                               CheckedChanged="@( (bool v) => OnChapterLockChanged(ch, v) )"
                                Color="Color.Warning" />
                 </MudTd>
+
                 <MudTd>
-                    @if (context.IsLocked)
+                    @if (ch.IsLocked)
                     {
-                        <MudNumericField T="int"
-                                         Value="@context.CoinPrice"
-                                         ValueChanged="@((v) => context.CoinPrice = v)"
+                        <MudNumericField T="int?"
+                                         Value="@ch.CoinPrice"
+                                         ValueChanged="@( (int? v) => ch.CoinPrice = v ?? 0 )"
+                                         Min="1"
+                                         Max="999"
                                          Variant="Variant.Outlined"
                                          Margin="Margin.Dense"
-                                         Min="1" Max="999"
                                          Adornment="Adornment.End"
                                          AdornmentText="🪙" />
                     }
                     else
                     {
-                        <span style="font-size:12px;opacity:0.35;">Bepul</span>
+                        <span style="opacity:0.35;">Bepul</span>
                     }
                 </MudTd>
             </RowTemplate>
         </MudTable>
 
         <div style="display:flex;justify-content:flex-end;margin-top:16px;">
-            <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                       OnClick="@SaveAll" Disabled="@_saving"
-                       Style="text-transform:none;font-weight:700;">
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Primary"
+                       OnClick="SaveAll"
+                       Disabled="@_saving">
                 @(_saving ? "Saqlanmoqda..." : "✅ Saqlash")
             </MudButton>
         </div>
+
     </MudPaper>
 }
 
 @code {
-    List<ComicDto>  _comics   = new();
+    List<ComicDto> _comics = new();
     List<ChapterPriceDto> _chapters = new();
-    Guid?           _comicId;
-    bool            _saving;
+    Guid? _comicId;
+    bool _saving = false;
 
     record ChapterPriceDto(Guid Id, double ChapterNumber, string? Title)
     {
-        public bool IsLocked  { get; set; }
-        public int  CoinPrice { get; set; }
+        public bool IsLocked { get; set; }
+        public int CoinPrice { get; set; }
     }
 
     protected override async Task OnInitializedAsync()
@@ -109,58 +138,95 @@
         _comics = r.Items;
     }
 
-    async Task ComicChanged(Guid? id)
+    private async Task ComicChanged(Guid? id)
     {
-        _comicId  = id;
-        _chapters = new();
-        if (!id.HasValue) return;
+        _comicId = id;
+        _chapters.Clear();
+
+        if (!id.HasValue)
+            return;
 
         var chapters = await Db.Chapters
             .Where(c => c.ComicId == id && !c.IsDeleted)
             .OrderBy(c => c.ChapterNumber)
-            .Select(c => new { c.Id, c.ChapterNumber, c.Title, c.IsLocked, c.CoinPrice })
+            .Select(c => new
+            {
+                c.Id,
+                c.ChapterNumber,
+                c.Title,
+                c.IsLocked,
+                c.CoinPrice
+            })
             .ToListAsync();
 
-        _chapters = chapters.Select(c =>
+        _chapters = chapters.Select(c => new ChapterPriceDto(c.Id, c.ChapterNumber, c.Title)
         {
-            var dto = new ChapterPriceDto(c.Id, c.ChapterNumber, c.Title);
-            dto.IsLocked  = c.IsLocked;
-            dto.CoinPrice = c.CoinPrice;
-            return dto;
+            IsLocked = c.IsLocked,
+            CoinPrice = c.CoinPrice
         }).ToList();
     }
 
-    void SetAllFree()
+    private Task OnChapterLockChanged(ChapterPriceDto chapter, bool isLocked)
     {
-        foreach (var ch in _chapters) { ch.IsLocked = false; ch.CoinPrice = 0; }
+        chapter.IsLocked = isLocked;
+
+        if (!isLocked)
+            chapter.CoinPrice = 0;
+
+        return Task.CompletedTask;
     }
 
-    void SetAllPrice(int price)
+    private void SetAllFree()
     {
-        foreach (var ch in _chapters) { ch.IsLocked = true; ch.CoinPrice = price; }
+        foreach (var ch in _chapters)
+        {
+            ch.IsLocked = false;
+            ch.CoinPrice = 0;
+        }
     }
 
-    async Task SaveAll()
+    private void SetAllPrice(int price)
+    {
+        foreach (var ch in _chapters)
+        {
+            ch.IsLocked = true;
+            ch.CoinPrice = price;
+        }
+    }
+
+    private async Task SaveAll()
     {
         _saving = true;
+
         try
         {
             var ids = _chapters.Select(c => c.Id).ToList();
+
             var dbChapters = await Db.Chapters
                 .Where(c => ids.Contains(c.Id))
                 .ToListAsync();
 
             foreach (var dbCh in dbChapters)
             {
-                var dto = _chapters.First(c => c.Id == dbCh.Id);
-                dbCh.IsLocked  = dto.IsLocked;
-                dbCh.CoinPrice = dto.IsLocked ? dto.CoinPrice : 0;
+                var dto = _chapters.FirstOrDefault(c => c.Id == dbCh.Id);
+
+                if (dto != null)
+                {
+                    dbCh.IsLocked = dto.IsLocked;
+                    dbCh.CoinPrice = dto.IsLocked ? dto.CoinPrice : 0;
+                }
             }
 
             await Db.SaveChangesAsync();
             Snackbar.Add("✅ Saqlandi!", Severity.Success);
         }
-        catch (Exception ex) { Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error); }
-        finally { _saving = false; }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
     }
 }

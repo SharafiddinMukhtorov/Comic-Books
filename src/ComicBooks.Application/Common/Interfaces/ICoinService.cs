@@ -1,3 +1,4 @@
+using ComicBooks.Application.Common.Mappings;
 using ComicBooks.Domain.Entities;
 
 namespace ComicBooks.Application.Common.Interfaces;
