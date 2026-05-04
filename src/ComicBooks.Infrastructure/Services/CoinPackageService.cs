@@ -27,6 +27,10 @@ public class CoinPackageService : ICoinPackageService
 
     public async Task<CoinPackageDto> CreateAsync(CoinPackageDto dto, CancellationToken ct = default)
     {
+        // Faqat bitta mashhur bo'lishi mumkin
+        if (dto.IsPopular)
+            await ClearPopularFlagAsync(null, ct);
+
         var entity = new CoinPackage
         {
             Name = dto.Name, CoinAmount = dto.CoinAmount, BonusCoins = dto.BonusCoins,
@@ -42,6 +46,11 @@ public class CoinPackageService : ICoinPackageService
     {
         var entity = await _db.CoinPackages.FindAsync(new object[] { dto.Id }, ct);
         if (entity is null) return false;
+
+        // Faqat bitta mashhur — boshqalardan olib tashlaymiz
+        if (dto.IsPopular)
+            await ClearPopularFlagAsync(dto.Id, ct);
+
         entity.Name = dto.Name; entity.CoinAmount = dto.CoinAmount;
         entity.BonusCoins = dto.BonusCoins; entity.Price = dto.Price;
         entity.IsPopular = dto.IsPopular; entity.SortOrder = dto.SortOrder;
@@ -56,5 +65,15 @@ public class CoinPackageService : ICoinPackageService
         entity.IsDeleted = true;
         await _db.SaveChangesAsync(ct);
         return true;
+    }
+
+    // Boshqa barcha paketlardan IsPopular = false qilamiz (except exceptId)
+    private async Task ClearPopularFlagAsync(Guid? exceptId, CancellationToken ct)
+    {
+        var others = await _db.CoinPackages
+            .Where(p => !p.IsDeleted && p.IsPopular && (exceptId == null || p.Id != exceptId))
+            .ToListAsync(ct);
+        foreach (var p in others) p.IsPopular = false;
+        // SaveChanges caller tomonidan chaqiriladi
     }
 }
