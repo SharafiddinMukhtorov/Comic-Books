@@ -3,184 +3,205 @@
 @inject NavigationManager Nav
 @inject ThemeService Theme
 
-<PageTitle>Manga Dunyo - Manhwa, Manga o'qing</PageTitle>
+<PageTitle>Manga Dunyo</PageTitle>
 
 <style>
-    .carousel-wrap {
+    /* Carousel */
+    .carousel-row {
         display: flex;
         align-items: flex-end;
-        justify-content: center;
-        gap: 6px;
-        padding: 32px 16px 16px;
         overflow-x: auto;
         scrollbar-width: none;
-        -webkit-overflow-scrolling: touch;
+        padding: 0;
+        gap: 0;
+        background: var(--mud-palette-background);
     }
-    .carousel-wrap::-webkit-scrollbar { display: none; }
-
+    .carousel-row::-webkit-scrollbar { display: none; }
     .c-card {
         flex: 0 0 auto;
-        border-radius: 10px;
-        overflow: hidden;
-        cursor: pointer;
-        transition: all 0.3s ease;
         position: relative;
+        cursor: pointer;
+        overflow: hidden;
+        transition: all 0.25s ease;
     }
-    .c-card img {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    .c-card-active {
-        box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 0 2px rgba(255,255,255,0.15);
-        z-index: 2;
-    }
-    .c-label {
-        position: absolute; bottom: 0; left: 0; right: 0;
-        padding: 24px 10px 10px;
-        background: linear-gradient(transparent, rgba(0,0,0,0.88));
+    .c-card img { display:block; width:100%; height:100%; object-fit:cover; }
+    .c-card-label {
+        position:absolute; bottom:0; left:0; right:0;
+        padding:32px 10px 10px;
+        background:linear-gradient(transparent,rgba(0,0,0,0.9));
     }
 
-    .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
-    .section-title  { font-size:1rem; font-weight:800; }
-    .view-all       { font-size:12px; font-weight:600; color:var(--mud-palette-primary); text-decoration:none; }
-
-    .h-scroll {
-        display:flex; gap:10px; overflow-x:auto; padding-bottom:6px;
-        scrollbar-width:thin; scrollbar-color:rgba(124,58,237,0.2) transparent;
+    /* Trending scroll */
+    .trending-row {
+        display:flex; gap:12px; overflow-x:auto; padding-bottom:4px;
+        scrollbar-width:thin; scrollbar-color:rgba(128,128,128,0.2) transparent;
     }
+    .trending-row::-webkit-scrollbar { height:3px; }
+    .trending-row::-webkit-scrollbar-thumb { background:rgba(128,128,128,0.2); border-radius:2px; }
 
-    .latest-item {
-        display:flex; gap:10px; padding:9px 6px;
-        border-bottom:1px solid var(--mud-palette-lines-default);
-        text-decoration:none; color:inherit; transition:background 0.12s;
-    }
-    .latest-item:hover { background:rgba(65,159,217,0.06); }
-
-    .rank-item {
-        display:flex; gap:10px; align-items:center; padding:7px 0;
+    /* Latest item */
+    .lu-item {
+        display:flex; gap:10px; padding:10px 8px;
         border-bottom:1px solid var(--mud-palette-lines-default);
         text-decoration:none; color:inherit;
     }
-    .tab-btn {
-        padding:3px 10px; border-radius:20px; font-size:11px;
-        font-weight:700; cursor:pointer; border:none;
+    .lu-item:hover { background:rgba(65,159,217,0.05); }
+    .lu-ch { font-size:12px; display:flex; justify-content:space-between; margin-top:3px; }
+    .lu-ch-n { color:var(--mud-palette-primary); font-weight:600; }
+    .lu-ch-t { font-size:11px; opacity:0.38; }
+
+    /* Rank item */
+    .rank-item {
+        display:flex; gap:10px; align-items:center; padding:8px 4px;
+        border-bottom:1px solid var(--mud-palette-lines-default);
+        text-decoration:none; color:inherit;
     }
+    .rank-item:hover { background:rgba(65,159,217,0.05); }
+
+    /* Tab buttons */
+    .tab-btn {
+        padding:4px 12px; border-radius:20px; font-size:12px;
+        font-weight:600; cursor:pointer; border:none; transition:all 0.15s;
+    }
+
+    /* Stars */
+    .stars { color:#f59e0b; font-size:11px; letter-spacing:1px; }
 </style>
 
 @if (_loading)
 {
-    <div style="display:flex;justify-content:center;padding:100px 0;">
+    <div style="display:flex;justify-content:center;padding:120px 0;">
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
     </div>
 }
 else
 {
     <!-- ═══ CAROUSEL ═══ -->
-    <div style="background:var(--mud-palette-background);padding-bottom:4px;">
-        <div class="carousel-wrap">
-            @{
-                var items = (_featured?.Items ?? new()).Take(9).ToList();
-                int mid   = items.Count / 2;
-            }
-            @for (int i = 0; i < items.Count; i++)
-            {
-                var c      = items[i];
-                bool active = _hero?.Id == c.Id;
-                int  off    = Math.Abs(i - mid);
-                int  w      = active ? 200 : Math.Max(100, 180 - off * 18);
-                int  h      = active ? 290 : Math.Max(145, 265 - off * 22);
-                var  ci     = c;
-
-                <div class="c-card @(active ? "c-card-active" : "")"
-                     style="width:@(w)px;height:@(h)px;"
-                     @onclick="@(() => SetHero(ci))">
-                    <img src="@(ci.CoverImageUrl ?? $"https://picsum.photos/seed/{ci.Slug}/300/450")"
-                         alt="@ci.Title"
-                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(ci.Slug)cv/300/450'" />
-                    @if (active)
-                    {
-                        <div class="c-label">
-                            <div style="font-size:13px;font-weight:800;color:#fff;
-                                        white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                @ci.Title
-                            </div>
-                            <div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:2px;">
-                                ★ @ci.AverageRating.ToString("F1")
-                            </div>
+    <div class="carousel-row">
+        @{
+            var items = (_featured?.Items ?? new()).Take(9).ToList();
+            int mid   = items.Count / 2;
+        }
+        @for (int i = 0; i < items.Count; i++)
+        {
+            var c      = items[i];
+            bool act   = _hero?.Id == c.Id;
+            int  off   = Math.Abs(i - mid);
+            int  w     = act ? 215 : Math.Max(95, 195 - off * 20);
+            int  h     = act ? 310 : Math.Max(140, 280 - off * 25);
+            var  ci    = c;
+            <div class="c-card"
+                 style="width:@(w)px;height:@(h)px;
+                        @(act ? "box-shadow:0 8px 32px rgba(0,0,0,0.6);z-index:2;" : "opacity:0.8;")"
+                 @onclick="@(() => SetHero(ci))">
+                <img src="@(ci.CoverImageUrl ?? $"https://picsum.photos/seed/{ci.Slug}/300/450")"
+                     alt="@ci.Title"
+                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(ci.Slug)c/300/450'" />
+                @if (act)
+                {
+                    <div class="c-card-label">
+                        <div style="font-size:12px;color:#f59e0b;font-weight:700;margin-bottom:3px;">
+                            ★ @ci.AverageRating.ToString("F1")
                         </div>
-                    }
-                </div>
-            }
-        </div>
+                        <div style="font-size:14px;font-weight:800;color:#fff;
+                                    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                            @ci.Title
+                        </div>
+                        @if (ci.LatestChapterNumber.HasValue)
+                        {
+                            <div style="font-size:12px;color:rgba(255,255,255,0.6);margin-top:2px;">
+                                Chapter @((int)ci.LatestChapterNumber)
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
     </div>
 
     <!-- ═══ BODY ═══ -->
-    <div style="max-width:1300px;margin:0 auto;padding:24px 20px 80px;">
+    <div style="max-width:1200px;margin:0 auto;padding:24px 16px 80px;">
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:28px;align-items:start;">
 
-        <!-- Trending -->
-        <div style="margin-bottom:32px;">
-            <div class="section-header">
-                <span class="section-title">Trending Today</span>
-                <a href="/comics?sortBy=views" class="view-all">View All →</a>
-            </div>
-            <div class="h-scroll">
-                @foreach (var c in _trending?.Items ?? new())
-                {
-                    <div style="flex:0 0 130px;"><ComicCard Comic="c" /></div>
-                }
-            </div>
-        </div>
-
-        <!-- Latest + Popular -->
-        <div style="display:grid;grid-template-columns:1fr 300px;gap:32px;">
-
-            <!-- Latest Updates -->
+            <!-- LEFT COLUMN -->
             <div>
-                <div class="section-header">
-                    <span class="section-title">Latest Updates</span>
-                </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;">
-                    @foreach (var c in _latest?.Items ?? new())
-                    {
-                        <a href="/comic/@c.Slug" class="latest-item">
-                            <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/80/110")"
-                                 style="width:58px;height:82px;object-fit:cover;border-radius:6px;flex-shrink:0;"
-                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)lt/80/110'" />
-                            <div style="flex:1;min-width:0;">
-                                <div style="font-weight:700;font-size:13px;margin-bottom:5px;
-                                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@c.Title</div>
-                                @if (c.LatestChapterNumber.HasValue)
-                                {
-                                    <div style="font-size:12px;display:flex;justify-content:space-between;">
-                                        <span style="color:var(--mud-palette-primary);font-weight:600;">
-                                            Ch.@((int)c.LatestChapterNumber)
-                                        </span>
-                                        <span style="opacity:0.38;font-size:11px;">@Age(c.CreatedAt)</span>
-                                    </div>
-                                    @if (c.LatestChapterNumber >= 2)
-                                    {
-                                        <div style="font-size:12px;display:flex;justify-content:space-between;margin-top:2px;">
-                                            <span style="color:var(--mud-palette-primary);opacity:0.6;font-weight:600;">
-                                                Ch.@((int)c.LatestChapterNumber - 1)
-                                            </span>
-                                            <span style="opacity:0.3;font-size:11px;">last week</span>
-                                        </div>
-                                    }
-                                }
-                            </div>
+                <!-- Trending Today -->
+                <div style="margin-bottom:28px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <span style="font-size:1.05rem;font-weight:800;">Trending Today</span>
+                        <a href="/comics?sortBy=views"
+                           style="font-size:12px;font-weight:600;color:var(--mud-palette-primary);text-decoration:none;">
+                            View All →
                         </a>
-                    }
+                    </div>
+                    <div class="trending-row">
+                        @foreach (var c in _trending?.Items ?? new())
+                        {
+                            <a href="/comic/@c.Slug" style="flex:0 0 auto;text-decoration:none;color:inherit;width:140px;">
+                                <div style="border-radius:8px;overflow:hidden;aspect-ratio:2/3;margin-bottom:6px;">
+                                    <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/140/210")"
+                                         style="width:100%;height:100%;object-fit:cover;display:block;"
+                                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)t/140/210'" />
+                                </div>
+                                <div style="font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">
+                                    @c.Title
+                                </div>
+                                <div class="stars">@Stars(c.AverageRating)</div>
+                                <div style="font-size:11px;opacity:0.5;">@c.AverageRating.ToString("F1")</div>
+                            </a>
+                        }
+                    </div>
+                </div>
+
+                <!-- Latest Updates -->
+                <div>
+                    <div style="font-size:1.05rem;font-weight:800;margin-bottom:12px;">Latest Updates</div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+                        @foreach (var c in _latest?.Items ?? new())
+                        {
+                            <a href="/comic/@c.Slug" class="lu-item">
+                                <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/80/110")"
+                                     style="width:70px;height:95px;object-fit:cover;border-radius:6px;flex-shrink:0;"
+                                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)l/80/110'" />
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-weight:700;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px;">
+                                        @c.Title
+                                    </div>
+                                    @if (c.LatestChapterNumber.HasValue)
+                                    {
+                                        int ch = (int)c.LatestChapterNumber.Value;
+                                        <div class="lu-ch">
+                                            <span class="lu-ch-n">Chapter @ch</span>
+                                            <span class="lu-ch-t">@Age(c.CreatedAt)</span>
+                                        </div>
+                                        @if (ch >= 2)
+                                        {
+                                            <div class="lu-ch">
+                                                <span class="lu-ch-n" style="opacity:0.65;">Chapter @(ch-1)</span>
+                                                <span class="lu-ch-t">last week</span>
+                                            </div>
+                                        }
+                                        @if (ch >= 3)
+                                        {
+                                            <div class="lu-ch">
+                                                <span class="lu-ch-n" style="opacity:0.4;">Chapter @(ch-2)</span>
+                                                <span class="lu-ch-t">2 weeks ago</span>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            </a>
+                        }
+                    </div>
                 </div>
             </div>
 
-            <!-- Popular ranking -->
-            <div>
-                <div class="section-header">
-                    <span class="section-title">Popular</span>
-                    <div style="display:flex;gap:3px;">
-                        @foreach (var (lbl, ti) in new[]{("Weekly",0),("Monthly",1),("All",2)})
+            <!-- RIGHT COLUMN — Popular -->
+            <div style="position:sticky;top:80px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:6px;">
+                    <span style="font-size:1.05rem;font-weight:800;">Popular</span>
+                    <div style="display:flex;gap:4px;">
+                        @foreach (var (lbl, ti) in new[]{("Weekly",0),("Monthly",1),("All Time",2)})
                         {
                             <button class="tab-btn"
                                     style="@(_tab==ti
@@ -190,27 +211,26 @@ else
                         }
                     </div>
                 </div>
+
                 @{ int rk=0; }
                 @foreach (var c in TabList())
                 {
                     int r = ++rk;
                     <a href="/comic/@c.Slug" class="rank-item">
-                        <div style="@RankBadge(r);width:22px;height:22px;border-radius:5px;
+                        <div style="@RankBadge(r);width:24px;height:24px;border-radius:6px;
                                     display:flex;align-items:center;justify-content:center;
-                                    font-size:11px;font-weight:900;flex-shrink:0;">@r</div>
-                        <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/44/60")"
-                             style="width:44px;height:60px;object-fit:cover;border-radius:5px;flex-shrink:0;"
-                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)rk/44/60'" />
+                                    font-size:12px;font-weight:900;flex-shrink:0;">@r</div>
+                        <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/50/70")"
+                             style="width:50px;height:68px;object-fit:cover;border-radius:6px;flex-shrink:0;"
+                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)p/50/70'" />
                         <div style="flex:1;min-width:0;">
-                            <div style="font-size:13px;font-weight:700;white-space:nowrap;
-                                        overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">@c.Title</div>
-                            <div style="font-size:11px;opacity:0.4;white-space:nowrap;
-                                        overflow:hidden;text-overflow:ellipsis;">
-                                @string.Join(", ", c.Genres.Take(2))
+                            <div style="font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:2px;">
+                                @c.Title
                             </div>
-                            <div style="font-size:11px;color:#f59e0b;font-weight:700;">
-                                ★ @c.AverageRating.ToString("F1")
+                            <div style="font-size:11px;opacity:0.4;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                Genres: @string.Join(", ", c.Genres.Take(3))
                             </div>
+                            <div class="stars">@Stars(c.AverageRating) <span style="font-size:11px;font-weight:700;color:#f59e0b;margin-left:2px;">@c.AverageRating.ToString("F1")</span></div>
                         </div>
                     </a>
                 }
@@ -228,9 +248,9 @@ else
     protected override async Task OnInitializedAsync()
     {
         _featured = await Mediator.Send(new GetComicsQuery(PageSize: 9,  IsFeatured: true, SortBy: "rating"));
-        _trending = await Mediator.Send(new GetComicsQuery(PageSize: 12, SortBy: "views"));
+        _trending = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "views"));
         _popular  = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true,  SortBy: "rating"));
-        _latest   = await Mediator.Send(new GetComicsQuery(PageSize: 16, SortBy: "createdAt"));
+        _latest   = await Mediator.Send(new GetComicsQuery(PageSize: 20, SortBy: "createdAt"));
 
         var list = _featured?.Items ?? new();
         _hero    = list.Count > 0 ? list[list.Count / 2] : null;
@@ -241,19 +261,25 @@ else
 
     List<ComicDto> TabList() => _tab switch
     {
-        1 => _popular?.Items?.Take(10).ToList()  ?? new(),
+        1 => _popular?.Items?.Take(10).ToList() ?? new(),
         2 => (_trending?.Items ?? new()).Concat(_popular?.Items ?? new())
-                .DistinctBy(c => c.Id).Take(10).ToList(),
+                .DistinctBy(x => x.Id).Take(10).ToList(),
         _ => _trending?.Items?.Take(10).ToList() ?? new()
     };
 
     string Age(DateTime d)
     {
         var diff = DateTime.UtcNow - d;
-        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m";
-        if (diff.TotalHours   < 24) return $"{(int)diff.TotalHours}h";
-        if (diff.TotalDays    < 7)  return $"{(int)diff.TotalDays}d";
-        return $"{(int)(diff.TotalDays/7)}w";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours   < 24) return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays    < 7)  return $"{(int)diff.TotalDays}d ago";
+        return $"{(int)(diff.TotalDays/7)}w ago";
+    }
+
+    string Stars(double rating)
+    {
+        int full = (int)Math.Round(rating / 2.0);
+        return new string('★', Math.Min(full, 5)) + new string('☆', Math.Max(0, 5 - full));
     }
 
     string RankBadge(int r) => r switch
