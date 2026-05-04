@@ -6,6 +6,87 @@
 <PageTitle>Manga Dunyo - Manhwa, Manga o'qing</PageTitle>
 
 <style>
+    .hero-wrap {
+        position: relative;
+        height: 360px;
+        overflow: hidden;
+        background: #050510;
+    }
+
+    .hero-bg-img {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: blur(14px) brightness(0.35);
+        z-index: 0;
+        transition: opacity 0.5s ease;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: linear-gradient(to bottom, rgba(5,5,16,0.3) 0%, rgba(5,5,16,0.1) 50%, transparent 100%);
+    }
+
+    .hero-overlay-bottom {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 120px;
+        z-index: 2;
+        background: linear-gradient(transparent, var(--mud-palette-background));
+    }
+
+    .hero-carousel {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 5;
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding: 20px 40px 0;
+        scrollbar-width: none;
+        align-items: flex-end;
+    }
+
+    .hero-carousel::-webkit-scrollbar {
+        display: none;
+    }
+
+    .hero-slide {
+        flex: 0 0 130px;
+        height: 185px;
+        border-radius: 10px;
+        overflow: hidden;
+        cursor: pointer;
+        transition: flex 0.3s ease, height 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    }
+
+    .hero-slide:hover {
+        transform: translateY(-4px);
+    }
+
+    .hero-slide.active {
+        flex: 0 0 165px;
+        height: 235px;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+    }
+
+    .hero-slide img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        pointer-events: none;
+    }
+
     .trending-scroll {
         display: flex;
         gap: 16px;
@@ -14,9 +95,9 @@
         scrollbar-width: none;
     }
 
-        .trending-scroll::-webkit-scrollbar {
-            display: none;
-        }
+    .trending-scroll::-webkit-scrollbar {
+        display: none;
+    }
 
     .trending-card {
         flex: 0 0 170px;
@@ -29,15 +110,15 @@
         display: block;
     }
 
-        .trending-card:hover {
-            transform: translateY(-8px);
-        }
+    .trending-card:hover {
+        transform: translateY(-8px);
+    }
 
-        .trending-card img {
-            width: 100%;
-            height: 235px;
-            object-fit: cover;
-        }
+    .trending-card img {
+        width: 100%;
+        height: 235px;
+        object-fit: cover;
+    }
 
     .trending-info {
         padding: 12px 10px;
@@ -52,56 +133,9 @@
         transition: background 0.15s;
     }
 
-        .latest-row:hover {
-            background: rgba(65,159,217,0.07);
-        }
-
-    .hero-carousel {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        z-index: 5;
-        display: flex;
-        gap: 12px;
-        overflow-x: auto;
-        padding: 0 40px 0 40px;
-        scrollbar-width: none;
-        align-items: flex-end;
-        height: 320px;
+    .latest-row:hover {
+        background: rgba(65,159,217,0.07);
     }
-
-        .hero-carousel::-webkit-scrollbar {
-            display: none;
-        }
-
-    .hero-slide {
-        flex: 0 0 140px;
-        height: 200px;
-        border-radius: 12px;
-        overflow: hidden;
-        cursor: pointer;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-    }
-
-        .hero-slide:hover {
-            transform: translateY(-6px);
-        }
-
-        .hero-slide.active {
-            flex: 0 0 180px;
-            height: 250px;
-            box-shadow: 0 16px 40px rgba(0,0,0,0.8);
-        }
-
-        .hero-slide img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            display: block;
-            pointer-events: none;
-        }
 </style>
 
 @if (_loading)
@@ -112,13 +146,14 @@
 }
 else
 {
+    <!-- HERO -->
     <div class="hero-wrap">
-        <img src="@BgOf(_hero)" class="hero-bg-img" key="@(_hero?.Id)" />
+        <img src="@BgOf(_hero)" class="hero-bg-img" />
         <div class="hero-overlay"></div>
         <div class="hero-overlay-bottom"></div>
 
         <div class="hero-carousel">
-            @foreach (var c in (_featured?.Items ?? new()).Take(9))
+            @foreach (var c in _featured?.Items ?? new())
             {
                 var cc = c;
                 bool isActive = _hero?.Id == c.Id;
@@ -132,6 +167,7 @@ else
         </div>
     </div>
 
+    <!-- BODY -->
     <div style="max-width:1300px;margin:0 auto;padding:28px 20px 80px;">
 
         <!-- Trending Today -->
@@ -206,9 +242,7 @@ else
                         }
                     </div>
                 </div>
-                @{
-                    int rk = 0;
-                }
+                @{ int rk = 0; }
                 @foreach (var c in TabList())
                 {
                     int r = ++rk;
@@ -235,19 +269,17 @@ else
     PaginatedList<ComicDto>? _featured, _trending, _popular, _latest;
     bool _loading = true;
     int _tab = 0;
-    int _activeIdx = 4;
     ComicDto? _hero;
 
     protected override async Task OnInitializedAsync()
     {
-        _featured = await Mediator.Send(new GetComicsQuery(PageSize: 9, IsFeatured: true, SortBy: "rating"));
-        _trending = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "views"));
-        _popular = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true, SortBy: "rating"));
-        _latest = await Mediator.Send(new GetComicsQuery(PageSize: 14, SortBy: "createdAt"));
+        _featured = await Mediator.Send(new GetComicsQuery(PageSize: 12, IsFeatured: true, SortBy: "rating"));
+        _trending  = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "views"));
+        _popular   = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true, SortBy: "rating"));
+        _latest    = await Mediator.Send(new GetComicsQuery(PageSize: 14, SortBy: "createdAt"));
 
         var list = _featured?.Items ?? new();
-        _activeIdx = list.Count / 2;
-        _hero = list.Count > 0 ? list[_activeIdx] : null;
+        _hero = list.Count > 0 ? list[0] : null;
         _loading = false;
     }
 
@@ -259,38 +291,22 @@ else
             _hero = c;
     }
 
-    string SlideStyle(int idx)
-    {
-        int diff = idx - _activeIdx;
-        int abs = Math.Abs(diff);
-        double x = diff == 0 ? 0 : Math.Sign(diff) * Math.Min(abs * 155.0, 300);
-        double scale = diff == 0 ? 1.22 : Math.Max(0.72 - (abs - 1) * 0.07, 0.45);
-        int zIndex = 50 - abs * 5;
-        double rotY = diff == 0 ? 0 : Math.Sign(diff) * Math.Min(abs * 12.0, 30);
-        double op = diff == 0 ? 1 : Math.Max(1 - (abs - 1) * 0.25, 0);
-        if (abs > 3) op = 0;
-
-        return $"transform:translateX({x:F0}px) scale({scale:F2}) rotateY({rotY:F0}deg);" +
-               $"z-index:{zIndex};opacity:{op:F2};" +
-               $"pointer-events:{(op < 0.1 ? "none" : "auto")};";
-    }
-
     string BgOf(ComicDto? c) =>
         c is null ? "" :
         !string.IsNullOrEmpty(c.BannerImageUrl) ? c.BannerImageUrl :
-        !string.IsNullOrEmpty(c.CoverImageUrl) ? c.CoverImageUrl :
+        !string.IsNullOrEmpty(c.CoverImageUrl)  ? c.CoverImageUrl  :
         $"https://picsum.photos/seed/{c.Slug}bg/1400/500";
 
     List<ComicDto> TabList() =>
         _tab == 0 ? (_trending?.Items?.Take(10).ToList() ?? new()) :
-                    (_popular?.Items?.Take(10).ToList() ?? new());
+                    (_popular?.Items?.Take(10).ToList()  ?? new());
 
     string FmtDate(DateTime d)
     {
         var diff = DateTime.UtcNow - d;
-        if (diff.TotalHours < 1) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 1)  return $"{(int)diff.TotalMinutes}m ago";
         if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
-        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
+        if (diff.TotalDays  < 7)  return $"{(int)diff.TotalDays}d ago";
         return $"{(int)(diff.TotalDays / 7)}w ago";
     }
 

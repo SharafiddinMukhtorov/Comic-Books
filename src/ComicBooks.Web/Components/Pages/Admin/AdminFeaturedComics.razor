@@ -1,0 +1,179 @@
+@page "/admin/featured"
+@layout AdminLayout
+@inject IMediator Mediator
+@inject ISnackbar Snackbar
+
+<PageTitle>Featured Carousel - Admin</PageTitle>
+
+<MudText Typo="Typo.h5" Class="mb-1">🎠 Carousel boshqaruvi</MudText>
+<MudText Typo="Typo.body2" Style="opacity:0.6;" Class="mb-4">
+    Bosh sahifa carousel'ida ko'rsatiladigan comiclarni tanlang (max 12 ta)
+</MudText>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+else
+{
+    <MudGrid>
+        <!-- LEFT: Featured (tanlangan) -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Style="min-height:500px;">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                    <MudText Typo="Typo.h6">
+                        ✅ Carousel'da (@_featured.Count/12)
+                    </MudText>
+                </div>
+
+                @if (_featured.Count == 0)
+                {
+                    <div style="text-align:center;opacity:0.4;padding:60px 0;">
+                        <div style="font-size:48px;margin-bottom:12px;">🎠</div>
+                        <div>Hech qanday comic tanlanmagan</div>
+                    </div>
+                }
+                else
+                {
+                    <div style="display:flex;flex-direction:column;gap:8px;">
+                        @foreach (var c in _featured)
+                        {
+                            var cc = c;
+                            <div style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:10px;background:rgba(65,159,217,0.08);border:1px solid rgba(65,159,217,0.2);">
+                                <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/60/80")"
+                                     style="width:40px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0;"
+                                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)f/60/80'" />
+                                <div style="flex:1;min-width:0;">
+                                    <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
+                                    <div style="font-size:11px;opacity:0.5;">★ @c.AverageRating.ToString("F1") · @c.Type</div>
+                                </div>
+                                <MudIconButton Icon="@Icons.Material.Filled.RemoveCircle"
+                                               Color="Color.Error" Size="Size.Small"
+                                               OnClick="@(() => RemoveFromFeatured(cc))"
+                                               Title="Carousel'dan olib tashlash" />
+                            </div>
+                        }
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <!-- RIGHT: All comics (qo'shish uchun) -->
+        <MudItem xs="12" md="6">
+            <MudPaper Class="pa-4" Style="min-height:500px;">
+                <MudText Typo="Typo.h6" Class="mb-3">📚 Barcha comiclar</MudText>
+
+                <MudTextField @bind-Value="_search" Label="Qidirish..." Variant="Variant.Outlined"
+                              Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                              Class="mb-3" Immediate="true" ValueChanged="@OnSearchChanged" />
+
+                <div style="display:flex;flex-direction:column;gap:6px;max-height:460px;overflow-y:auto;">
+                    @foreach (var c in _allComics.Where(x => !_featured.Any(f => f.Id == x.Id)))
+                    {
+                        var cc = c;
+                        bool canAdd = _featured.Count < 12;
+                        <div style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:10px;transition:background 0.15s;"
+                             onmouseover="this.style.background='rgba(128,128,128,0.06)'"
+                             onmouseout="this.style.background='transparent'">
+                            <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/60/80")"
+                                 style="width:40px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0;"
+                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)a/60/80'" />
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
+                                <div style="font-size:11px;opacity:0.5;">★ @c.AverageRating.ToString("F1") · @c.Type</div>
+                            </div>
+                            <MudIconButton Icon="@Icons.Material.Filled.AddCircle"
+                                           Color="@(canAdd ? Color.Success : Color.Default)"
+                                           Size="Size.Small"
+                                           Disabled="@(!canAdd)"
+                                           OnClick="@(() => AddToFeatured(cc))"
+                                           Title="@(canAdd ? "Carousel'ga qo'shish" : "Maksimal 12 ta")" />
+                        </div>
+                    }
+                </div>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
+
+    <!-- Save button -->
+    <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:12px;">
+        <MudButton Variant="Variant.Outlined" OnClick="@LoadData" Disabled="@_saving">
+            ↺ Bekor qilish
+        </MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                   OnClick="@SaveChanges" Disabled="@_saving"
+                   Style="min-width:160px;font-weight:700;">
+            @(_saving ? "Saqlanmoqda..." : "💾 Saqlash")
+        </MudButton>
+    </div>
+}
+
+@code {
+    List<ComicDto> _featured = new();
+    List<ComicDto> _allComics = new();
+    bool _loading = true;
+    bool _saving = false;
+    string _search = "";
+
+    protected override async Task OnInitializedAsync() => await LoadData();
+
+    async Task LoadData()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        var featuredResult = await Mediator.Send(new GetComicsQuery(PageSize: 100, IsFeatured: true, SortBy: "rating"));
+        _featured = featuredResult.Items.ToList();
+
+        var allResult = await Mediator.Send(new GetComicsQuery(PageSize: 200, SortBy: "rating"));
+        _allComics = allResult.Items.ToList();
+
+        _loading = false;
+    }
+
+    void AddToFeatured(ComicDto c)
+    {
+        if (_featured.Count >= 12) return;
+        if (!_featured.Any(f => f.Id == c.Id))
+            _featured.Add(c);
+    }
+
+    void RemoveFromFeatured(ComicDto c)
+    {
+        _featured.RemoveAll(f => f.Id == c.Id);
+    }
+
+    async Task OnSearchChanged(string val)
+    {
+        _search = val;
+        if (!string.IsNullOrWhiteSpace(val))
+        {
+            var result = await Mediator.Send(new GetComicsQuery(PageSize: 50, Search: val, SortBy: "rating"));
+            _allComics = result.Items.ToList();
+        }
+        else
+        {
+            var result = await Mediator.Send(new GetComicsQuery(PageSize: 200, SortBy: "rating"));
+            _allComics = result.Items.ToList();
+        }
+    }
+
+    async Task SaveChanges()
+    {
+        _saving = true;
+        try
+        {
+            var featuredIds = _featured.Select(f => f.Id).ToList();
+            await Mediator.Send(new ToggleFeaturedCommand(featuredIds));
+            Snackbar.Add($"✅ {_featured.Count} ta comic carousel'ga saqlandi!", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
