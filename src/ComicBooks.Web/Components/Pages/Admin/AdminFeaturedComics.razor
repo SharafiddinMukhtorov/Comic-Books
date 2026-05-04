@@ -5,6 +5,42 @@
 
 <PageTitle>Featured Carousel - Admin</PageTitle>
 
+<style>
+    .fc-card {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px;
+        border-radius: 10px;
+        margin-bottom: 6px;
+    }
+    .fc-card-featured {
+        background: rgba(65,159,217,0.08);
+        border: 1px solid rgba(65,159,217,0.2);
+    }
+    .fc-card-all:hover {
+        background: rgba(128,128,128,0.07);
+    }
+    .fc-btn {
+        border: none;
+        border-radius: 50%;
+        width: 32px;
+        height: 32px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        flex-shrink: 0;
+        transition: opacity 0.2s;
+    }
+    .fc-btn-remove { background: rgba(239,68,68,0.15); color: #ef4444; }
+    .fc-btn-remove:hover { background: rgba(239,68,68,0.3); }
+    .fc-btn-add    { background: rgba(34,197,94,0.15);  color: #22c55e; }
+    .fc-btn-add:hover    { background: rgba(34,197,94,0.3); }
+    .fc-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+</style>
+
 <MudText Typo="Typo.h5" Class="mb-1">🎠 Carousel boshqaruvi</MudText>
 <MudText Typo="Typo.body2" Style="opacity:0.6;" Class="mb-4">
     Bosh sahifa carousel'ida ko'rsatiladigan comiclarni tanlang (max 12 ta)
@@ -20,11 +56,7 @@ else
         <!-- LEFT: Featured (tanlangan) -->
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4" Style="min-height:500px;">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-                    <MudText Typo="Typo.h6">
-                        ✅ Carousel'da (@_featured.Count/12)
-                    </MudText>
-                </div>
+                <MudText Typo="Typo.h6" Class="mb-3">✅ Carousel'da (@_featured.Count/12)</MudText>
 
                 @if (_featured.Count == 0)
                 {
@@ -35,30 +67,25 @@ else
                 }
                 else
                 {
-                    <div style="display:flex;flex-direction:column;gap:8px;">
-                        @foreach (var c in _featured)
-                        {
-                            var cc = c;
-                            <div style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:10px;background:rgba(65,159,217,0.08);border:1px solid rgba(65,159,217,0.2);">
-                                <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/60/80")"
-                                     style="width:40px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0;"
-                                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)f/60/80'" />
-                                <div style="flex:1;min-width:0;">
-                                    <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
-                                    <div style="font-size:11px;opacity:0.5;">★ @c.AverageRating.ToString("F1") · @c.Type</div>
-                                </div>
-                                <MudIconButton Icon="@Icons.Material.Filled.RemoveCircle"
-                                               Color="Color.Error" Size="Size.Small"
-                                               OnClick="@(() => RemoveFromFeatured(cc))"
-                                               Title="Carousel'dan olib tashlash" />
+                    @foreach (var c in _featured.ToList())
+                    {
+                        var cc = c;
+                        <div class="fc-card fc-card-featured">
+                            <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/60/80")"
+                                 style="width:40px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0;"
+                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)f/60/80'" />
+                            <div style="flex:1;min-width:0;">
+                                <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
+                                <div style="font-size:11px;opacity:0.5;">★ @c.AverageRating.ToString("F1") · @c.Type</div>
                             </div>
-                        }
-                    </div>
+                            <button class="fc-btn fc-btn-remove" @onclick="@(() => RemoveFromFeatured(cc))" title="Olib tashlash">−</button>
+                        </div>
+                    }
                 }
             </MudPaper>
         </MudItem>
 
-        <!-- RIGHT: All comics (qo'shish uchun) -->
+        <!-- RIGHT: All comics -->
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4" Style="min-height:500px;">
                 <MudText Typo="Typo.h6" Class="mb-3">📚 Barcha comiclar</MudText>
@@ -67,14 +94,12 @@ else
                               Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
                               Class="mb-3" Immediate="true" ValueChanged="@OnSearchChanged" />
 
-                <div style="display:flex;flex-direction:column;gap:6px;max-height:460px;overflow-y:auto;">
-                    @foreach (var c in _allComics.Where(x => !_featured.Any(f => f.Id == x.Id)))
+                <div style="max-height:460px;overflow-y:auto;">
+                    @foreach (var c in _allComics.Where(x => !_featured.Any(f => f.Id == x.Id)).ToList())
                     {
                         var cc = c;
                         bool canAdd = _featured.Count < 12;
-                        <div style="display:flex;align-items:center;gap:12px;padding:8px;border-radius:10px;transition:background 0.15s;"
-                             onmouseover="this.style.background='rgba(128,128,128,0.06)'"
-                             onmouseout="this.style.background='transparent'">
+                        <div class="fc-card fc-card-all">
                             <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/60/80")"
                                  style="width:40px;height:56px;object-fit:cover;border-radius:6px;flex-shrink:0;"
                                  onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)a/60/80'" />
@@ -82,12 +107,8 @@ else
                                 <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
                                 <div style="font-size:11px;opacity:0.5;">★ @c.AverageRating.ToString("F1") · @c.Type</div>
                             </div>
-                            <MudIconButton Icon="@Icons.Material.Filled.AddCircle"
-                                           Color="@(canAdd ? Color.Success : Color.Default)"
-                                           Size="Size.Small"
-                                           Disabled="@(!canAdd)"
-                                           OnClick="@(() => AddToFeatured(cc))"
-                                           Title="@(canAdd ? "Carousel'ga qo'shish" : "Maksimal 12 ta")" />
+                            <button class="fc-btn fc-btn-add" @onclick="@(() => AddToFeatured(cc))"
+                                    disabled="@(!canAdd)" title="@(canAdd ? "Qo'shish" : "Max 12 ta")">+</button>
                         </div>
                     }
                 </div>
@@ -95,14 +116,10 @@ else
         </MudItem>
     </MudGrid>
 
-    <!-- Save button -->
     <div style="margin-top:20px;display:flex;justify-content:flex-end;gap:12px;">
-        <MudButton Variant="Variant.Outlined" OnClick="@LoadData" Disabled="@_saving">
-            ↺ Bekor qilish
-        </MudButton>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                   OnClick="@SaveChanges" Disabled="@_saving"
-                   Style="min-width:160px;font-weight:700;">
+        <MudButton Variant="Variant.Outlined" OnClick="@LoadData" Disabled="@_saving">↺ Bekor qilish</MudButton>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@SaveChanges"
+                   Disabled="@_saving" Style="min-width:160px;font-weight:700;">
             @(_saving ? "Saqlanmoqda..." : "💾 Saqlash")
         </MudButton>
     </div>
@@ -135,27 +152,25 @@ else
     {
         if (_featured.Count >= 12) return;
         if (!_featured.Any(f => f.Id == c.Id))
+        {
             _featured.Add(c);
+            StateHasChanged();
+        }
     }
 
     void RemoveFromFeatured(ComicDto c)
     {
         _featured.RemoveAll(f => f.Id == c.Id);
+        StateHasChanged();
     }
 
     async Task OnSearchChanged(string val)
     {
         _search = val;
-        if (!string.IsNullOrWhiteSpace(val))
-        {
-            var result = await Mediator.Send(new GetComicsQuery(PageSize: 50, Search: val, SortBy: "rating"));
-            _allComics = result.Items.ToList();
-        }
-        else
-        {
-            var result = await Mediator.Send(new GetComicsQuery(PageSize: 200, SortBy: "rating"));
-            _allComics = result.Items.ToList();
-        }
+        var result = string.IsNullOrWhiteSpace(val)
+            ? await Mediator.Send(new GetComicsQuery(PageSize: 200, SortBy: "rating"))
+            : await Mediator.Send(new GetComicsQuery(PageSize: 50, Search: val, SortBy: "rating"));
+        _allComics = result.Items.ToList();
     }
 
     async Task SaveChanges()
