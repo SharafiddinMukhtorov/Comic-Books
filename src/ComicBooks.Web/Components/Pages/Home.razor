@@ -140,12 +140,13 @@ else
                 int    zIndex   = active ? 10 : (mid - Math.Abs(offset));
                 double opacity  = active ? 1.0 : Math.Max(0.55, 1.0 - Math.Abs(offset) * 0.12);
 
-                string style = $@"
-                    transform: translateX({transX}px) rotate({rotDeg}deg) scale({scale}) translateY({transY}px);
-                    z-index: {zIndex};
-                    opacity: {opacity.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)};
-                    {(active ? "box-shadow:0 24px 60px rgba(0,0,0,0.9),0 0 0 3px rgba(255,255,255,0.18);" : "")}
-                ";
+                string style =
+                $"transform: translateX({transX}px) rotate({rotDeg}deg) scale({scale}) translateY({transY}px);" +
+                $"z-index: {zIndex};" +
+                $"opacity: {opacity.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)};" +
+                (active
+                ? "box-shadow:0 24px 60px rgba(0,0,0,0.9),0 0 0 3px rgba(255,255,255,0.18);"
+                : "");
 
                 var capturedC = c;
                 <div class="fan-card" style="@style" @onclick="@(() => SetHero(capturedC))">
