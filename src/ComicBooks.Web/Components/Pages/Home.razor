@@ -6,135 +6,107 @@
 <PageTitle>Manga Dunyo - Manhwa, Manga o'qing</PageTitle>
 
 <style>
-    /* ── Fan carousel (AsuraScans uslubi) ── */
-    .hero-section {
-        position: relative;
-        background: var(--mud-palette-background);
-        overflow: hidden;
-        padding: 20px 0 0;
-    }
-    .fan-row {
+    .carousel-wrap {
         display: flex;
         align-items: flex-end;
         justify-content: center;
-        min-height: 340px;
-        padding-bottom: 8px;
-        position: relative;
-        z-index: 2;
+        gap: 6px;
+        padding: 32px 16px 16px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
     }
-    .fan-card {
-        position: absolute;
-        width: 160px;
-        aspect-ratio: 2/3;
+    .carousel-wrap::-webkit-scrollbar { display: none; }
+
+    .c-card {
+        flex: 0 0 auto;
         border-radius: 10px;
         overflow: hidden;
         cursor: pointer;
-        transform-origin: bottom center;
-        transition: all 0.38s cubic-bezier(0.34,1.4,0.64,1);
-        bottom: 8px;
+        transition: all 0.3s ease;
+        position: relative;
     }
-    .fan-card img {
-        width: 100%; height: 100%; object-fit: cover; display: block;
+    .c-card img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
-    .fan-title-bar {
+    .c-card-active {
+        box-shadow: 0 12px 40px rgba(0,0,0,0.7), 0 0 0 2px rgba(255,255,255,0.15);
+        z-index: 2;
+    }
+    .c-label {
         position: absolute; bottom: 0; left: 0; right: 0;
-        padding: 28px 8px 8px;
+        padding: 24px 10px 10px;
         background: linear-gradient(transparent, rgba(0,0,0,0.88));
-        text-align: center;
     }
-    .section-header {
-        display: flex; justify-content: space-between; align-items: center;
-        margin-bottom: 14px;
-    }
-    .section-title { font-size: 1rem; font-weight: 800; }
-    .view-all {
-        font-size: 12px; font-weight: 600; text-decoration: none;
-        color: var(--mud-palette-primary);
-    }
-    .view-all:hover { text-decoration: underline; }
 
-    /* Trending scroll */
+    .section-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; }
+    .section-title  { font-size:1rem; font-weight:800; }
+    .view-all       { font-size:12px; font-weight:600; color:var(--mud-palette-primary); text-decoration:none; }
+
     .h-scroll {
-        display: flex; gap: 10px; overflow-x: auto; padding-bottom: 8px;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(124,58,237,0.25) transparent;
+        display:flex; gap:10px; overflow-x:auto; padding-bottom:6px;
+        scrollbar-width:thin; scrollbar-color:rgba(124,58,237,0.2) transparent;
     }
-    .h-scroll::-webkit-scrollbar { height: 3px; }
-    .h-scroll::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.25); border-radius:2px; }
 
-    /* Latest updates */
     .latest-item {
-        display: flex; gap: 10px; padding: 9px 8px;
-        border-bottom: 1px solid var(--mud-palette-lines-default);
-        cursor: pointer; transition: background 0.12s; text-decoration: none; color: inherit;
+        display:flex; gap:10px; padding:9px 6px;
+        border-bottom:1px solid var(--mud-palette-lines-default);
+        text-decoration:none; color:inherit; transition:background 0.12s;
     }
-    .latest-item:hover { background: rgba(65,159,217,0.07); }
-    .ch-link { font-size: 12px; display: flex; justify-content: space-between; }
-    .ch-num  { color: var(--mud-palette-primary); font-weight: 600; }
-    .ch-age  { opacity: 0.38; font-size: 11px; }
+    .latest-item:hover { background:rgba(65,159,217,0.06); }
 
-    /* Popular ranking */
     .rank-item {
-        display: flex; gap: 10px; align-items: center; padding: 7px 0;
-        border-bottom: 1px solid var(--mud-palette-lines-default);
-        cursor: pointer; text-decoration: none; color: inherit;
+        display:flex; gap:10px; align-items:center; padding:7px 0;
+        border-bottom:1px solid var(--mud-palette-lines-default);
+        text-decoration:none; color:inherit;
     }
-    .tab-btn { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; cursor: pointer; border: none; }
+    .tab-btn {
+        padding:3px 10px; border-radius:20px; font-size:11px;
+        font-weight:700; cursor:pointer; border:none;
+    }
 </style>
 
 @if (_loading)
 {
-    <div style="display:flex;justify-content:center;padding:120px 0;">
+    <div style="display:flex;justify-content:center;padding:100px 0;">
         <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
     </div>
 }
 else
 {
-    <!-- ══════════════════════════════════════════════
-         HERO / FAN CAROUSEL  (AsuraScans identical)
-    ══════════════════════════════════════════════ -->
-    <div class="hero-section">
-        <div class="fan-row">
+    <!-- ═══ CAROUSEL ═══ -->
+    <div style="background:var(--mud-palette-background);padding-bottom:4px;">
+        <div class="carousel-wrap">
             @{
                 var items = (_featured?.Items ?? new()).Take(9).ToList();
-                int total = items.Count;
-                int mid   = total / 2;
-                double stepX   = 108;   // px per card
-                double stepRot = 7.0;   // deg per card
-                double stepY   = 18.0;  // vertical drop per step
+                int mid   = items.Count / 2;
             }
             @for (int i = 0; i < items.Count; i++)
             {
-                var c       = items[i];
-                int  off    = i - mid;
+                var c      = items[i];
                 bool active = _hero?.Id == c.Id;
+                int  off    = Math.Abs(i - mid);
+                int  w      = active ? 200 : Math.Max(100, 180 - off * 18);
+                int  h      = active ? 290 : Math.Max(145, 265 - off * 22);
+                var  ci     = c;
 
-                double tx   = off * stepX;
-                double rot  = active ? 0 : off * stepRot;
-                double ty   = active ? -32 : Math.Abs(off) * stepY;
-                double sc   = active ? 1.08 : Math.Max(0.68, 1.0 - Math.Abs(off) * 0.07);
-                double op   = active ? 1.0  : Math.Max(0.5,  1.0 - Math.Abs(off) * 0.11);
-                int    z    = active ? 20   : (mid - Math.Abs(off) + 1);
-                string shdw = active
-                    ? "0 28px 64px rgba(0,0,0,0.85), 0 0 0 3px rgba(255,255,255,0.2)"
-                    : "0 6px 24px rgba(0,0,0,0.6)";
-
-                var ci = c;
-                <div class="fan-card"
-                     style="transform:translateX(@(tx.ToString("F0", System.Globalization.CultureInfo.InvariantCulture))px) rotate(@(rot.ToString("F1", System.Globalization.CultureInfo.InvariantCulture))deg) scale(@(sc.ToString("F2", System.Globalization.CultureInfo.InvariantCulture))) translateY(-@(ty.ToString("F0", System.Globalization.CultureInfo.InvariantCulture))px);
-                           z-index:@z;opacity:@(op.ToString("F2", System.Globalization.CultureInfo.InvariantCulture));box-shadow:@shdw;"
+                <div class="c-card @(active ? "c-card-active" : "")"
+                     style="width:@(w)px;height:@(h)px;"
                      @onclick="@(() => SetHero(ci))">
                     <img src="@(ci.CoverImageUrl ?? $"https://picsum.photos/seed/{ci.Slug}/300/450")"
                          alt="@ci.Title"
-                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(ci.Slug)x/300/450'" />
+                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(ci.Slug)cv/300/450'" />
                     @if (active)
                     {
-                        <div class="fan-title-bar">
-                            <div style="font-size:12px;font-weight:800;color:#fff;
+                        <div class="c-label">
+                            <div style="font-size:13px;font-weight:800;color:#fff;
                                         white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                                 @ci.Title
                             </div>
-                            <div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:1px;">
+                            <div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:2px;">
                                 ★ @ci.AverageRating.ToString("F1")
                             </div>
                         </div>
@@ -144,12 +116,10 @@ else
         </div>
     </div>
 
-    <!-- ══════════════════════════════════════════════
-         MAIN BODY
-    ══════════════════════════════════════════════ -->
-    <div style="max-width:1300px;margin:0 auto;padding:28px 20px 80px;">
+    <!-- ═══ BODY ═══ -->
+    <div style="max-width:1300px;margin:0 auto;padding:24px 20px 80px;">
 
-        <!-- ── Trending Today ── -->
+        <!-- Trending -->
         <div style="margin-bottom:32px;">
             <div class="section-header">
                 <span class="section-title">Trending Today</span>
@@ -163,9 +133,8 @@ else
             </div>
         </div>
 
-        <!-- ── Latest Updates + Popular (2-column) ── -->
-        <div style="display:grid;grid-template-columns:1fr 300px;gap:32px;
-                    @("@media(max-width:900px){grid-template-columns:1fr;}")">
+        <!-- Latest + Popular -->
+        <div style="display:grid;grid-template-columns:1fr 300px;gap:32px;">
 
             <!-- Latest Updates -->
             <div>
@@ -181,20 +150,22 @@ else
                                  onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)lt/80/110'" />
                             <div style="flex:1;min-width:0;">
                                 <div style="font-weight:700;font-size:13px;margin-bottom:5px;
-                                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                                    @c.Title
-                                </div>
+                                            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">@c.Title</div>
                                 @if (c.LatestChapterNumber.HasValue)
                                 {
-                                    <div class="ch-link">
-                                        <span class="ch-num">Ch.@((int)c.LatestChapterNumber)</span>
-                                        <span class="ch-age">@Age(c.CreatedAt)</span>
+                                    <div style="font-size:12px;display:flex;justify-content:space-between;">
+                                        <span style="color:var(--mud-palette-primary);font-weight:600;">
+                                            Ch.@((int)c.LatestChapterNumber)
+                                        </span>
+                                        <span style="opacity:0.38;font-size:11px;">@Age(c.CreatedAt)</span>
                                     </div>
                                     @if (c.LatestChapterNumber >= 2)
                                     {
-                                        <div class="ch-link" style="margin-top:2px;">
-                                            <span class="ch-num" style="opacity:0.6;">Ch.@((int)c.LatestChapterNumber - 1)</span>
-                                            <span class="ch-age">last week</span>
+                                        <div style="font-size:12px;display:flex;justify-content:space-between;margin-top:2px;">
+                                            <span style="color:var(--mud-palette-primary);opacity:0.6;font-weight:600;">
+                                                Ch.@((int)c.LatestChapterNumber - 1)
+                                            </span>
+                                            <span style="opacity:0.3;font-size:11px;">last week</span>
                                         </div>
                                     }
                                 }
@@ -214,12 +185,12 @@ else
                             <button class="tab-btn"
                                     style="@(_tab==ti
                                         ? "background:var(--mud-palette-primary);color:#fff;"
-                                        : "background:transparent;color:inherit;border:1px solid var(--mud-palette-lines-default);opacity:0.65;")"
+                                        : "background:transparent;color:inherit;border:1px solid var(--mud-palette-lines-default);opacity:0.6;")"
                                     @onclick="@(()=>_tab=ti)">@lbl</button>
                         }
                     </div>
                 </div>
-                @{ int rk = 0; }
+                @{ int rk=0; }
                 @foreach (var c in TabList())
                 {
                     int r = ++rk;
@@ -237,7 +208,7 @@ else
                                         overflow:hidden;text-overflow:ellipsis;">
                                 @string.Join(", ", c.Genres.Take(2))
                             </div>
-                            <div style="font-size:11px;color:#f59e0b;font-weight:700;margin-top:1px;">
+                            <div style="font-size:11px;color:#f59e0b;font-weight:700;">
                                 ★ @c.AverageRating.ToString("F1")
                             </div>
                         </div>
@@ -270,7 +241,7 @@ else
 
     List<ComicDto> TabList() => _tab switch
     {
-        1 => _popular?.Items?.Take(10).ToList() ?? new(),
+        1 => _popular?.Items?.Take(10).ToList()  ?? new(),
         2 => (_trending?.Items ?? new()).Concat(_popular?.Items ?? new())
                 .DistinctBy(c => c.Id).Take(10).ToList(),
         _ => _trending?.Items?.Take(10).ToList() ?? new()
@@ -279,9 +250,9 @@ else
     string Age(DateTime d)
     {
         var diff = DateTime.UtcNow - d;
-        if (diff.TotalMinutes < 60)  return $"{(int)diff.TotalMinutes}m";
-        if (diff.TotalHours   < 24)  return $"{(int)diff.TotalHours}h";
-        if (diff.TotalDays    < 7)   return $"{(int)diff.TotalDays}d";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m";
+        if (diff.TotalHours   < 24) return $"{(int)diff.TotalHours}h";
+        if (diff.TotalDays    < 7)  return $"{(int)diff.TotalDays}d";
         return $"{(int)(diff.TotalDays/7)}w";
     }
 
