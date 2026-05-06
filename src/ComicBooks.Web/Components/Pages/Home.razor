@@ -8,7 +8,7 @@
 <style>
     .hero-wrap {
         position: relative;
-        height: 360px;
+        height: 420px;
         overflow: hidden;
         background: #050510;
     }
@@ -19,123 +19,94 @@
         width: 100%;
         height: 100%;
         object-fit: cover;
-        filter: blur(14px) brightness(0.35);
+        filter: blur(18px) brightness(0.32) saturate(1.3);
         z-index: 0;
-        transition: opacity 0.5s ease;
-    }
-
-    .hero-overlay {
-        position: absolute;
-        inset: 0;
-        z-index: 1;
-        background: linear-gradient(to bottom, rgba(5,5,16,0.3) 0%, rgba(5,5,16,0.1) 50%, transparent 100%);
+        transition: all 0.6s ease;
     }
 
     .hero-overlay-bottom {
         position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        height: 120px;
+        bottom: 0; left: 0; right: 0;
+        height: 160px;
         z-index: 2;
         background: linear-gradient(transparent, var(--mud-palette-background));
     }
 
-    .hero-carousel {
+    /* Nav buttons */
+    .carousel-nav {
         position: absolute;
-        bottom: 0;
-        left: 0;
-        right: 0;
+        top: 50%; transform: translateY(-50%);
+        z-index: 20;
+        width: 40px; height: 40px;
+        border-radius: 50%;
+        border: none;
+        background: rgba(255,255,255,0.15);
+        color: #fff;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center;
+        backdrop-filter: blur(6px);
+        transition: background 0.2s;
+    }
+    .carousel-nav:hover { background: rgba(255,255,255,0.28); }
+    .carousel-nav-left  { left: 16px; }
+    .carousel-nav-right { right: 16px; }
+
+    /* Slides container */
+    .carousel-track {
+        position: absolute;
+        bottom: 0; left: 0; right: 0;
         z-index: 5;
         display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        padding: 20px 40px 0;
-        scrollbar-width: none;
         align-items: flex-end;
+        justify-content: center;
+        gap: 10px;
+        padding: 0 70px;
+        height: 100%;
+        pointer-events: none;
     }
 
-    .hero-carousel::-webkit-scrollbar {
-        display: none;
-    }
-
-    .hero-slide {
-        flex: 0 0 130px;
-        height: 185px;
+    .c-slide {
+        flex-shrink: 0;
         border-radius: 10px;
         overflow: hidden;
         cursor: pointer;
-        transition: flex 0.3s ease, height 0.3s ease, box-shadow 0.3s ease, transform 0.3s ease;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+        pointer-events: auto;
+        transition: width 0.35s ease, height 0.35s ease, opacity 0.35s ease, box-shadow 0.35s ease;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+        align-self: flex-end;
     }
 
-    .hero-slide:hover {
-        transform: translateY(-4px);
-    }
-
-    .hero-slide.active {
-        flex: 0 0 165px;
-        height: 235px;
-        box-shadow: 0 20px 50px rgba(0,0,0,0.9);
-    }
-
-    .hero-slide img {
-        width: 100%;
-        height: 100%;
+    .c-slide img {
+        width: 100%; height: 100%;
         object-fit: cover;
         display: block;
         pointer-events: none;
     }
 
     .trending-scroll {
-        display: flex;
-        gap: 16px;
-        overflow-x: auto;
-        padding-bottom: 12px;
+        display: flex; gap: 16px;
+        overflow-x: auto; padding-bottom: 12px;
         scrollbar-width: none;
     }
-
-    .trending-scroll::-webkit-scrollbar {
-        display: none;
-    }
+    .trending-scroll::-webkit-scrollbar { display: none; }
 
     .trending-card {
-        flex: 0 0 170px;
-        border-radius: 12px;
-        overflow: hidden;
+        flex: 0 0 170px; border-radius: 12px; overflow: hidden;
         box-shadow: 0 8px 25px rgba(0,0,0,0.4);
         transition: all 0.3s ease;
-        text-decoration: none;
-        color: inherit;
-        display: block;
+        text-decoration: none; color: inherit; display: block;
     }
-
-    .trending-card:hover {
-        transform: translateY(-8px);
-    }
-
-    .trending-card img {
-        width: 100%;
-        height: 235px;
-        object-fit: cover;
-    }
-
-    .trending-info {
-        padding: 12px 10px;
-    }
+    .trending-card:hover { transform: translateY(-8px); }
+    .trending-card img { width: 100%; height: 235px; object-fit: cover; }
+    .trending-info { padding: 12px 10px; }
 
     .latest-row {
-        display: flex;
-        gap: 10px;
-        padding: 10px 8px;
+        display: flex; gap: 10px; padding: 10px 8px;
         border-bottom: 1px solid rgba(128,128,128,0.09);
-        cursor: pointer;
-        transition: background 0.15s;
+        cursor: pointer; transition: background 0.15s;
     }
-
-    .latest-row:hover {
-        background: rgba(65,159,217,0.07);
-    }
+    .latest-row:hover { background: rgba(65,159,217,0.07); }
 </style>
 
 @if (_loading)
@@ -146,25 +117,49 @@
 }
 else
 {
+    var slides = _featured?.Items ?? new();
+
     <!-- HERO -->
     <div class="hero-wrap">
         <img src="@BgOf(_hero)" class="hero-bg-img" />
-        <div class="hero-overlay"></div>
         <div class="hero-overlay-bottom"></div>
 
-        <div class="hero-carousel">
-            @foreach (var c in _featured?.Items ?? new())
+        <!-- Prev button -->
+        @if (_activeIdx > 0)
+        {
+            <button class="carousel-nav carousel-nav-left" @onclick="Prev">‹</button>
+        }
+
+        <!-- Slides -->
+        <div class="carousel-track">
+            @for (int i = 0; i < slides.Count; i++)
             {
-                var cc = c;
-                bool isActive = _hero?.Id == c.Id;
-                <div class="hero-slide @(isActive ? "active" : "")"
-                     @onclick="@(() => HandleSlideClick(cc))">
+                var c = slides[i];
+                int dist = Math.Abs(i - _activeIdx);
+                if (dist > 3) continue;
+
+                int capturedI = i;
+                var capturedC = c;
+
+                double w = dist == 0 ? 160 : dist == 1 ? 120 : 90;
+                double h = dist == 0 ? 230 : dist == 1 ? 175 : 135;
+                double op = dist == 0 ? 1.0 : dist == 1 ? 0.85 : 0.55;
+
+                <div class="c-slide"
+                     style="width:@(w)px;height:@(h)px;opacity:@(op.ToString("F2"));"
+                     @onclick="@(async () => await OnSlideClick(capturedC, capturedI))">
                     <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/300/420")"
                          alt="@c.Title"
                          onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)cv/300/420'" />
                 </div>
             }
         </div>
+
+        <!-- Next button -->
+        @if (_activeIdx < slides.Count - 1)
+        {
+            <button class="carousel-nav carousel-nav-right" @onclick="Next">›</button>
+        }
     </div>
 
     <!-- BODY -->
@@ -218,7 +213,7 @@ else
                                         </div>
                                         @if (c.LatestChapterNumber.Value >= 2)
                                         {
-                                            <div style="font-size:12px;color:@(Theme.IsDark ? "#5b8af0" : "#2563eb");display:flex;justify-content:space-between;">
+                                            <div style="font-size:12px;color:@(Theme.IsDark?"#5b8af0":"#2563eb");display:flex;justify-content:space-between;">
                                                 <span>Ch. @((int)c.LatestChapterNumber.Value - 1)</span>
                                                 <span style="opacity:0.35;font-size:11px;">last week</span>
                                             </div>
@@ -269,6 +264,7 @@ else
     PaginatedList<ComicDto>? _featured, _trending, _popular, _latest;
     bool _loading = true;
     int _tab = 0;
+    int _activeIdx = 0;
     ComicDto? _hero;
 
     protected override async Task OnInitializedAsync()
@@ -279,16 +275,39 @@ else
         _latest    = await Mediator.Send(new GetComicsQuery(PageSize: 14, SortBy: "createdAt"));
 
         var list = _featured?.Items ?? new();
-        _hero = list.Count > 0 ? list[0] : null;
+        _activeIdx = list.Count / 2;
+        _hero = list.Count > 0 ? list[_activeIdx] : null;
         _loading = false;
     }
 
-    private void HandleSlideClick(ComicDto c)
+    async Task OnSlideClick(ComicDto c, int idx)
     {
-        if (_hero?.Id == c.Id)
+        if (_activeIdx == idx)
             Nav.NavigateTo($"/comic/{c.Slug}");
         else
+        {
+            _activeIdx = idx;
             _hero = c;
+        }
+    }
+
+    void Prev()
+    {
+        if (_activeIdx > 0)
+        {
+            _activeIdx--;
+            _hero = (_featured?.Items ?? new()).ElementAtOrDefault(_activeIdx);
+        }
+    }
+
+    void Next()
+    {
+        var list = _featured?.Items ?? new();
+        if (_activeIdx < list.Count - 1)
+        {
+            _activeIdx++;
+            _hero = list.ElementAtOrDefault(_activeIdx);
+        }
     }
 
     string BgOf(ComicDto? c) =>
