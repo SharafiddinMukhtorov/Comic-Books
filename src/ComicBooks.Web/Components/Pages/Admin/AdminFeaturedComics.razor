@@ -31,7 +31,7 @@
 else
 {
     <MudGrid>
-        <!-- Tanlangan -->
+        <!-- Tanlangan comiclar -->
         <MudItem xs="12" md="6">
             <MudPaper Class="pa-4" Style="min-height:520px;">
                 <MudText Typo="Typo.h6" Class="mb-3">✅ Carousel'da (@_featuredIds.Count/12)</MudText>
@@ -56,7 +56,9 @@ else
                                 <div class="fc-title">@item.Title</div>
                                 <div class="fc-meta">★ @item.AverageRating.ToString("F1") · @item.Type</div>
                             </div>
-                            <MudChip Color="Color.Error" Size="Size.Small"
+                            <MudChip T="string"
+                                     Color="Color.Error"
+                                     Size="Size.Small"
                                      OnClick="@(() => Toggle(id))"
                                      Style="cursor:pointer;font-weight:700;">✕</MudChip>
                         </div>
@@ -76,14 +78,14 @@ else
                               Adornment="Adornment.Start"
                               AdornmentIcon="@Icons.Material.Filled.Search"
                               Class="mb-3"
-                              Immediate="true"
-                              ValueChanged="@OnSearch" />
+                              Immediate="true" />
 
                 <div style="max-height:440px;overflow-y:auto;">
                     @foreach (var item in _allComics.Where(c => !_featuredIds.Contains(c.Id)).ToList())
                     {
                         var id = item.Id;
                         bool canAdd = _featuredIds.Count < 12;
+
                         <div class="fc-row fc-row-right">
                             <img class="fc-thumb"
                                  src="@(item.CoverImageUrl ?? $"https://picsum.photos/seed/{item.Slug}/80/110")"
@@ -92,7 +94,8 @@ else
                                 <div class="fc-title">@item.Title</div>
                                 <div class="fc-meta">★ @item.AverageRating.ToString("F1") · @item.Type</div>
                             </div>
-                            <MudChip Color="@(canAdd ? Color.Success : Color.Default)"
+                            <MudChip T="string"
+                                     Color="@(canAdd ? Color.Success : Color.Default)"
                                      Size="Size.Small"
                                      Disabled="@(!canAdd)"
                                      OnClick="@(() => Toggle(id))"
@@ -121,9 +124,27 @@ else
     HashSet<Guid> _featuredIds = new();
     bool _loading = true;
     bool _saving  = false;
-    string _search = "";
+    private string _search = "";
 
     protected override async Task OnInitializedAsync() => await LoadData();
+
+    private async Task OnSearchChanged(string val)
+    {
+        _search = val;
+
+        if (string.IsNullOrWhiteSpace(val))
+        {
+            var result = await Mediator.Send(new GetComicsQuery(PageSize: 200, SortBy: "rating"));
+            _allComics = result.Items.ToList();
+        }
+        else
+        {
+            var result = await Mediator.Send(new GetComicsQuery(PageSize: 50, Search: val, SortBy: "rating"));
+            _allComics = result.Items.ToList();
+        }
+
+        StateHasChanged();
+    }
 
     async Task LoadData()
     {
