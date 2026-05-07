@@ -2,46 +2,291 @@
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject ThemeService Theme
+@implements IDisposable
 
 <PageTitle>Manga Dunyo - Manhwa, Manga o'qing</PageTitle>
 
 <style>
+    /* ── Hero / Carousel ── */
+    .hero-wrapper {
+        position: relative;
+        width: 100%;
+        overflow: hidden;
+        background: #0a0a14;
+    }
+
+    .hero-bg-blur {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center;
+        filter: blur(28px) brightness(0.35) saturate(1.4);
+        transform: scale(1.08);
+        transition: background-image 0.6s ease;
+    }
+
+    .hero-content {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 420px;
+        padding: 48px 60px;
+        gap: 32px;
+    }
+
+    .hero-left {
+        flex: 1;
+        max-width: 560px;
+    }
+
+    .hero-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(245,158,11,0.18);
+        border: 1px solid rgba(245,158,11,0.4);
+        color: #f59e0b;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.5px;
+        padding: 5px 14px;
+        border-radius: 999px;
+        margin-bottom: 16px;
+        text-transform: uppercase;
+    }
+
+    .hero-title {
+        font-size: clamp(26px, 3.5vw, 42px);
+        font-weight: 900;
+        color: #fff;
+        line-height: 1.15;
+        margin: 0 0 14px;
+        text-shadow: 0 2px 12px rgba(0,0,0,0.5);
+    }
+
+    .hero-meta {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+    }
+
+    .hero-genre-tag {
+        background: rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.85);
+        border-radius: 6px;
+        padding: 4px 12px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .hero-rating {
+        color: #f59e0b;
+        font-weight: 800;
+        font-size: 14px;
+    }
+
+    .hero-views {
+        color: rgba(255,255,255,0.5);
+        font-size: 12px;
+    }
+
+    .hero-read-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background: linear-gradient(135deg, #1b13be, #419fd9);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        padding: 14px 32px;
+        font-size: 15px;
+        font-weight: 800;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 6px 24px rgba(27,19,190,0.45);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .hero-read-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 32px rgba(27,19,190,0.6);
+        color: #fff;
+    }
+
+    .hero-right {
+        flex-shrink: 0;
+        position: relative;
+    }
+
+    .hero-cover {
+        width: 175px;
+        height: 250px;
+        object-fit: cover;
+        border-radius: 14px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 3px rgba(255,255,255,0.08);
+        transition: opacity 0.4s ease;
+    }
+
+    .hero-cover-year {
+        position: absolute;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(0,0,0,0.7);
+        color: rgba(255,255,255,0.7);
+        font-size: 11px;
+        font-weight: 700;
+        padding: 3px 10px;
+        border-radius: 6px;
+        white-space: nowrap;
+    }
+
+    /* Dots */
+    .hero-dots {
+        position: absolute;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 5;
+    }
+
+    .hero-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.35);
+        border: none;
+        padding: 0;
+        cursor: pointer;
+        transition: all 0.25s;
+    }
+
+    .hero-dot.active {
+        background: #fff;
+        width: 22px;
+        border-radius: 4px;
+    }
+
+    /* Nav arrows */
+    .hero-arrow {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 6;
+        background: rgba(255,255,255,0.1);
+        border: 1px solid rgba(255,255,255,0.2);
+        color: #fff;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        backdrop-filter: blur(4px);
+        transition: background 0.2s;
+        font-size: 18px;
+    }
+
+    .hero-arrow:hover { background: rgba(255,255,255,0.2); }
+    .hero-arrow.left  { left: 16px; }
+    .hero-arrow.right { right: 16px; }
+
+    /* ── Popular section ── */
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+    }
+
+    .section-title {
+        font-size: 1.05rem;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .section-title::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 20px;
+        background: linear-gradient(180deg, #1b13be, #419fd9);
+        border-radius: 2px;
+    }
+
     /* Trending */
     .trending-scroll {
         display: flex;
-        gap: 16px;
+        gap: 14px;
         overflow-x: auto;
         padding-bottom: 12px;
         scrollbar-width: none;
     }
 
-        .trending-scroll::-webkit-scrollbar {
-            display: none;
-        }
+    .trending-scroll::-webkit-scrollbar { display: none; }
 
     .trending-card {
-        flex: 0 0 170px;
+        flex: 0 0 160px;
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.4);
-        transition: all 0.3s ease;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
         text-decoration: none;
         color: inherit;
         display: block;
+        position: relative;
     }
 
-        .trending-card:hover {
-            transform: translateY(-8px);
-        }
+    .trending-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
 
-        .trending-card img {
-            width: 100%;
-            height: 235px;
-            object-fit: cover;
-        }
+    .trending-card img {
+        width: 100%;
+        height: 225px;
+        object-fit: cover;
+        display: block;
+    }
+
+    .trending-card-rating {
+        position: absolute;
+        top: 8px;
+        left: 8px;
+        background: rgba(0,0,0,0.65);
+        color: #f59e0b;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 6px;
+        backdrop-filter: blur(4px);
+    }
+
+    .trending-card-fav {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(0,0,0,0.55);
+        color: #fff;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        backdrop-filter: blur(4px);
+        cursor: pointer;
+    }
 
     .trending-info {
-        padding: 12px 10px;
+        padding: 10px 10px 12px;
     }
 
     .latest-row {
@@ -51,11 +296,16 @@
         border-bottom: 1px solid rgba(128,128,128,0.09);
         cursor: pointer;
         transition: background 0.15s;
+        border-radius: 8px;
     }
 
-        .latest-row:hover {
-            background: rgba(65,159,217,0.07);
-        }
+    .latest-row:hover { background: rgba(65,159,217,0.07); }
+
+    @@media (max-width: 768px) {
+        .hero-content { padding: 32px 20px; }
+        .hero-right { display: none; }
+        .hero-title { font-size: 22px; }
+    }
 </style>
 
 @if (_loading)
@@ -66,66 +316,96 @@
 }
 else
 {
-<div style="height:460px; padding:15px; border-radius:80px;">
-        <div class="hero-overlay"></div>
-        <div class="hero-overlay-bottom"></div>
+    var items = _featured?.Items ?? new();
+    var active = items.Count > 0 ? items[_activeIndex % items.Count] : null;
 
-        <MudCarousel @ref="_carousel"
-                     ItemsSource="@(_featured?.Items ?? new())"
-                     @bind-SelectedIndex="_activeIndex"
-                     Style="height:100%; border-radius: 28px;"
-                     ShowArrows="false"
-                     ShowBullets="false" 
-                     EnableSwipeGesture="true"
-                     AutoCycle="true"
-                     AutoCycleInterval="5000"
-                     Class="mud-height-full">
-            <ItemTemplate>
-                <div style="height:100%; position:relative; cursor:pointer;" 
-                     @onclick="@(() => NavigateToComic(context))">
-                    <img src="@(context.CoverImageUrl ?? $"https://picsum.photos/seed/{context.Slug}/1200/500")"
-                         style="width:100%; height:100%; object-fit:cover;"
-                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(context.Slug)cv/1200/500'" />
-                    <div style="position:absolute; bottom:0; left:0; right:0; padding:40px 60px; 
-                                background:linear-gradient(transparent, rgba(0,0,0,0.85));">
-                        <div style="color:#f59e0b; font-weight:700; font-size:15px;">
-                            ★ @context.AverageRating.ToString("F1")
-                        </div>
-                        <div style="font-size:28px; font-weight:900; color:white; margin:8px 0;">
-                            @context.Title
-                        </div>
-                        <MudButton Variant="Variant.Filled" Color="Color.Primary" Size="Size.Large">
-                            ▶ Hozir o'qish
-                        </MudButton>
+    <!-- Hero Carousel -->
+    <div class="hero-wrapper">
+        <!-- Blurred background -->
+        @if (active != null)
+        {
+            <div class="hero-bg-blur"
+                 style="background-image: url('@(active.CoverImageUrl ?? $"https://picsum.photos/seed/{active.Slug}/1200/500")');">
+            </div>
+        }
+
+        <!-- Left arrow -->
+        <button class="hero-arrow left" @onclick="PrevSlide">&#8249;</button>
+
+        <!-- Content -->
+        <div class="hero-content">
+            @if (active != null)
+            {
+                <!-- Left: text info -->
+                <div class="hero-left">
+                    <div class="hero-badge">⭐ Eng mashhur</div>
+                    <h1 class="hero-title">@active.Title</h1>
+                    <div class="hero-meta">
+                        @foreach (var g in active.Genres.Take(2))
+                        {
+                            <span class="hero-genre-tag">@g</span>
+                        }
+                        <span class="hero-rating">★ @active.AverageRating.ToString("F1")</span>
+                        <span class="hero-views">@active.ViewCount ko'rishlar</span>
                     </div>
+                    <a class="hero-read-btn" href="/comic/@active.Slug">
+                        ▶ &nbsp;Hozir o'qish
+                    </a>
                 </div>
-            </ItemTemplate>
-        </MudCarousel>
+
+                <!-- Right: cover image -->
+                <div class="hero-right">
+                    <img class="hero-cover"
+                         src="@(active.CoverImageUrl ?? $"https://picsum.photos/seed/{active.Slug}/350/500")"
+                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(active.Slug)cv/350/500'"
+                         alt="@active.Title" />
+                    <div class="hero-cover-year">🏆 @DateTime.Now.Year</div>
+                </div>
+            }
+        </div>
+
+        <!-- Right arrow -->
+        <button class="hero-arrow right" @onclick="NextSlide">&#8250;</button>
+
+        <!-- Dot indicators -->
+        <div class="hero-dots">
+            @for (int i = 0; i < items.Count; i++)
+            {
+                int idx = i;
+                <button class="hero-dot @(_activeIndex == idx ? "active" : "")"
+                        @onclick="@(() => _activeIndex = idx)"></button>
+            }
+        </div>
     </div>
 
     <!-- BODY -->
-    <div style="max-width:1300px;margin:0 auto;padding:28px 20px 80px;">
+    <div style="max-width:1300px;margin:0 auto;padding:32px 20px 80px;">
 
-        <!-- Trending Today -->
-        <div style="margin-bottom:36px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                <span style="font-size:1.05rem;font-weight:800;">Trending Today</span>
-                <MudLink Href="/comics?sortBy=views" Underline="Underline.None"
-                         Style="@($"font-size:13px;font-weight:600;color:{(Theme.IsDark?"#5b8af0":"#2563eb")};")">
-                    View All →
-                </MudLink>
+        <!-- Mashhur (Popular cards like TopManga) -->
+        <div style="margin-bottom:40px;">
+            <div class="section-header">
+                <span class="section-title">Mashhur</span>
+                <a href="/comics?sortBy=rating"
+                   style="@($"font-size:13px;font-weight:700;color:{(Theme.IsDark?"#5b8af0":"#2563eb")};text-decoration:none;")">
+                    Barchasi →
+                </a>
             </div>
             <div class="trending-scroll">
                 @foreach (var c in _trending?.Items ?? new())
                 {
                     <a href="/comic/@c.Slug" class="trending-card">
                         <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/300/420")"
-                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)t/300/420'" />
+                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)t/300/420'"
+                             alt="@c.Title" />
+                        <div class="trending-card-rating">★ @c.AverageRating.ToString("F1")</div>
+                        <div class="trending-card-fav">♡</div>
                         <div class="trending-info">
-                            <div style="font-weight:700;font-size:14px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                            <div style="font-weight:700;font-size:13px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                 @c.Title
                             </div>
-                            <div style="color:#f59e0b;font-weight:700;">★ @c.AverageRating.ToString("F1")</div>
+                            <div style="font-size:11px;opacity:0.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                @string.Join(", ", c.Genres.Take(2))
+                            </div>
                         </div>
                     </a>
                 }
@@ -136,7 +416,9 @@ else
         <div style="display:grid;grid-template-columns:1fr 300px;gap:32px;">
             <!-- Latest Updates -->
             <div>
-                <div style="font-size:1.05rem;font-weight:800;margin-bottom:14px;">Latest Updates</div>
+                <div class="section-header">
+                    <span class="section-title">So'nggi yangilanishlar</span>
+                </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
                     @foreach (var c in _latest?.Items ?? new())
                     {
@@ -170,8 +452,8 @@ else
 
             <!-- Popular -->
             <div>
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:4px;">
-                    <span style="font-size:1.05rem;font-weight:800;">Popular</span>
+                <div class="section-header" style="flex-wrap:wrap;gap:8px;">
+                    <span class="section-title">Reytinglar</span>
                     <div style="display:flex;gap:4px;">
                         @foreach (var (label, ti) in new[] { ("Haftalik", 0), ("Oylik", 1), ("All Time", 2) })
                         {
@@ -205,9 +487,8 @@ else
 }
 
 @code {
-    private MudCarousel<ComicDto> _carousel;
     private int _activeIndex = 0;
-    private ComicDto? _hero;
+    private System.Threading.Timer? _autoTimer;
 
     PaginatedList<ComicDto>? _featured, _trending, _popular, _latest;
     bool _loading = true;
@@ -220,16 +501,32 @@ else
         _popular = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true, SortBy: "rating"));
         _latest = await Mediator.Send(new GetComicsQuery(PageSize: 14, SortBy: "createdAt"));
 
-        var list = _featured?.Items ?? new();
-        _hero = list.Count > 0 ? list[0] : null;
         _loading = false;
+
+        _autoTimer = new System.Threading.Timer(_ =>
+        {
+            var count = _featured?.Items?.Count ?? 0;
+            if (count > 1)
+            {
+                _activeIndex = (_activeIndex + 1) % count;
+                InvokeAsync(StateHasChanged);
+            }
+        }, null, 5000, 5000);
     }
 
-    private void NavigateToComic(ComicDto comic)
+    void NextSlide()
     {
-        _hero = comic;
-        Nav.NavigateTo($"/comic/{comic.Slug}");
+        var count = _featured?.Items?.Count ?? 1;
+        _activeIndex = (_activeIndex + 1) % count;
     }
+
+    void PrevSlide()
+    {
+        var count = _featured?.Items?.Count ?? 1;
+        _activeIndex = (_activeIndex - 1 + count) % count;
+    }
+
+    private void NavigateToComic(ComicDto comic) => Nav.NavigateTo($"/comic/{comic.Slug}");
 
     List<ComicDto> TabList() =>
         _tab == 0 ? (_trending?.Items?.Take(10).ToList() ?? new()) :
@@ -255,4 +552,9 @@ else
         3 => "background:#b45309;color:#fff;",
         _ => "background:rgba(124,58,237,0.15);color:#a78bfa;"
     };
+
+    public void Dispose()
+    {
+        _autoTimer?.Dispose();
+    }
 }

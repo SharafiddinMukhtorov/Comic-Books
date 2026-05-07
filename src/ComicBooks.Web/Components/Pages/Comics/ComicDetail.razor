@@ -2,8 +2,272 @@
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject BookmarkService BookmarkSvc
+@inject ThemeService Theme
+@implements IDisposable
 
 <PageTitle>@(_comic?.Title ?? "Comic") - Manga Dunyo</PageTitle>
+
+<style>
+    /* ── CSS vars per theme ── */
+    .detail-root {
+        --acc:        #1b13be;
+        --acc2:       #030082;
+        --acc-light:  rgba(27,19,190,0.18);
+        --acc-border: rgba(27,19,190,0.45);
+        --genre-bg:   rgba(27,19,190,0.2);
+        --genre-col:  #7b8ff5;
+        --btn-bm-bg:  #1b13be;
+        --btn-bm-col: #fff;
+        --btn-first-bg:  rgba(255,255,255,0.06);
+        --btn-first-brd: rgba(255,255,255,0.2);
+        --btn-first-col: #fff;
+        --meta-label: rgba(255,255,255,0.45);
+        --meta-val:   rgba(255,255,255,0.85);
+        --ch-bg:      rgba(255,255,255,0.03);
+        --ch-brd:     rgba(255,255,255,0.07);
+        --ch-hover:   rgba(27,19,190,0.1);
+        --ch-lock-col:#f59e0b;
+    }
+
+    .detail-root.light {
+        --acc:        #419fd9;
+        --acc2:       #0e6fa8;
+        --acc-light:  rgba(65,159,217,0.12);
+        --acc-border: rgba(65,159,217,0.4);
+        --genre-bg:   rgba(65,159,217,0.15);
+        --genre-col:  #1a6fa8;
+        --btn-bm-bg:  #419fd9;
+        --btn-bm-col: #fff;
+        --btn-first-bg:  rgba(0,0,0,0.05);
+        --btn-first-brd: rgba(0,0,0,0.15);
+        --btn-first-col: #1a1a2e;
+        --meta-label: rgba(30,30,60,0.5);
+        --meta-val:   #1a1a2e;
+        --ch-bg:      #fff;
+        --ch-brd:     rgba(0,0,0,0.07);
+        --ch-hover:   rgba(65,159,217,0.08);
+        --ch-lock-col:#d97706;
+    }
+
+    .detail-hero { position:relative; min-height:400px; overflow:hidden; }
+
+    .detail-hero-bg {
+        position:absolute; inset:0;
+        background-size:cover; background-position:center top;
+        filter:blur(22px) brightness(0.28) saturate(1.5);
+        transform:scale(1.1); z-index:0;
+    }
+
+    .detail-hero-grad {
+        position:absolute; inset:0; z-index:1;
+        background:linear-gradient(to right,rgba(10,10,22,0.9) 0%,rgba(10,10,22,0.55) 55%,rgba(10,10,22,0.1) 100%);
+    }
+
+    .detail-hero-grad-bottom {
+        position:absolute; bottom:0; left:0; right:0; height:170px; z-index:2;
+        background:linear-gradient(transparent, var(--mud-palette-background));
+    }
+
+    .detail-hero-content {
+        position:relative; z-index:3;
+        max-width:1100px; margin:0 auto;
+        padding:52px 28px 76px;
+        display:flex; gap:34px; align-items:flex-start;
+    }
+
+    .detail-cover { flex:0 0 auto; position:relative; }
+
+    .detail-cover img {
+        width:190px; height:272px; object-fit:cover;
+        border-radius:12px; box-shadow:0 28px 64px rgba(0,0,0,0.8); display:block;
+    }
+
+    .detail-rank-badge {
+        position:absolute; top:10px; left:10px;
+        background:var(--btn-bm-bg); color:#fff;
+        font-size:11px; font-weight:900; padding:4px 10px;
+        border-radius:6px; letter-spacing:0.3px;
+    }
+
+    .detail-info { flex:1; min-width:0; }
+
+    .detail-title {
+        font-size:clamp(22px,3vw,36px); font-weight:900;
+        color:#fff; margin:0 0 6px; line-height:1.2;
+    }
+
+    .detail-alt {
+        font-size:12px; color:rgba(255,255,255,0.3);
+        margin-bottom:14px; overflow:hidden;
+        text-overflow:ellipsis; white-space:nowrap;
+    }
+
+    .detail-desc {
+        font-size:13.5px; line-height:1.75;
+        color:rgba(255,255,255,0.68); margin-bottom:4px;
+    }
+
+    .detail-desc.clamped {
+        display:-webkit-box; -webkit-line-clamp:3;
+        -webkit-box-orient:vertical; overflow:hidden;
+    }
+
+    .detail-show-more {
+        font-size:12px; font-weight:700; color:var(--acc2);
+        cursor:pointer; margin-bottom:18px; display:inline-block;
+        border:none; background:none; padding:0;
+    }
+
+    .detail-stats { display:flex; gap:28px; margin-bottom:22px; flex-wrap:wrap; }
+
+    .detail-stat { display:flex; flex-direction:column; gap:3px; }
+
+    .detail-stat-val {
+        font-size:19px; font-weight:900;
+        display:flex; align-items:center; gap:5px;
+    }
+
+    .detail-stat-lbl {
+        font-size:10.5px; color:var(--meta-label);
+        font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
+    }
+
+    .btn-bookmark {
+        display:flex; align-items:center; justify-content:center; gap:10px;
+        width:100%; max-width:460px; height:50px;
+        background:var(--btn-bm-bg); color:var(--btn-bm-col);
+        border-radius:10px; font-size:15px; font-weight:800;
+        cursor:pointer; border:none; margin-bottom:12px;
+        transition:opacity 0.2s, transform 0.2s;
+    }
+
+    .btn-bookmark:hover { opacity:0.9; transform:translateY(-1px); }
+
+    .btn-bookmark.saved {
+        background:var(--acc-light); color:var(--acc);
+        border:1.5px solid var(--acc-border);
+    }
+
+    .detail-ch-btns {
+        display:flex; gap:10px; margin-bottom:22px; max-width:460px;
+    }
+
+    .btn-ch {
+        flex:1; height:46px; display:flex; align-items:center;
+        justify-content:center; gap:8px; border-radius:10px;
+        font-size:13.5px; font-weight:700; text-decoration:none;
+        cursor:pointer; border:1.5px solid var(--btn-first-brd);
+        background:var(--btn-first-bg); color:var(--btn-first-col);
+        transition:border-color 0.2s, background 0.2s;
+    }
+
+    .btn-ch:hover {
+        border-color:var(--acc);
+        background:var(--acc-light);
+    }
+
+    .detail-meta { display:flex; flex-wrap:wrap; gap:20px; }
+
+    .detail-meta-item { display:flex; flex-direction:column; gap:3px; }
+
+    .detail-meta-label {
+        font-size:10.5px; color:var(--meta-label);
+        text-transform:uppercase; font-weight:700; letter-spacing:0.4px;
+    }
+
+    .detail-meta-val {
+        color:var(--meta-val); font-weight:700; font-size:13px;
+        display:flex; align-items:center; gap:5px;
+    }
+
+    .detail-status-dot { width:7px; height:7px; border-radius:50%; display:inline-block; }
+
+    .detail-genres { display:flex; flex-wrap:wrap; gap:7px; margin-top:20px; }
+
+    .genre-pill {
+        padding:4px 14px; border-radius:999px; font-size:11.5px; font-weight:700;
+        background:var(--genre-bg); color:var(--genre-col);
+        border:1px solid var(--acc-border); text-decoration:none;
+        transition:background 0.15s;
+    }
+
+    .genre-pill:hover { background:var(--acc-light); }
+
+    /* Chapter section */
+    .ch-section { max-width:1100px; margin:0 auto; padding:10px 28px 80px; }
+
+    .ch-header {
+        display:flex; justify-content:space-between; align-items:center;
+        margin-bottom:14px; flex-wrap:wrap; gap:10px;
+    }
+
+    .ch-count { font-size:1rem; font-weight:900; }
+
+    .ch-controls { display:flex; gap:8px; align-items:center; }
+
+    .ch-search-box {
+        display:flex; align-items:center; gap:6px; padding:7px 13px;
+        background:var(--mud-palette-surface); border-radius:8px;
+        border:1px solid rgba(128,128,128,0.15);
+    }
+
+    .ch-search-box input {
+        background:transparent; border:none; outline:none;
+        font-size:13px; color:var(--mud-palette-text-primary); width:140px;
+    }
+
+    .ch-sort-btn {
+        padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700;
+        border:1px solid rgba(128,128,128,0.2); background:transparent;
+        cursor:pointer; color:inherit;
+    }
+
+    .ch-list {
+        border:1px solid var(--ch-brd); border-radius:12px;
+        background:var(--ch-bg); overflow:hidden;
+        max-height:580px; overflow-y:auto;
+    }
+
+    .ch-row {
+        display:flex; justify-content:space-between; align-items:center;
+        padding:13px 18px; border-bottom:1px solid var(--ch-brd);
+        cursor:pointer; transition:background 0.15s;
+        text-decoration:none; color:inherit;
+    }
+
+    .ch-row:hover { background:var(--ch-hover); }
+    .ch-row:last-child { border-bottom:none; }
+
+    .ch-row-left { display:flex; align-items:center; gap:12px; }
+
+    .ch-icon { font-size:15px; width:22px; text-align:center; flex-shrink:0; }
+
+    .ch-name { font-weight:700; font-size:14px; }
+    .ch-sub  { font-size:12px; opacity:0.42; margin-left:4px; }
+
+    .ch-coin-badge {
+        font-size:11px; background:rgba(245,158,11,0.15);
+        color:var(--ch-lock-col); padding:2px 9px;
+        border-radius:999px; font-weight:800;
+    }
+
+    .ch-row-right {
+        display:flex; align-items:center; gap:14px;
+        font-size:12px; opacity:0.42; flex-shrink:0;
+    }
+
+    @@media (max-width:700px) {
+        .detail-hero-content { flex-direction:column; padding:28px 16px 64px; gap:20px; }
+        .detail-cover img    { width:150px; height:214px; }
+        .detail-title        { font-size:22px; }
+        .btn-bookmark, .detail-ch-btns { max-width:100%; }
+        .ch-section          { padding:8px 14px 60px; }
+    }
+</style>
+
+@{
+    var themeClass = Theme.IsDark ? "" : "light";
+}
 
 @if (_loading)
 {
@@ -12,269 +276,216 @@
 else if (_comic is null)
 {
     <div style="text-align:center;padding:80px;">
-        <MudText Typo="Typo.h4" Class="mb-4">Comic not found</MudText>
-        <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Style="text-transform:none;">Go Home</MudButton>
+        <MudText Typo="Typo.h4" Class="mb-4">Comic topilmadi</MudText>
+        <a href="/" style="display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 24px;
+                           background:var(--acc);color:#fff;border-radius:10px;
+                           font-weight:700;text-decoration:none;">
+            ← Bosh sahifa
+        </a>
     </div>
 }
 else
 {
-    <!-- ═══ HERO BANNER ═══ -->
-    <div style="position:relative;min-height:380px;overflow:hidden;">
+<div class="detail-root @themeClass">
 
-        <!-- Blurred background -->
-        <img src="@BgUrl()"
-             style="position:absolute;top:0;left:0;width:100%;height:100%;
-                    object-fit:cover;
-                    filter:blur(18px) brightness(0.35) saturate(1.4);
-                    transform:scale(1.08);z-index:0;" />
+    <!-- HERO -->
+    <div class="detail-hero">
+        <div class="detail-hero-bg" style="background-image:url('@BgUrl()');"></div>
+        <div class="detail-hero-grad"></div>
+        <div class="detail-hero-grad-bottom"></div>
 
-        <!-- Gradients -->
-        <div style="position:absolute;inset:0;z-index:1;
-                    background:linear-gradient(to right,rgba(10,10,20,0.9) 0%,rgba(10,10,20,0.5) 50%,rgba(10,10,20,0.15) 100%);"></div>
-        <div style="position:absolute;bottom:0;left:0;right:0;height:180px;z-index:1;
-                    background:linear-gradient(transparent,var(--mud-palette-background));"></div>
-
-        <!-- Content -->
-        <div style="position:relative;z-index:2;max-width:1100px;margin:0 auto;
-                    padding:40px 24px 60px;display:flex;gap:28px;align-items:flex-start;">
+        <div class="detail-hero-content">
 
             <!-- Cover -->
-            <div style="flex:0 0 auto;">
+            <div class="detail-cover">
                 <img src="@CoverUrl()" alt="@_comic.Title"
-                     style="width:200px;height:285px;object-fit:cover;border-radius:10px;
-                            box-shadow:0 24px 60px rgba(0,0,0,0.8);display:block;"
                      onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_comic.Slug)/300/420'" />
+                @if (_comic.AverageRating >= 9.0)
+                {
+                    <div class="detail-rank-badge">⭐ TOP RATED</div>
+                }
             </div>
 
             <!-- Info -->
-            <div style="flex:1;min-width:0;padding-top:4px;">
+            <div class="detail-info">
 
-                <!-- Title -->
-                <h1 style="font-size:1.9rem;font-weight:900;color:#fff;margin:0 0 6px;line-height:1.2;">
-                    @_comic.Title
-                </h1>
+                <h1 class="detail-title">@_comic.Title</h1>
 
-                <!-- Alt title -->
                 @if (!string.IsNullOrEmpty(_comic.AlternativeTitles))
                 {
-                    <div style="font-size:12px;color:rgba(255,255,255,0.35);margin-bottom:12px;">
-                        @_comic.AlternativeTitles
-                    </div>
+                    <div class="detail-alt">@_comic.AlternativeTitles</div>
                 }
 
-                <!-- Rating stars row -->
-                <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-                    <div style="display:flex;gap:2px;">
-                        @for (int s = 1; s <= 5; s++)
-                        {
-                            double half = _comic.AverageRating / 2.0;
-                            <span style="font-size:16px;color:@(s<=Math.Round(half)?"#f59e0b":"rgba(255,255,255,0.2)");">★</span>
-                        }
-                    </div>
-                    <span style="font-size:14px;font-weight:700;color:#f59e0b;">@_comic.AverageRating.ToString("F1")</span>
-                    <span style="font-size:12px;color:rgba(255,255,255,0.35);">/ 10</span>
-                    <span style="color:rgba(255,255,255,0.2);">|</span>
-                    <span style="font-size:12px;color:rgba(255,255,255,0.5);">
-                        👁 @Fmt(_comic.ViewCount) ko'rishlar
-                    </span>
-                </div>
-
-                <!-- Description -->
                 @if (!string.IsNullOrEmpty(_comic.Description))
                 {
-                    <div style="font-size:14px;line-height:1.75;color:rgba(255,255,255,0.72);
-                                margin-bottom:6px;
-                                @(!_showMore ? "display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;" : "")">
-                        @_comic.Description
-                    </div>
-                    <span style="color:#a78bfa;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:18px;display:inline-block;"
-                          @onclick="@(() => _showMore = !_showMore)">
+                    <div class="detail-desc @(!_showMore ? "clamped" : "")">@_comic.Description</div>
+                    <button class="detail-show-more" @onclick="@(() => _showMore = !_showMore)">
                         @(_showMore ? "Ko'proq yig'ish ↑" : "Ko'proq ko'rish ↓")
-                    </span>
+                    </button>
                 }
+
+                <!-- Stats -->
+                <div class="detail-stats">
+                    <div class="detail-stat">
+                        <div class="detail-stat-val" style="color:#f59e0b;">⭐ @_comic.AverageRating.ToString("F1")</div>
+                        <div class="detail-stat-lbl">Reyting</div>
+                    </div>
+                    <div class="detail-stat">
+                        <div class="detail-stat-val" style="color:#34d399;">📗 @_comic.ChapterCount</div>
+                        <div class="detail-stat-lbl">Boblar</div>
+                    </div>
+                    <div class="detail-stat">
+                        <div class="detail-stat-val" style="color:var(--acc);">🔖 @Fmt(_comic.ViewCount)</div>
+                        <div class="detail-stat-lbl">Ko'rishlar</div>
+                    </div>
+                </div>
+
+                <!-- Bookmark -->
+                <button class="btn-bookmark @(IsBookmarked ? "saved" : "")"
+                        @onclick="@(() => BookmarkSvc.Toggle(_comic.Id))">
+                    @(IsBookmarked ? "✓  Saqlangan" : "🔖  Bookmark")
+                </button>
+
+                <!-- Chapter buttons -->
+                @if (FirstId != Guid.Empty)
+                {
+                    <div class="detail-ch-btns">
+                        <a class="btn-ch" href="/chapter/@FirstId">👁 Birinchi bob</a>
+                        <a class="btn-ch" href="/chapter/@LastId">👁 Oxirgi bob</a>
+                    </div>
+                }
+
+                <!-- Meta -->
+                <div class="detail-meta">
+                    <div class="detail-meta-item">
+                        <div class="detail-meta-label">Holat</div>
+                        <div class="detail-meta-val">
+                            <span class="detail-status-dot" style="@StatusDotColor()"></span>
+                            @_comic.Status
+                        </div>
+                    </div>
+                    <div class="detail-meta-item">
+                        <div class="detail-meta-label">Turi</div>
+                        <div class="detail-meta-val" style="color:var(--acc);">✦ @_comic.Type</div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(_comic.Author))
+                    {
+                        <div class="detail-meta-item">
+                            <div class="detail-meta-label">Muallif</div>
+                            <div class="detail-meta-val">✍️ @_comic.Author</div>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(_comic.Artist))
+                    {
+                        <div class="detail-meta-item">
+                            <div class="detail-meta-label">Rassom</div>
+                            <div class="detail-meta-val">🎨 @_comic.Artist</div>
+                        </div>
+                    }
+                    @if (_comic.ReleaseYear.HasValue)
+                    {
+                        <div class="detail-meta-item">
+                            <div class="detail-meta-label">Yil</div>
+                            <div class="detail-meta-val">📅 @_comic.ReleaseYear</div>
+                        </div>
+                    }
+                </div>
 
                 <!-- Genres -->
                 @if (_comic.Genres.Any())
                 {
-                    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:18px;">
+                    <div class="detail-genres">
                         @foreach (var g in _comic.Genres)
                         {
-                            <a href="/comics?genre=@g"
-                               style="padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;
-                                      background:rgba(124,58,237,0.25);color:#c4b5fd;
-                                      border:1px solid rgba(124,58,237,0.4);text-decoration:none;
-                                      transition:background 0.15s;"
-                               onmouseover="this.style.background='rgba(124,58,237,0.45)'"
-                               onmouseout="this.style.background='rgba(124,58,237,0.25)'">
-                                @g
-                            </a>
+                            <a class="genre-pill" href="/comics?genre=@g">@g</a>
                         }
                     </div>
                 }
 
-                <!-- Action buttons -->
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:20px;">
-                    @if (FirstId != Guid.Empty)
-                    {
-                        <a href="/chapter/@FirstId"
-                           style="display:inline-flex;align-items:center;gap:6px;height:42px;padding:0 20px;
-                                  background:#7c3aed;color:#fff;border-radius:8px;
-                                  font-weight:700;font-size:13px;text-decoration:none;
-                                  box-shadow:0 4px 16px rgba(124,58,237,0.4);">
-                            ▶ Birinchi bob
-                        </a>
-                        <a href="/chapter/@LastId"
-                           style="display:inline-flex;align-items:center;gap:6px;height:42px;padding:0 20px;
-                                  background:rgba(255,255,255,0.08);color:#fff;border-radius:8px;
-                                  font-weight:600;font-size:13px;text-decoration:none;
-                                  border:1px solid rgba(255,255,255,0.18);">
-                            ⏭ Oxirgi bob
-                        </a>
-                    }
-                    <button @onclick="@(() => BookmarkSvc.Toggle(_comic.Id))"
-                            style="display:inline-flex;align-items:center;gap:6px;height:42px;padding:0 18px;
-                                   background:@(IsBookmarked ? "rgba(124,58,237,0.35)" : "rgba(255,255,255,0.06)");
-                                   color:@(IsBookmarked ? "#a78bfa" : "rgba(255,255,255,0.7)");
-                                   border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;
-                                   border:1px solid @(IsBookmarked ? "rgba(124,58,237,0.5)" : "rgba(255,255,255,0.15)");">
-                        @(IsBookmarked ? "✓ Saqlangan" : "🔖 Saqlash")
-                    </button>
-                </div>
-
-                <!-- Meta info row -->
-                <div style="display:flex;flex-wrap:wrap;gap:16px;font-size:12px;color:rgba(255,255,255,0.5);">
-                    <div>
-                        <span style="opacity:0.5;margin-right:4px;">Holat</span>
-                        <span style="@StatusBadge();padding:2px 8px;border-radius:5px;font-size:11px;font-weight:700;">
-                            @_comic.Status
-                        </span>
-                    </div>
-                    <div>
-                        <span style="opacity:0.5;margin-right:4px;">Turi</span>
-                        <span style="color:#7c3aed;font-weight:700;">@_comic.Type</span>
-                    </div>
-                    @if (!string.IsNullOrEmpty(_comic.Author))
-                    {
-                        <div>✍️ <span>@_comic.Author</span></div>
-                    }
-                    @if (_comic.ReleaseYear.HasValue)
-                    {
-                        <div>📅 <span>@_comic.ReleaseYear</span></div>
-                    }
-                    <div>📖 <strong style="color:rgba(255,255,255,0.8);">@_comic.ChapterCount</strong> bob</div>
-                </div>
             </div>
         </div>
     </div>
 
-    <!-- ═══ CHAPTER LIST ═══ -->
-    <div style="max-width:1100px;margin:0 auto;padding:16px 24px 80px;">
-
-        <!-- Chapter list header -->
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <span style="font-size:1rem;font-weight:800;">
-                @_chapters.Count Boblar
-            </span>
-            <div style="display:flex;gap:8px;align-items:center;">
-                <!-- Search -->
-                <div style="display:flex;align-items:center;gap:6px;padding:6px 12px;
-                            background:var(--mud-palette-surface);border-radius:8px;
-                            border:1px solid rgba(128,128,128,0.14);">
+    <!-- CHAPTER LIST -->
+    <div class="ch-section">
+        <div class="ch-header">
+            <span class="ch-count">@_chapters.Count Boblar</span>
+            <div class="ch-controls">
+                <div class="ch-search-box">
                     <MudIcon Icon="@Icons.Material.Filled.Search" Style="opacity:0.3;font-size:16px;" />
-                    <input @bind="_chapSearch" @bind:event="oninput"
-                           placeholder="Bob qidirish..."
-                           style="background:transparent;border:none;outline:none;
-                                  font-size:13px;color:var(--mud-palette-text-primary);width:140px;" />
+                    <input @bind="_chapSearch" @bind:event="oninput" placeholder="Bob qidirish..." />
                 </div>
-                <button @onclick="@(() => _desc = !_desc)"
-                        style="padding:6px 14px;border-radius:8px;font-size:12px;font-weight:600;
-                               border:1px solid rgba(128,128,128,0.2);background:transparent;
-                               cursor:pointer;color:inherit;">
+                <button class="ch-sort-btn" @onclick="@(() => _desc = !_desc)">
                     @(_desc ? "Yangi ↓" : "Eski ↑")
                 </button>
             </div>
         </div>
 
-        <!-- Chapter rows — AsuraScans style -->
-        <div style="border:1px solid rgba(128,128,128,0.1);border-radius:10px;
-                    background:var(--mud-palette-surface);overflow:hidden;max-height:560px;overflow-y:auto;">
+        <div class="ch-list">
             @foreach (var ch in Filtered())
             {
-                <a href="/chapter/@ch.Id" style="text-decoration:none;color:inherit;">
-                    <div @onmouseover="@(()=>_chapHover=ch.Id)"
-                         @onmouseout="@(()=>_chapHover=Guid.Empty)"
-                         style="display:flex;justify-content:space-between;align-items:center;
-                                padding:12px 18px;cursor:pointer;transition:background 0.15s;
-                                border-bottom:1px solid rgba(128,128,128,0.07);
-                                background:@(_chapHover==ch.Id ? "rgba(124,58,237,0.07)" : "transparent");">
-
-                        <div style="display:flex;align-items:center;gap:10px;">
-                            @if (ch.IsLocked)
+                <a class="ch-row" href="/chapter/@ch.Id">
+                    <div class="ch-row-left">
+                        <span class="ch-icon">
+                            @if (ch.IsLocked) { <text>🔒</text> } else { <text style="opacity:0.28">📖</text> }
+                        </span>
+                        <div>
+                            <span class="ch-name">Chapter @ch.ChapterNumber</span>
+                            @if (!string.IsNullOrEmpty(ch.Title))
                             {
-                                <span style="font-size:13px;color:#f59e0b;">🔒</span>
-                            }
-                            else
-                            {
-                                <span style="font-size:13px;opacity:0.25;">📖</span>
-                            }
-                            <div>
-                                <span style="font-weight:700;font-size:14px;">Chapter @ch.ChapterNumber</span>
-                                @if (!string.IsNullOrEmpty(ch.Title))
-                                {
-                                    <span style="font-size:13px;opacity:0.45;margin-left:6px;">@ch.Title</span>
-                                }
-                            </div>
-                            @if (ch.IsLocked && ch.CoinPrice > 0)
-                            {
-                                <span style="font-size:11px;background:rgba(245,158,11,0.15);
-                                             color:#f59e0b;padding:1px 8px;border-radius:10px;font-weight:700;">
-                                    🪙 @ch.CoinPrice
-                                </span>
+                                <span class="ch-sub">@ch.Title</span>
                             }
                         </div>
-
-                        <div style="display:flex;align-items:center;gap:12px;font-size:12px;opacity:0.4;">
-                            @if (ch.ViewCount > 0)
-                            {
-                                <span>👁 @Fmt(ch.ViewCount)</span>
-                            }
-                            <span>@FmtDate(ch.PublishedAt)</span>
-                        </div>
+                        @if (ch.IsLocked && ch.CoinPrice > 0)
+                        {
+                            <span class="ch-coin-badge">🪙 @ch.CoinPrice</span>
+                        }
+                    </div>
+                    <div class="ch-row-right">
+                        @if (ch.ViewCount > 0)
+                        {
+                            <span>👁 @Fmt(ch.ViewCount)</span>
+                        }
+                        <span>@FmtDate(ch.PublishedAt)</span>
                     </div>
                 </a>
             }
 
             @if (!Filtered().Any())
             {
-                <div style="padding:32px;text-align:center;opacity:0.4;">Bob topilmadi.</div>
+                <div style="padding:40px;text-align:center;opacity:0.4;">Bob topilmadi.</div>
             }
         </div>
     </div>
+
+</div>
 }
 
 @code {
     [Parameter] public string Slug { get; set; } = "";
 
     ComicDto?        _comic;
-    List<ChapterDto> _chapters    = new();
-    bool   _loading     = true;
-    bool   _desc        = true;
-    bool   _showMore    = false;
-    string _chapSearch  = "";
-    Guid   _chapHover;
+    List<ChapterDto> _chapters   = new();
+    bool   _loading    = true;
+    bool   _desc       = true;
+    bool   _showMore   = false;
+    string _chapSearch = "";
 
     bool IsBookmarked => _comic != null && BookmarkSvc.IsBookmarked(_comic.Id);
     Guid FirstId => _chapters.OrderBy(c => c.ChapterNumber).FirstOrDefault()?.Id ?? Guid.Empty;
     Guid LastId  => _chapters.OrderByDescending(c => c.ChapterNumber).FirstOrDefault()?.Id ?? Guid.Empty;
 
-    string CoverUrl() => !string.IsNullOrEmpty(_comic?.CoverImageUrl) ? _comic.CoverImageUrl
-                       : $"https://picsum.photos/seed/{_comic?.Slug}/300/420";
+    string CoverUrl() => !string.IsNullOrEmpty(_comic?.CoverImageUrl)
+        ? _comic.CoverImageUrl
+        : $"https://picsum.photos/seed/{_comic?.Slug}/300/420";
 
     string BgUrl() => !string.IsNullOrEmpty(_comic?.BannerImageUrl) ? _comic.BannerImageUrl
                     : !string.IsNullOrEmpty(_comic?.CoverImageUrl)  ? _comic.CoverImageUrl
                     : $"https://picsum.photos/seed/{_comic?.Slug}bg/1400/500";
 
-    string Fmt(int v) => v >= 1_000_000 ? $"{v/1_000_000.0:F1}M" : v >= 1_000 ? $"{v/1_000}K" : v.ToString();
+    string Fmt(int v) => v >= 1_000_000 ? $"{v/1_000_000.0:F1}M"
+                       : v >= 1_000     ? $"{v/1_000.0:F1}K"
+                       : v.ToString();
 
     string FmtDate(DateTime? d)
     {
@@ -284,7 +495,7 @@ else
         if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}s oldin";
         if (diff.TotalDays  < 7)  return $"{(int)diff.TotalDays} kun oldin";
         if (diff.TotalDays  < 30) return $"{(int)(diff.TotalDays/7)} hafta oldin";
-        return d.Value.ToString("dd.MM.yyyy");
+        return d.Value.ToString("MMM d, yyyy");
     }
 
     List<ChapterDto> Filtered()
@@ -294,23 +505,28 @@ else
             : _chapters.OrderBy(c => c.ChapterNumber).ToList();
         if (!string.IsNullOrWhiteSpace(_chapSearch))
             list = list.Where(c => c.ChapterNumber.ToString().Contains(_chapSearch)
-                               || (c.Title ?? "").Contains(_chapSearch, StringComparison.OrdinalIgnoreCase)).ToList();
+                               || (c.Title ?? "").Contains(_chapSearch, StringComparison.OrdinalIgnoreCase))
+                       .ToList();
         return list;
     }
 
+    string StatusDotColor() => _comic?.Status switch
+    {
+        ComicStatus.Ongoing   => "background:#34d399;",
+        ComicStatus.Completed => "background:#818cf8;",
+        ComicStatus.Hiatus    => "background:#fbbf24;",
+        _                     => "background:#9ca3af;"
+    };
+
     protected override async Task OnInitializedAsync()
     {
+        Theme.OnChange += Refresh;
         _comic    = await Mediator.Send(new GetComicBySlugQuery(Slug));
         if (_comic != null)
             _chapters = await Mediator.Send(new GetChaptersByComicQuery(_comic.Id));
         _loading  = false;
     }
 
-    string StatusBadge() => _comic?.Status switch
-    {
-        ComicStatus.Ongoing   => "background:rgba(5,150,105,0.2);color:#34d399;",
-        ComicStatus.Completed => "background:rgba(124,58,237,0.2);color:#a78bfa;",
-        ComicStatus.Hiatus    => "background:rgba(217,119,6,0.2);color:#fbbf24;",
-        _                     => "background:rgba(75,85,99,0.2);color:#9ca3af;"
-    };
+    async void Refresh() => await InvokeAsync(StateHasChanged);
+    public void Dispose() => Theme.OnChange -= Refresh;
 }
