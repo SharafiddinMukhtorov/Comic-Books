@@ -1,4 +1,4 @@
-@page "/chapter/{ChapterId:guid}"
+﻿@page "/chapter/{ChapterId:guid}"
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
@@ -74,8 +74,8 @@ else
 
         <div style="flex:1;min-width:0;font-size:13px;font-weight:600;
                     overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            @_chapter.ComicTitle › Chapter @_chapter.ChapterNumber
-            @if (!string.IsNullOrEmpty(_chapter.Title)) { <text> – @_chapter.Title</text> }
+            @_chapter.ComicTitle вЂє Chapter @_chapter.ChapterNumber
+            @if (!string.IsNullOrEmpty(_chapter.Title)) { <text> вЂ“ @_chapter.Title</text> }
         </div>
 
         <span style="font-size:12px;opacity:0.4;flex-shrink:0;">@_pages.Count pages</span>
@@ -84,16 +84,16 @@ else
         {
             <MudButton Href="@($"/chapter/{_prevId}")" Variant="Variant.Outlined"
                        Size="Size.Small" Color="Color.Primary"
-                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">← Prev</MudButton>
+                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">в†ђ Prev</MudButton>
         }
         @if (_nextId != Guid.Empty)
         {
             <MudButton Href="@($"/chapter/{_nextId}")" Variant="Variant.Filled"
                        Size="Size.Small" Color="Color.Primary"
-                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">Next →</MudButton>
+                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">Next в†’</MudButton>
         }
 
-        <!-- Settings button in toolbar — popup opens above FAB, so toolbar button stays simple -->
+        <!-- Settings button in toolbar вЂ” popup opens above FAB, so toolbar button stays simple -->
         <div style="position:relative;">
             <MudIconButton Icon="@Icons.Material.Filled.Tune"
                            Size="Size.Small" Color="Color.Inherit"
@@ -106,15 +106,15 @@ else
     {
         <div style="max-width:600px;margin:40px auto;padding:0 16px;">
             <MudPaper Class="pa-8" Style="border-radius:16px;text-align:center;">
-                <span style="font-size:3rem;">🔐</span>
+                <span style="font-size:3rem;">рџ”ђ</span>
                 <MudText Typo="Typo.h5" Style="font-weight:800;margin:12px 0 8px;">
                     Bu bob qulflangan
                 </MudText>
                 <MudText Style="opacity:0.55;margin-bottom:20px;">
-                    Ushbu bobni o'qish uchun <strong>@_chapter?.CoinPrice 🪙 coin</strong> kerak.
+                    Ushbu bobni o'qish uchun <strong>@_chapter?.CoinPrice рџЄ™ coin</strong> kerak.
                 </MudText>
                 <MudText Style="font-size:14px;margin-bottom:16px;">
-                    Sizda: <strong>@_userBalance 🪙 coins</strong>
+                    Sizda: <strong>@_userBalance рџЄ™ coins</strong>
                 </MudText>
                 @if (_userBalance >= (_chapter?.CoinPrice ?? 0))
                 {
@@ -122,7 +122,7 @@ else
                                Size="Size.Large" OnClick="@BuyChapter"
                                Disabled="@_buying"
                                Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
-                        @(_buying ? "..." : $"🪙 {_chapter?.CoinPrice} coin sarflab o'qish")
+                        @(_buying ? "..." : $"рџЄ™ {_chapter?.CoinPrice} coin sarflab o'qish")
                     </MudButton>
                 }
                 else
@@ -130,12 +130,12 @@ else
                     <MudButton Variant="Variant.Filled" Color="Color.Primary"
                                Size="Size.Large" Href="/coins"
                                Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
-                        🪙 Coin sotib olish
+                        рџЄ™ Coin sotib olish
                     </MudButton>
                 }
                 <div style="margin-top:20px;">
                     <MudButton Href="@($"/comic/{ComicSlug()}")" Variant="Variant.Text"
-                               Style="text-transform:none;opacity:0.6;">← Komikga qaytish</MudButton>
+                               Style="text-transform:none;opacity:0.6;">в†ђ Komikga qaytish</MudButton>
                 </div>
             </MudPaper>
         </div>
@@ -163,7 +163,7 @@ else
                 <MudButton Href="@($"/chapter/{_prevId}")" Variant="Variant.Outlined"
                            Color="Color.Primary" Size="Size.Large"
                            Style="border-radius:10px;text-transform:none;font-weight:700;">
-                    ← Previous Chapter
+                    в†ђ Previous Chapter
                 </MudButton>
             }
             <MudButton Href="@($"/comic/{ComicSlug()}")" Variant="Variant.Text"
@@ -173,7 +173,7 @@ else
                 <MudButton Href="@($"/chapter/{_nextId}")" Variant="Variant.Filled"
                            Color="Color.Primary" Size="Size.Large"
                            Style="border-radius:10px;text-transform:none;font-weight:700;">
-                    Next Chapter →
+                    Next Chapter в†’
                 </MudButton>
             }
         </div>
@@ -189,7 +189,7 @@ else
                 Style="box-shadow:0 4px 20px rgba(124,58,237,0.5);" />
     </div>
 
-    <!-- SETTINGS POPUP — tugma tepasida -->
+    <!-- SETTINGS POPUP вЂ” tugma tepasida -->
     @if (_showSettings)
     {
         <!-- Backdrop (click outside = close) -->
@@ -215,19 +215,19 @@ else
             <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
                 <button @onclick="@(() => SetWidth(_width - 40))"
                         style="width:34px;height:34px;border-radius:8px;border:none;
-                               background:#7c3aed;color:#fff;font-size:18px;
+                               background:#1b13be;color:#fff;font-size:18px;
                                cursor:pointer;display:flex;align-items:center;justify-content:center;
-                               flex-shrink:0;">−</button>
+                               flex-shrink:0;">в€’</button>
 
                 <div style="flex:1;position:relative;height:6px;
                             background:rgba(124,58,237,0.2);border-radius:3px;cursor:pointer;">
                     <div style="position:absolute;left:0;top:0;height:100%;border-radius:3px;
-                                background:#7c3aed;width:@(FillPct())%;transition:width 0.1s;"></div>
+                                background:#1b13be;width:@(FillPct())%;transition:width 0.1s;"></div>
                     <div style="position:absolute;top:50%;
                                 left:calc(@(FillPct())% - 9px);
                                 transform:translateY(-50%);
                                 width:18px;height:18px;border-radius:50%;
-                                background:#7c3aed;cursor:pointer;
+                                background:#1b13be;cursor:pointer;
                                 box-shadow:0 0 0 3px rgba(124,58,237,0.3);">
                     </div>
                     <input type="range" min="400" max="1400" step="40" value="@_width"
@@ -237,24 +237,24 @@ else
 
                 <button @onclick="@(() => SetWidth(_width + 40))"
                         style="width:34px;height:34px;border-radius:8px;border:none;
-                               background:#7c3aed;color:#fff;font-size:18px;
+                               background:#1b13be;color:#fff;font-size:18px;
                                cursor:pointer;display:flex;align-items:center;justify-content:center;
                                flex-shrink:0;">+</button>
 
                 <button @onclick="@(() => SetWidth(800))"
                         style="width:34px;height:34px;border-radius:8px;border:none;
-                               background:rgba(124,58,237,0.15);color:#7c3aed;font-size:16px;
+                               background:rgba(27,19,190,0.15);color:#1b13be;font-size:16px;
                                cursor:pointer;display:flex;align-items:center;justify-content:center;
-                               flex-shrink:0;">↺</button>
+                               flex-shrink:0;">в†є</button>
             </div>
 
             <div style="text-align:center;font-size:14px;font-weight:700;
-                        color:#7c3aed;margin-bottom:10px;">
+                        color:#1b13be;margin-bottom:10px;">
                 @_width px
             </div>
 
             <div style="font-size:11px;opacity:0.4;">
-                Qisqa tugmalar: +/−, 0 (reset), Esc (yopish).
+                Qisqa tugmalar: +/в€’, 0 (reset), Esc (yopish).
             </div>
         </div>
     }
@@ -274,13 +274,13 @@ else
     int   _userBalance  = 0;
     bool  _buying       = false;
 
-    // Hozircha userId placeholder — UserSession tayyor bo'lguncha
+    // Hozircha userId placeholder вЂ” UserSession tayyor bo'lguncha
     Guid _currentUserId = Guid.Empty;
 
     double FillPct() => (_width - 400.0) / (1400.0 - 400.0) * 100.0;
 
     string GetTitle() => _chapter != null
-        ? $"Ch.{_chapter.ChapterNumber} — {_chapter.ComicTitle}"
+        ? $"Ch.{_chapter.ChapterNumber} вЂ” {_chapter.ComicTitle}"
         : "O'qilmoqda...";
 
     string ComicSlug() => _chapter?.ComicTitle != null
@@ -344,9 +344,10 @@ else
         {
             _hasAccess   = true;
             _userBalance = await Mediator.Send(new ComicBooks.Application.Features.Coins.Queries.GetCoinBalanceQuery(_currentUserId));
-            Snackbar.Add("✅ Bob ochildi!", Severity.Success);
+            Snackbar.Add("вњ… Bob ochildi!", Severity.Success);
         }
-        else Snackbar.Add($"❌ {msg}", Severity.Error);
+        else Snackbar.Add($"вќЊ {msg}", Severity.Error);
         _buying = false;
     }
 }
+

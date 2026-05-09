@@ -2,271 +2,458 @@
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject BookmarkService BookmarkSvc
+@inject SessionService SessionSvc
 @inject ThemeService Theme
+@using ComicBooks.Application.Features.Comics.Commands
 @implements IDisposable
 
 <PageTitle>@(_comic?.Title ?? "Comic") - Manga Dunyo</PageTitle>
 
 <style>
-    /* ── CSS vars per theme ── */
-    .detail-root {
+    .dr {
         --acc:        #1b13be;
-        --acc2:       #030082;
-        --acc-light:  rgba(27,19,190,0.18);
-        --acc-border: rgba(27,19,190,0.45);
-        --genre-bg:   rgba(27,19,190,0.2);
-        --genre-col:  #7b8ff5;
-        --btn-bm-bg:  #1b13be;
-        --btn-bm-col: #fff;
-        --btn-first-bg:  rgba(255,255,255,0.06);
-        --btn-first-brd: rgba(255,255,255,0.2);
-        --btn-first-col: #fff;
-        --meta-label: rgba(255,255,255,0.45);
-        --meta-val:   rgba(255,255,255,0.85);
-        --ch-bg:      rgba(255,255,255,0.03);
-        --ch-brd:     rgba(255,255,255,0.07);
+        --acc2:       #419fd9;
+        --acc-light:  rgba(27,19,190,0.12);
+        --acc-border: rgba(27,19,190,0.35);
+        --panel-bg:   rgba(255,255,255,0.04);
+        --panel-brd:  rgba(255,255,255,0.07);
         --ch-hover:   rgba(27,19,190,0.1);
-        --ch-lock-col:#f59e0b;
+        --lbl:        rgba(255,255,255,0.42);
+        --val:        rgba(255,255,255,0.88);
+        --tag-bg:     rgba(255,255,255,0.06);
+        --tag-brd:    rgba(255,255,255,0.14);
+        --tag-col:    rgba(255,255,255,0.85);
+        --div:        rgba(255,255,255,0.07);
+        position: relative;
+        overflow: hidden;
+        background: #0a0a14;
     }
-
-    .detail-root.light {
+    .dr.light {
         --acc:        #419fd9;
         --acc2:       #0e6fa8;
-        --acc-light:  rgba(65,159,217,0.12);
-        --acc-border: rgba(65,159,217,0.4);
-        --genre-bg:   rgba(65,159,217,0.15);
-        --genre-col:  #1a6fa8;
-        --btn-bm-bg:  #419fd9;
-        --btn-bm-col: #fff;
-        --btn-first-bg:  rgba(0,0,0,0.05);
-        --btn-first-brd: rgba(0,0,0,0.15);
-        --btn-first-col: #1a1a2e;
-        --meta-label: rgba(30,30,60,0.5);
-        --meta-val:   #1a1a2e;
-        --ch-bg:      #fff;
-        --ch-brd:     rgba(0,0,0,0.07);
+        --acc-light:  rgba(65,159,217,0.10);
+        --acc-border: rgba(65,159,217,0.40);
+        --panel-bg:   rgba(255,255,255,0.82);
+        --panel-brd:  rgba(0,0,0,0.08);
         --ch-hover:   rgba(65,159,217,0.08);
-        --ch-lock-col:#d97706;
+        --lbl:        rgba(30,30,60,0.45);
+        --val:        #1a1a2e;
+        --tag-bg:     rgba(0,0,0,0.05);
+        --tag-brd:    rgba(0,0,0,0.14);
+        --tag-col:    #1a1a2e;
+        --div:        rgba(0,0,0,0.07);
+        background: #dde8f0;
     }
 
-    .detail-hero { position:relative; min-height:400px; overflow:hidden; }
-
-    .detail-hero-bg {
-        position:absolute; inset:0;
-        background-size:cover; background-position:center top;
-        filter:blur(22px) brightness(0.28) saturate(1.5);
-        transform:scale(1.1); z-index:0;
+    /* ── Blurred banner background ── */
+    .dr-bg {
+        position: absolute;
+        inset: 0;
+        background-size: cover;
+        background-position: center top;
+        filter: blur(28px) brightness(0.38) saturate(1.5);
+        transform: scale(1.08);
+        z-index: 0;
     }
 
-    .detail-hero-grad {
-        position:absolute; inset:0; z-index:1;
-        background:linear-gradient(to right,rgba(10,10,22,0.9) 0%,rgba(10,10,22,0.55) 55%,rgba(10,10,22,0.1) 100%);
+    .dr-bg-grad {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        background: linear-gradient(
+            to bottom,
+            rgba(8,8,18,0.40) 0%,
+            rgba(8,8,18,0.60) 55%,
+            var(--mud-palette-background) 100%
+        );
     }
 
-    .detail-hero-grad-bottom {
-        position:absolute; bottom:0; left:0; right:0; height:170px; z-index:2;
-        background:linear-gradient(transparent, var(--mud-palette-background));
+    /* ── Outer wrap ── */
+    .dr-wrap {
+        position: relative;
+        z-index: 2;
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 36px 20px 80px;
+        display: flex;
+        gap: 28px;
+        align-items: flex-start;
     }
 
-    .detail-hero-content {
-        position:relative; z-index:3;
-        max-width:1100px; margin:0 auto;
-        padding:52px 28px 76px;
-        display:flex; gap:34px; align-items:flex-start;
+    /* ── LEFT PANEL ── */
+    .dr-left {
+        flex: 0 0 264px;
+        background: var(--panel-bg);
+        border: 1px solid var(--panel-brd);
+        border-radius: 12px;
+        overflow: hidden;
+        position: sticky;
+        top: 80px;
     }
 
-    .detail-cover { flex:0 0 auto; position:relative; }
-
-    .detail-cover img {
-        width:190px; height:272px; object-fit:cover;
-        border-radius:12px; box-shadow:0 28px 64px rgba(0,0,0,0.8); display:block;
+    .dr-cover {
+        width: 100%;
+        aspect-ratio: 2/3;
+        object-fit: cover;
+        display: block;
     }
 
-    .detail-rank-badge {
-        position:absolute; top:10px; left:10px;
-        background:var(--btn-bm-bg); color:#fff;
-        font-size:11px; font-weight:900; padding:4px 10px;
-        border-radius:6px; letter-spacing:0.3px;
+    .dr-panel-body { padding: 14px 14px 16px; }
+
+    /* Rating button */
+    .dr-rate-btn {
+        width: 100%;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border: 1.5px solid rgba(245,158,11,0.50);
+        background: rgba(245,158,11,0.06);
+        border-radius: 8px;
+        color: #f59e0b;
+        font-size: 14px;
+        font-weight: 700;
+        cursor: pointer;
+        margin-bottom: 14px;
+        transition: background 0.2s;
+    }
+    .dr-rate-btn:hover { background: rgba(245,158,11,0.13); }
+
+    /* Stats */
+    .dr-stats {
+        display: flex;
+        border: 1px solid var(--panel-brd);
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 14px;
+    }
+    .dr-stat {
+        flex: 1;
+        padding: 9px 4px;
+        text-align: center;
+        border-right: 1px solid var(--panel-brd);
+    }
+    .dr-stat:last-child { border-right: none; }
+    .dr-stat-val {
+        font-size: 14px;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 3px;
+        margin-bottom: 2px;
+        white-space: nowrap;
+    }
+    .dr-stat-lbl {
+        font-size: 9.5px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-weight: 700;
+        color: var(--lbl);
     }
 
-    .detail-info { flex:1; min-width:0; }
+    .dr-div { height: 1px; background: var(--div); margin: 12px 0; }
 
-    .detail-title {
-        font-size:clamp(22px,3vw,36px); font-weight:900;
-        color:#fff; margin:0 0 6px; line-height:1.2;
+    /* Status / Type */
+    .dr-st-row { display: flex; gap: 22px; }
+    .dr-meta-item { display: flex; flex-direction: column; gap: 3px; }
+    .dr-meta-lbl {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        font-weight: 700;
+        color: var(--lbl);
+    }
+    .dr-meta-val {
+        font-size: 13px;
+        font-weight: 700;
+        color: var(--acc);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .dr-dot {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--acc);
+        display: inline-block;
+        flex-shrink: 0;
     }
 
-    .detail-alt {
-        font-size:12px; color:rgba(255,255,255,0.3);
-        margin-bottom:14px; overflow:hidden;
-        text-overflow:ellipsis; white-space:nowrap;
+    /* Author / Artist rows */
+    .dr-person-row {
+        display: flex;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid var(--div);
+        gap: 8px;
+    }
+    .dr-person-row:last-of-type { border-bottom: none; }
+    .dr-person-icon { font-size: 13px; width: 22px; flex-shrink: 0; color: var(--lbl); }
+    .dr-person-lbl  { font-size: 11px; color: var(--lbl); font-weight: 600; width: 52px; flex-shrink: 0; }
+    .dr-person-val  { font-size: 13px; font-weight: 700; color: var(--val); }
+
+    /* Genre tags */
+    .dr-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+    .dr-tag {
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 600;
+        background: var(--tag-bg);
+        border: 1px solid var(--tag-brd);
+        color: var(--tag-col);
+        text-decoration: none;
+        transition: background 0.15s;
+    }
+    .dr-tag:hover { background: var(--acc-light); }
+
+    /* ── RIGHT COLUMN ── */
+    .dr-right { flex: 1; min-width: 0; }
+
+    .dr-title {
+        font-size: clamp(20px, 2.5vw, 30px);
+        font-weight: 900;
+        margin: 0 0 10px;
+        line-height: 1.2;
     }
 
-    .detail-desc {
-        font-size:13.5px; line-height:1.75;
-        color:rgba(255,255,255,0.68); margin-bottom:4px;
+    .dr-rank-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 14px;
+        flex-wrap: wrap;
+        min-height: 24px;
+    }
+    .dr-rank-badge {
+        background: #f59e0b;
+        color: #000;
+        font-size: 11px;
+        font-weight: 900;
+        padding: 3px 10px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    .dr-alt {
+        font-size: 12px;
+        color: var(--lbl);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        flex: 1;
     }
 
-    .detail-desc.clamped {
-        display:-webkit-box; -webkit-line-clamp:3;
-        -webkit-box-orient:vertical; overflow:hidden;
+    .dr-desc {
+        font-size: 14px;
+        line-height: 1.78;
+        color: var(--val);
+        opacity: 0.82;
+        margin-bottom: 4px;
+    }
+    .dr-desc.clamped {
+        display: -webkit-box;
+        -webkit-line-clamp: 4;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+    .dr-show-more {
+        font-size: 12.5px;
+        font-weight: 700;
+        color: var(--acc);
+        cursor: pointer;
+        margin-bottom: 24px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        border: none;
+        background: none;
+        padding: 0;
     }
 
-    .detail-show-more {
-        font-size:12px; font-weight:700; color:var(--acc2);
-        cursor:pointer; margin-bottom:18px; display:inline-block;
-        border:none; background:none; padding:0;
+    /* Action buttons */
+    .dr-actions { display: flex; gap: 10px; margin-bottom: 28px; }
+
+    .dr-btn-bm {
+        flex: 1.3;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        border-radius: 10px;
+        font-size: 14.5px;
+        font-weight: 800;
+        cursor: pointer;
+        border: none;
+        background: var(--acc);
+        color: #fff;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+    }
+    .dr-btn-bm:hover { opacity: 0.88; }
+    .dr-btn-bm.saved {
+        background: var(--acc-light);
+        color: var(--acc);
+        border: 1.5px solid var(--acc-border);
     }
 
-    .detail-stats { display:flex; gap:28px; margin-bottom:22px; flex-wrap:wrap; }
+    .dr-btn-ch {
+        flex: 1;
+        height: 52px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 700;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1.5px solid var(--panel-brd);
+        background: var(--panel-bg);
+        color: inherit;
+        transition: border-color 0.2s, background 0.2s;
+        white-space: nowrap;
+    }
+    .dr-btn-ch:hover { border-color: var(--acc); background: var(--acc-light); color: inherit; }
 
-    .detail-stat { display:flex; flex-direction:column; gap:3px; }
-
-    .detail-stat-val {
-        font-size:19px; font-weight:900;
-        display:flex; align-items:center; gap:5px;
+    /* Chapter header */
+    .ch-hdr {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+    .ch-count { font-size: 1rem; font-weight: 900; }
+    .ch-sort {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid var(--panel-brd);
+        background: var(--panel-bg);
+        cursor: pointer;
+        color: inherit;
     }
 
-    .detail-stat-lbl {
-        font-size:10.5px; color:var(--meta-label);
-        font-weight:700; text-transform:uppercase; letter-spacing:0.5px;
+    /* Search */
+    .ch-srch-wrap { position: relative; margin-bottom: 12px; }
+    .ch-srch-inp {
+        width: 100%;
+        height: 46px;
+        padding: 0 44px 0 16px;
+        border-radius: 10px;
+        background: var(--panel-bg);
+        border: 1px solid var(--panel-brd);
+        color: inherit;
+        font-size: 14px;
+        outline: none;
+        font-family: inherit;
+    }
+    .ch-srch-ico {
+        position: absolute;
+        right: 14px;
+        top: 50%;
+        transform: translateY(-50%);
+        opacity: 0.32;
+        pointer-events: none;
     }
 
-    .btn-bookmark {
-        display:flex; align-items:center; justify-content:center; gap:10px;
-        width:100%; max-width:460px; height:50px;
-        background:var(--btn-bm-bg); color:var(--btn-bm-col);
-        border-radius:10px; font-size:15px; font-weight:800;
-        cursor:pointer; border:none; margin-bottom:12px;
-        transition:opacity 0.2s, transform 0.2s;
-    }
-
-    .btn-bookmark:hover { opacity:0.9; transform:translateY(-1px); }
-
-    .btn-bookmark.saved {
-        background:var(--acc-light); color:var(--acc);
-        border:1.5px solid var(--acc-border);
-    }
-
-    .detail-ch-btns {
-        display:flex; gap:10px; margin-bottom:22px; max-width:460px;
-    }
-
-    .btn-ch {
-        flex:1; height:46px; display:flex; align-items:center;
-        justify-content:center; gap:8px; border-radius:10px;
-        font-size:13.5px; font-weight:700; text-decoration:none;
-        cursor:pointer; border:1.5px solid var(--btn-first-brd);
-        background:var(--btn-first-bg); color:var(--btn-first-col);
-        transition:border-color 0.2s, background 0.2s;
-    }
-
-    .btn-ch:hover {
-        border-color:var(--acc);
-        background:var(--acc-light);
-    }
-
-    .detail-meta { display:flex; flex-wrap:wrap; gap:20px; }
-
-    .detail-meta-item { display:flex; flex-direction:column; gap:3px; }
-
-    .detail-meta-label {
-        font-size:10.5px; color:var(--meta-label);
-        text-transform:uppercase; font-weight:700; letter-spacing:0.4px;
-    }
-
-    .detail-meta-val {
-        color:var(--meta-val); font-weight:700; font-size:13px;
-        display:flex; align-items:center; gap:5px;
-    }
-
-    .detail-status-dot { width:7px; height:7px; border-radius:50%; display:inline-block; }
-
-    .detail-genres { display:flex; flex-wrap:wrap; gap:7px; margin-top:20px; }
-
-    .genre-pill {
-        padding:4px 14px; border-radius:999px; font-size:11.5px; font-weight:700;
-        background:var(--genre-bg); color:var(--genre-col);
-        border:1px solid var(--acc-border); text-decoration:none;
-        transition:background 0.15s;
-    }
-
-    .genre-pill:hover { background:var(--acc-light); }
-
-    /* Chapter section */
-    .ch-section { max-width:1100px; margin:0 auto; padding:10px 28px 80px; }
-
-    .ch-header {
-        display:flex; justify-content:space-between; align-items:center;
-        margin-bottom:14px; flex-wrap:wrap; gap:10px;
-    }
-
-    .ch-count { font-size:1rem; font-weight:900; }
-
-    .ch-controls { display:flex; gap:8px; align-items:center; }
-
-    .ch-search-box {
-        display:flex; align-items:center; gap:6px; padding:7px 13px;
-        background:var(--mud-palette-surface); border-radius:8px;
-        border:1px solid rgba(128,128,128,0.15);
-    }
-
-    .ch-search-box input {
-        background:transparent; border:none; outline:none;
-        font-size:13px; color:var(--mud-palette-text-primary); width:140px;
-    }
-
-    .ch-sort-btn {
-        padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700;
-        border:1px solid rgba(128,128,128,0.2); background:transparent;
-        cursor:pointer; color:inherit;
-    }
-
+    /* Chapter list */
     .ch-list {
-        border:1px solid var(--ch-brd); border-radius:12px;
-        background:var(--ch-bg); overflow:hidden;
-        max-height:580px; overflow-y:auto;
+        border: 1px solid var(--panel-brd);
+        border-radius: 12px;
+        overflow: hidden;
+        max-height: 560px;
+        overflow-y: auto;
     }
-
     .ch-row {
-        display:flex; justify-content:space-between; align-items:center;
-        padding:13px 18px; border-bottom:1px solid var(--ch-brd);
-        cursor:pointer; transition:background 0.15s;
-        text-decoration:none; color:inherit;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 20px;
+        border-bottom: 1px solid var(--div);
+        text-decoration: none;
+        color: inherit;
+        transition: background 0.15s;
     }
-
-    .ch-row:hover { background:var(--ch-hover); }
-    .ch-row:last-child { border-bottom:none; }
-
-    .ch-row-left { display:flex; align-items:center; gap:12px; }
-
-    .ch-icon { font-size:15px; width:22px; text-align:center; flex-shrink:0; }
-
-    .ch-name { font-weight:700; font-size:14px; }
-    .ch-sub  { font-size:12px; opacity:0.42; margin-left:4px; }
-
-    .ch-coin-badge {
-        font-size:11px; background:rgba(245,158,11,0.15);
-        color:var(--ch-lock-col); padding:2px 9px;
-        border-radius:999px; font-weight:800;
+    .ch-row:last-child { border-bottom: none; }
+    .ch-row:hover { background: var(--ch-hover); }
+    .ch-name { font-weight: 700; font-size: 14px; }
+    .ch-sub  { font-size: 12px; opacity: 0.40; margin-left: 8px; }
+    .ch-coin {
+        font-size: 11px;
+        background: rgba(245,158,11,0.14);
+        color: #f59e0b;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-weight: 800;
+        margin-left: 10px;
     }
+    .ch-date { font-size: 12px; color: var(--lbl); flex-shrink: 0; }
 
-    .ch-row-right {
-        display:flex; align-items:center; gap:14px;
-        font-size:12px; opacity:0.42; flex-shrink:0;
+    /* Rating widget */
+    .dr-rating-section {
+        margin-top: 40px;
+        padding-top: 28px;
+        border-top: 1px solid var(--div);
+        text-align: center;
     }
+    .dr-rating-title   { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
+    .dr-rating-sub     { font-size: 13px; color: var(--lbl); margin-bottom: 18px; }
+    .dr-stars-row      { display: inline-flex; gap: 5px; }
+    .dr-star {
+        font-size: 30px;
+        cursor: pointer;
+        background: none;
+        border: none;
+        padding: 0;
+        line-height: 1;
+        color: #f59e0b;
+        transition: transform 0.13s;
+    }
+    .dr-star:hover, .dr-star.active { transform: scale(1.22); }
+    .dr-rating-thanks  { font-size: 14px; font-weight: 700; color: var(--acc); }
 
-    @@media (max-width:700px) {
-        .detail-hero-content { flex-direction:column; padding:28px 16px 64px; gap:20px; }
-        .detail-cover img    { width:150px; height:214px; }
-        .detail-title        { font-size:22px; }
-        .btn-bookmark, .detail-ch-btns { max-width:100%; }
-        .ch-section          { padding:8px 14px 60px; }
+    /* Scroll-to-top */
+    .dr-scroll-top {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        width: 46px;
+        height: 46px;
+        border-radius: 50%;
+        background: var(--acc);
+        color: #fff;
+        border: none;
+        font-size: 22px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+        z-index: 999;
+        transition: opacity 0.2s;
+    }
+    .dr-scroll-top:hover { opacity: 0.83; }
+
+    @@media (max-width: 800px) {
+        .dr-wrap       { flex-direction: column; padding: 14px 12px 60px; gap: 16px; }
+        .dr-left       { flex: none; width: 100%; position: static; }
+        .dr-cover      { height: 280px; aspect-ratio: auto; }
+        .dr-actions    { flex-wrap: wrap; }
+        .dr-btn-bm     { flex: 1 1 100%; }
+        .dr-btn-ch     { flex: 1 1 calc(50% - 5px); }
     }
 </style>
 
 @{
-    var themeClass = Theme.IsDark ? "" : "light";
+    var tc = Theme.IsDark ? "" : "light";
 }
 
 @if (_loading)
@@ -278,186 +465,213 @@ else if (_comic is null)
     <div style="text-align:center;padding:80px;">
         <MudText Typo="Typo.h4" Class="mb-4">Comic topilmadi</MudText>
         <a href="/" style="display:inline-flex;align-items:center;gap:6px;height:44px;padding:0 24px;
-                           background:var(--acc);color:#fff;border-radius:10px;
-                           font-weight:700;text-decoration:none;">
+                           background:var(--acc);color:#fff;border-radius:10px;font-weight:700;text-decoration:none;">
             ← Bosh sahifa
         </a>
     </div>
 }
 else
 {
-<div class="detail-root @themeClass">
+<div class="dr @tc">
+    <div class="dr-bg" style="background-image:url('@BgUrl()');"></div>
+    <div class="dr-bg-grad"></div>
+    <div class="dr-wrap">
 
-    <!-- HERO -->
-    <div class="detail-hero">
-        <div class="detail-hero-bg" style="background-image:url('@BgUrl()');"></div>
-        <div class="detail-hero-grad"></div>
-        <div class="detail-hero-grad-bottom"></div>
+        <!-- ════ LEFT PANEL ════ -->
+        <div class="dr-left">
+            <img class="dr-cover"
+                 src="@CoverUrl()"
+                 alt="@_comic.Title"
+                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_comic.Slug)/300/420'" />
 
-        <div class="detail-hero-content">
+            <div class="dr-panel-body">
 
-            <!-- Cover -->
-            <div class="detail-cover">
-                <img src="@CoverUrl()" alt="@_comic.Title"
-                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_comic.Slug)/300/420'" />
-                @if (_comic.AverageRating >= 9.0)
-                {
-                    <div class="detail-rank-badge">⭐ TOP RATED</div>
-                }
-            </div>
-
-            <!-- Info -->
-            <div class="detail-info">
-
-                <h1 class="detail-title">@_comic.Title</h1>
-
-                @if (!string.IsNullOrEmpty(_comic.AlternativeTitles))
-                {
-                    <div class="detail-alt">@_comic.AlternativeTitles</div>
-                }
-
-                @if (!string.IsNullOrEmpty(_comic.Description))
-                {
-                    <div class="detail-desc @(!_showMore ? "clamped" : "")">@_comic.Description</div>
-                    <button class="detail-show-more" @onclick="@(() => _showMore = !_showMore)">
-                        @(_showMore ? "Ko'proq yig'ish ↑" : "Ko'proq ko'rish ↓")
-                    </button>
-                }
-
-                <!-- Stats -->
-                <div class="detail-stats">
-                    <div class="detail-stat">
-                        <div class="detail-stat-val" style="color:#f59e0b;">⭐ @_comic.AverageRating.ToString("F1")</div>
-                        <div class="detail-stat-lbl">Reyting</div>
-                    </div>
-                    <div class="detail-stat">
-                        <div class="detail-stat-val" style="color:#34d399;">📗 @_comic.ChapterCount</div>
-                        <div class="detail-stat-lbl">Boblar</div>
-                    </div>
-                    <div class="detail-stat">
-                        <div class="detail-stat-val" style="color:var(--acc);">🔖 @Fmt(_comic.ViewCount)</div>
-                        <div class="detail-stat-lbl">Ko'rishlar</div>
-                    </div>
-                </div>
-
-                <!-- Bookmark -->
-                <button class="btn-bookmark @(IsBookmarked ? "saved" : "")"
-                        @onclick="@(() => BookmarkSvc.Toggle(_comic.Id))">
-                    @(IsBookmarked ? "✓  Saqlangan" : "🔖  Bookmark")
+                <!-- Rating button -->
+                <button class="dr-rate-btn" @onclick="@(() => _showRating = !_showRating)">
+                    ★&nbsp; Reyting
                 </button>
 
-                <!-- Chapter buttons -->
-                @if (FirstId != Guid.Empty)
+                <!-- Stats -->
+                <div class="dr-stats">
+                    <div class="dr-stat">
+                        <div class="dr-stat-val" style="color:#f59e0b;">⭐ @_comic.AverageRating.ToString("F1")</div>
+                        <div class="dr-stat-lbl">Reyting</div>
+                    </div>
+                    <div class="dr-stat">
+                        <div class="dr-stat-val" style="color:#34d399;">📗 @_comic.ChapterCount</div>
+                        <div class="dr-stat-lbl">Boblar</div>
+                    </div>
+                    <div class="dr-stat">
+                        <div class="dr-stat-val" style="color:var(--acc2);">🔖 @Fmt(_comic.BookmarkCount)</div>
+                        <div class="dr-stat-lbl">Bookmarks</div>
+                    </div>
+                </div>
+
+                <div class="dr-div"></div>
+
+                <!-- Status / Type -->
+                <div class="dr-st-row">
+                    <div class="dr-meta-item">
+                        <div class="dr-meta-lbl">Holat</div>
+                        <div class="dr-meta-val"><span class="dr-dot"></span>@_comic.Status</div>
+                    </div>
+                    <div class="dr-meta-item">
+                        <div class="dr-meta-lbl">Turi</div>
+                        <div class="dr-meta-val"><span class="dr-dot"></span>@_comic.Type</div>
+                    </div>
+                </div>
+
+                <div class="dr-div"></div>
+
+                <!-- Author / Artist -->
+                @if (!string.IsNullOrEmpty(_comic.Author))
                 {
-                    <div class="detail-ch-btns">
-                        <a class="btn-ch" href="/chapter/@FirstId">👁 Birinchi bob</a>
-                        <a class="btn-ch" href="/chapter/@LastId">👁 Oxirgi bob</a>
+                    <div class="dr-person-row">
+                        <span class="dr-person-icon">✏️</span>
+                        <span class="dr-person-lbl">Muallif</span>
+                        <span class="dr-person-val">@_comic.Author</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_comic.Artist))
+                {
+                    <div class="dr-person-row">
+                        <span class="dr-person-icon">🖼️</span>
+                        <span class="dr-person-lbl">Rassom</span>
+                        <span class="dr-person-val">@_comic.Artist</span>
                     </div>
                 }
 
-                <!-- Meta -->
-                <div class="detail-meta">
-                    <div class="detail-meta-item">
-                        <div class="detail-meta-label">Holat</div>
-                        <div class="detail-meta-val">
-                            <span class="detail-status-dot" style="@StatusDotColor()"></span>
-                            @_comic.Status
-                        </div>
-                    </div>
-                    <div class="detail-meta-item">
-                        <div class="detail-meta-label">Turi</div>
-                        <div class="detail-meta-val" style="color:var(--acc);">✦ @_comic.Type</div>
-                    </div>
-                    @if (!string.IsNullOrEmpty(_comic.Author))
-                    {
-                        <div class="detail-meta-item">
-                            <div class="detail-meta-label">Muallif</div>
-                            <div class="detail-meta-val">✍️ @_comic.Author</div>
-                        </div>
-                    }
-                    @if (!string.IsNullOrEmpty(_comic.Artist))
-                    {
-                        <div class="detail-meta-item">
-                            <div class="detail-meta-label">Rassom</div>
-                            <div class="detail-meta-val">🎨 @_comic.Artist</div>
-                        </div>
-                    }
-                    @if (_comic.ReleaseYear.HasValue)
-                    {
-                        <div class="detail-meta-item">
-                            <div class="detail-meta-label">Yil</div>
-                            <div class="detail-meta-val">📅 @_comic.ReleaseYear</div>
-                        </div>
-                    }
-                </div>
-
-                <!-- Genres -->
+                <!-- Genre tags -->
                 @if (_comic.Genres.Any())
                 {
-                    <div class="detail-genres">
+                    <div class="dr-tags">
                         @foreach (var g in _comic.Genres)
                         {
-                            <a class="genre-pill" href="/comics?genre=@g">@g</a>
+                            <a class="dr-tag" href="/comics?genre=@g">@g</a>
                         }
                     </div>
                 }
 
             </div>
         </div>
-    </div>
 
-    <!-- CHAPTER LIST -->
-    <div class="ch-section">
-        <div class="ch-header">
-            <span class="ch-count">@_chapters.Count Boblar</span>
-            <div class="ch-controls">
-                <div class="ch-search-box">
-                    <MudIcon Icon="@Icons.Material.Filled.Search" Style="opacity:0.3;font-size:16px;" />
-                    <input @bind="_chapSearch" @bind:event="oninput" placeholder="Bob qidirish..." />
-                </div>
-                <button class="ch-sort-btn" @onclick="@(() => _desc = !_desc)">
-                    @(_desc ? "Yangi ↓" : "Eski ↑")
+        <!-- ════ RIGHT COLUMN ════ -->
+        <div class="dr-right">
+
+            <h1 class="dr-title">@_comic.Title</h1>
+
+            <div class="dr-rank-row">
+                @if (_comic.AverageRating >= 9.0)
+                {
+                    <span class="dr-rank-badge">⭐ TOP RATED</span>
+                }
+                @if (!string.IsNullOrEmpty(_comic.AlternativeTitles))
+                {
+                    <span class="dr-alt">@_comic.AlternativeTitles</span>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(_comic.Description))
+            {
+                <div class="dr-desc @(!_showMore ? "clamped" : "")">@_comic.Description</div>
+                <button class="dr-show-more" @onclick="@(() => _showMore = !_showMore)">
+                    @(_showMore ? "Yig'ish ↑" : "Ko'proq ko'rish ↓")
+                </button>
+            }
+
+            <!-- Action buttons -->
+            <div class="dr-actions">
+                <button class="dr-btn-bm @(IsBookmarked ? "saved" : "")"
+                        @onclick="ToggleBookmark">
+                    🔖&nbsp;@(IsBookmarked ? "Saqlangan" : "Bookmark")
+                </button>
+                @if (FirstId != Guid.Empty)
+                {
+                    <a class="dr-btn-ch" href="/chapter/@FirstId">◉&nbsp;Birinchi bob</a>
+                    <a class="dr-btn-ch" href="/chapter/@LastId">◉&nbsp;Oxirgi bob</a>
+                }
+                else
+                {
+                    <span class="dr-btn-ch" style="opacity:.4;cursor:default;">◉&nbsp;Birinchi bob</span>
+                    <span class="dr-btn-ch" style="opacity:.4;cursor:default;">◉&nbsp;Oxirgi bob</span>
+                }
+            </div>
+
+            <!-- Chapter header -->
+            <div class="ch-hdr">
+                <span class="ch-count">@_chapters.Count Boblar</span>
+                <button class="ch-sort" @onclick="@(() => _desc = !_desc)">
+                    ↑↓&nbsp;@(_desc ? "Yangi" : "Eski")
                 </button>
             </div>
-        </div>
 
-        <div class="ch-list">
-            @foreach (var ch in Filtered())
-            {
-                <a class="ch-row" href="/chapter/@ch.Id">
-                    <div class="ch-row-left">
-                        <span class="ch-icon">
-                            @if (ch.IsLocked) { <text>🔒</text> } else { <text style="opacity:0.28">📖</text> }
-                        </span>
-                        <div>
+            <!-- Search -->
+            <div class="ch-srch-wrap">
+                <input class="ch-srch-inp"
+                       @bind="_chapSearch"
+                       @bind:event="oninput"
+                       placeholder="Bob qidirish..." />
+                <MudIcon Icon="@Icons.Material.Filled.Search" Class="ch-srch-ico" Style="font-size:18px;" />
+            </div>
+
+            <!-- Chapter list -->
+            <div class="ch-list">
+                @foreach (var ch in Filtered())
+                {
+                    <a class="ch-row" href="/chapter/@ch.Id">
+                        <div style="display:flex;align-items:center;min-width:0;">
                             <span class="ch-name">Chapter @ch.ChapterNumber</span>
                             @if (!string.IsNullOrEmpty(ch.Title))
                             {
                                 <span class="ch-sub">@ch.Title</span>
                             }
+                            @if (ch.IsLocked && ch.CoinPrice > 0)
+                            {
+                                <span class="ch-coin">🪙 @ch.CoinPrice</span>
+                            }
                         </div>
-                        @if (ch.IsLocked && ch.CoinPrice > 0)
-                        {
-                            <span class="ch-coin-badge">🪙 @ch.CoinPrice</span>
-                        }
-                    </div>
-                    <div class="ch-row-right">
-                        @if (ch.ViewCount > 0)
-                        {
-                            <span>👁 @Fmt(ch.ViewCount)</span>
-                        }
-                        <span>@FmtDate(ch.PublishedAt)</span>
-                    </div>
-                </a>
+                        <span class="ch-date">@FmtDate(ch.PublishedAt)</span>
+                    </a>
+                }
+                @if (!Filtered().Any())
+                {
+                    <div style="padding:40px;text-align:center;opacity:.4;">Bob topilmadi.</div>
+                }
+            </div>
+
+            <!-- Rating section -->
+            @if (_showRating)
+            {
+                <div class="dr-rating-section">
+                    <div class="dr-rating-title">Bu manga haqida nima deb o'ylaysiz?</div>
+                    <div class="dr-rating-sub">@_comic.RatingCount reaksiyalar</div>
+                    @if (_ratingSubmitted)
+                    {
+                        <div class="dr-rating-thanks">✓ Rahmat! Baholashingiz qabul qilindi.</div>
+                    }
+                    else
+                    {
+                        <div class="dr-stars-row">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                int star = i;
+                                <button class="dr-star @(_hoverStar >= star || _selectedStar >= star ? "active" : "")"
+                                        @onmouseenter="@(() => _hoverStar = star)"
+                                        @onmouseleave="@(() => _hoverStar = 0)"
+                                        @onclick="@(() => SubmitRating(star))">
+                                    @(_hoverStar >= star || _selectedStar >= star ? "★" : "☆")
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
             }
 
-            @if (!Filtered().Any())
-            {
-                <div style="padding:40px;text-align:center;opacity:0.4;">Bob topilmadi.</div>
-            }
         </div>
     </div>
 
+    <!-- Scroll to top -->
+    <button class="dr-scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Yuqoriga">↑</button>
 </div>
 }
 
@@ -465,11 +679,15 @@ else
     [Parameter] public string Slug { get; set; } = "";
 
     ComicDto?        _comic;
-    List<ChapterDto> _chapters   = new();
-    bool   _loading    = true;
-    bool   _desc       = true;
-    bool   _showMore   = false;
-    string _chapSearch = "";
+    List<ChapterDto> _chapters      = new();
+    bool   _loading         = true;
+    bool   _desc            = true;
+    bool   _showMore        = false;
+    bool   _showRating      = false;
+    string _chapSearch      = "";
+    int    _hoverStar       = 0;
+    int    _selectedStar    = 0;
+    bool   _ratingSubmitted = false;
 
     bool IsBookmarked => _comic != null && BookmarkSvc.IsBookmarked(_comic.Id);
     Guid FirstId => _chapters.OrderBy(c => c.ChapterNumber).FirstOrDefault()?.Id ?? Guid.Empty;
@@ -481,7 +699,7 @@ else
 
     string BgUrl() => !string.IsNullOrEmpty(_comic?.BannerImageUrl) ? _comic.BannerImageUrl
                     : !string.IsNullOrEmpty(_comic?.CoverImageUrl)  ? _comic.CoverImageUrl
-                    : $"https://picsum.photos/seed/{_comic?.Slug}bg/1400/500";
+                    : $"https://picsum.photos/seed/{_comic?.Slug}bg/1400/600";
 
     string Fmt(int v) => v >= 1_000_000 ? $"{v/1_000_000.0:F1}M"
                        : v >= 1_000     ? $"{v/1_000.0:F1}K"
@@ -491,10 +709,10 @@ else
     {
         if (d is null) return "";
         var diff = DateTime.UtcNow - d.Value;
-        if (diff.TotalHours < 1)  return $"{(int)diff.TotalMinutes}m oldin";
-        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}s oldin";
-        if (diff.TotalDays  < 7)  return $"{(int)diff.TotalDays} kun oldin";
-        if (diff.TotalDays  < 30) return $"{(int)(diff.TotalDays/7)} hafta oldin";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes}m oldin";
+        if (diff.TotalHours  < 24) return $"{(int)diff.TotalHours}s oldin";
+        if (diff.TotalDays   < 7)  return $"{(int)diff.TotalDays} kun oldin";
+        if (diff.TotalDays   < 30) return $"{(int)(diff.TotalDays/7)} hafta oldin";
         return d.Value.ToString("MMM d, yyyy");
     }
 
@@ -510,21 +728,48 @@ else
         return list;
     }
 
-    string StatusDotColor() => _comic?.Status switch
-    {
-        ComicStatus.Ongoing   => "background:#34d399;",
-        ComicStatus.Completed => "background:#818cf8;",
-        ComicStatus.Hiatus    => "background:#fbbf24;",
-        _                     => "background:#9ca3af;"
-    };
-
     protected override async Task OnInitializedAsync()
     {
         Theme.OnChange += Refresh;
-        _comic    = await Mediator.Send(new GetComicBySlugQuery(Slug));
+        _comic = await Mediator.Send(new GetComicBySlugQuery(Slug));
         if (_comic != null)
             _chapters = await Mediator.Send(new GetChaptersByComicQuery(_comic.Id));
-        _loading  = false;
+        _loading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _comic is null) return;
+
+        await BookmarkSvc.EnsureLoadedAsync();
+
+        var sessionId = await SessionSvc.GetSessionIdAsync();
+        var counted   = await Mediator.Send(new TrackComicViewCommand(sessionId, _comic.Id));
+        if (counted) _comic.ViewCount++;
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task ToggleBookmark()
+    {
+        if (_comic is null) return;
+        await BookmarkSvc.ToggleAsync(_comic.Id);
+        if (BookmarkSvc.IsBookmarked(_comic.Id))
+            _comic.BookmarkCount++;
+        else if (_comic.BookmarkCount > 0)
+            _comic.BookmarkCount--;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task SubmitRating(int stars)
+    {
+        if (_ratingSubmitted || _comic is null) return;
+        _selectedStar    = stars;
+        _ratingSubmitted = true;
+        var newAvg = await Mediator.Send(new RateComicCommand(_comic.Id, stars * 2));
+        _comic.AverageRating = newAvg;
+        _comic.RatingCount++;
+        await InvokeAsync(StateHasChanged);
     }
 
     async void Refresh() => await InvokeAsync(StateHasChanged);

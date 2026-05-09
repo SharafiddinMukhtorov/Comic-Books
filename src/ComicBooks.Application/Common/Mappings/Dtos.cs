@@ -17,6 +17,7 @@ public class ComicDto
     public string? Artist { get; set; }
     public int? ReleaseYear { get; set; }
     public double AverageRating { get; set; }
+    public int RatingCount { get; set; } = 0;
     public int ViewCount { get; set; }
     public int BookmarkCount { get; set; }
     public bool IsFeatured { get; set; }

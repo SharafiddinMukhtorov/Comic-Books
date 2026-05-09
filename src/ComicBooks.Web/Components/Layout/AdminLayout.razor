@@ -20,7 +20,7 @@
 
     <MudDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always" Elevation="2">
         <MudDrawerHeader>
-            <MudText Style="color:#7c3aed;font-weight:800;">⚙️ Admin</MudText>
+            <MudText Style="color:#419fd9;font-weight:800;">⚙️ Admin</MudText>
         </MudDrawerHeader>
         <MudNavMenu>
             <MudNavLink Href="/admin"                Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Dashboard">Boshqaruv paneli</MudNavLink>
@@ -53,16 +53,17 @@
     {
         PaletteLight = new PaletteLight
         {
-            Primary = "#7c3aed", Background = "#f3f4f6", Surface = "#ffffff",
-            AppbarBackground = "#ffffff", AppbarText = "#111827",
-            DrawerBackground = "#f9f9fb", DrawerText = "#111827", TextPrimary = "#111827"
+            Primary = "#419fd9", Secondary = "#1b13be", Background = "#f0f4f8", Surface = "#ffffff",
+            AppbarBackground = "#419fd9", AppbarText = "#ffffff",
+            DrawerBackground = "#ffffff", DrawerText = "#1a1a2e", TextPrimary = "#1a1a2e",
+            TextSecondary = "#5a6a7a", LinesDefault = "rgba(0,0,0,0.08)"
         },
         PaletteDark = new PaletteDark
         {
-            Primary = "#7c3aed", Background = "#0f0f1a", Surface = "#1a1a2e",
-            AppbarBackground = "#16213e", AppbarText = "#e5e7eb",
-            DrawerBackground = "#16213e", DrawerText = "#e5e7eb",
-            TextPrimary = "#f9fafb", TextSecondary = "#9ca3af"
+            Primary = "#419fd9", Secondary = "#1b13be", Background = "#0a0a14", Surface = "#12121e",
+            AppbarBackground = "#030082", AppbarText = "#ffffff",
+            DrawerBackground = "#0e0e1c", DrawerText = "#e2e2f0",
+            TextPrimary = "#f0f0f8", TextSecondary = "#8892a4", LinesDefault = "rgba(255,255,255,0.07)"
         }
     };
 

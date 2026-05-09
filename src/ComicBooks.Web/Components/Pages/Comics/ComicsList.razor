@@ -1,95 +1,224 @@
 @page "/comics"
 @inject IMediator Mediator
 
-<PageTitle>Komiklar - AsuraComic</PageTitle>
+<PageTitle>Browse - Manga Dunyo</PageTitle>
 
-<MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-4">
-    <MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
-        <MudButton Href="/" Variant="Variant.Text" StartIcon="@Icons.Material.Filled.ArrowBack" Style="text-transform:none;">Orqaga</MudButton>
-        <MudText Typo="Typo.h5">Barcha komiklar</MudText>
-    </MudStack>
+<style>
+    .browse-wrap { max-width: 1260px; margin: 0 auto; padding: 28px 20px 80px; }
 
-    <MudPaper Class="pa-3 mb-4">
-        <MudGrid Spacing="2">
-            <MudItem xs="12" sm="5">
-                <MudTextField @bind-Value="_search" Label="Qidirish..." Variant="Variant.Outlined"
-                              Margin="Margin.Dense" OnKeyDown="@OnKey" Clearable="true" />
-            </MudItem>
-            <MudItem xs="6" sm="2">
-                <MudSelect T="ComicStatus?" @bind-Value="_status" Label="Holat" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
-                    <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)ComicStatus.Ongoing)">Davom etmoqda</MudSelectItem>
-                    <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)ComicStatus.Completed)">Tugallangan</MudSelectItem>
-                    <MudSelectItem T="ComicStatus?" Value="@((ComicStatus?)ComicStatus.Hiatus)">To'xtatilgan</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="6" sm="2">
-                <MudSelect T="ComicType?" @bind-Value="_type" Label="Turi" Variant="Variant.Outlined" Margin="Margin.Dense" Clearable="true">
-                    <MudSelectItem T="ComicType?" Value="@((ComicType?)ComicType.Manhwa)">Manhwa</MudSelectItem>
-                    <MudSelectItem T="ComicType?" Value="@((ComicType?)ComicType.Manga)">Manga</MudSelectItem>
-                    <MudSelectItem T="ComicType?" Value="@((ComicType?)ComicType.Manhua)">Manhua</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="6" sm="2">
-                <MudSelect T="string" @bind-Value="_sort" Label="Saralash" Variant="Variant.Outlined" Margin="Margin.Dense">
-                    <MudSelectItem T="string" Value="@("createdAt")">Yangi</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("views")">Ko'p ko'rilgan</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("rating")">Reyting</MudSelectItem>
-                    <MudSelectItem T="string" Value="@("title")">A-Z</MudSelectItem>
-                </MudSelect>
-            </MudItem>
-            <MudItem xs="6" sm="1">
-                <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Search"
-                           FullWidth="true" Style="height:40px;text-transform:none;">Qidirish</MudButton>
-            </MudItem>
-        </MudGrid>
-    </MudPaper>
+    .browse-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 22px;
+    }
+    .browse-title {
+        font-size: 1.1rem;
+        font-weight: 900;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+    .browse-title::before {
+        content: '';
+        display: inline-block;
+        width: 4px; height: 20px;
+        background: linear-gradient(180deg,#030082,#419fd9);
+        border-radius: 2px;
+    }
+
+    /* Filter bar */
+    .filter-bar {
+        background: var(--mud-palette-surface);
+        border-radius: 12px;
+        padding: 16px 18px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-items: center;
+        margin-bottom: 24px;
+        border: 1px solid rgba(128,128,128,0.1);
+    }
+
+    .filter-search {
+        flex: 1;
+        min-width: 200px;
+        height: 42px;
+        padding: 0 16px;
+        border-radius: 8px;
+        background: var(--mud-palette-background);
+        border: 1px solid rgba(128,128,128,0.15);
+        color: inherit;
+        font-size: 14px;
+        font-family: inherit;
+        outline: none;
+        transition: border-color 0.2s;
+    }
+    .filter-search:focus { border-color: #419fd9; }
+
+    .filter-select {
+        height: 42px;
+        padding: 0 32px 0 12px;
+        border-radius: 8px;
+        background: var(--mud-palette-background);
+        border: 1px solid rgba(128,128,128,0.15);
+        color: inherit;
+        font-size: 13px;
+        font-family: inherit;
+        outline: none;
+        cursor: pointer;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='rgba(128,128,128,0.6)'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 10px center;
+        min-width: 130px;
+    }
+    .filter-select:focus { border-color: #419fd9; }
+
+    .filter-btn {
+        height: 42px;
+        padding: 0 20px;
+        border-radius: 8px;
+        background: #1b13be;
+        color: #fff;
+        font-size: 13.5px;
+        font-weight: 700;
+        border: none;
+        cursor: pointer;
+        transition: opacity 0.2s;
+        white-space: nowrap;
+    }
+    .filter-btn:hover { opacity: 0.88; }
+
+    /* Results bar */
+    .results-bar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 18px;
+        font-size: 13px;
+        opacity: 0.55;
+    }
+
+    /* Comic grid */
+    .comics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(155px, 1fr));
+        gap: 16px;
+    }
+
+    /* Pagination */
+    .pag-wrap { display: flex; justify-content: center; margin-top: 36px; }
+
+    /* Skeleton */
+    .sk-card { border-radius: 10px; overflow: hidden; }
+    .sk-img   { aspect-ratio: 2/3; background: rgba(128,128,128,0.12); border-radius: 10px; }
+    .sk-line  { height: 12px; background: rgba(128,128,128,0.1); border-radius: 4px; margin-top: 8px; }
+    .sk-line.short { width: 60%; }
+
+    @@media (max-width: 600px) {
+        .comics-grid { grid-template-columns: repeat(auto-fill, minmax(130px,1fr)); gap: 12px; }
+        .filter-bar  { padding: 12px 14px; }
+    }
+</style>
+
+<div class="browse-wrap">
+
+    <div class="browse-header">
+        <span class="browse-title">Browse</span>
+    </div>
+
+    <!-- Filter bar -->
+    <div class="filter-bar">
+        <input class="filter-search"
+               @bind="_search"
+               @bind:event="oninput"
+               @onkeydown="@OnKey"
+               placeholder="🔍  Series qidirish..." />
+
+        <select class="filter-select" @bind="_status">
+            <option value="">Barcha holat</option>
+            <option value="Ongoing">Davom etmoqda</option>
+            <option value="Completed">Tugallangan</option>
+            <option value="Hiatus">To'xtatilgan</option>
+        </select>
+
+        <select class="filter-select" @bind="_type">
+            <option value="">Barcha tur</option>
+            <option value="Manhwa">Manhwa</option>
+            <option value="Manga">Manga</option>
+            <option value="Manhua">Manhua</option>
+        </select>
+
+        <select class="filter-select" @bind="_sort">
+            <option value="createdAt">Yangi</option>
+            <option value="views">Ko'p ko'rilgan</option>
+            <option value="rating">Reyting</option>
+            <option value="title">A-Z</option>
+        </select>
+
+        <button class="filter-btn" @onclick="Search">Qidirish</button>
+    </div>
 
     @if (_loading)
     {
-        <MudGrid Spacing="2">
-            @for (int i = 0; i < 12; i++)
+        <div class="comics-grid">
+            @for (int i = 0; i < 24; i++)
             {
-                <MudItem xs="6" sm="4" md="3" lg="2">
-                    <MudSkeleton SkeletonType="SkeletonType.Rectangle" Height="260px" />
-                    <MudSkeleton Class="mt-1" />
-                </MudItem>
+                <div class="sk-card">
+                    <div class="sk-img"></div>
+                    <div class="sk-line"></div>
+                    <div class="sk-line short"></div>
+                </div>
             }
-        </MudGrid>
+        </div>
     }
     else if (_result?.Items.Any() == true)
     {
-        <MudText Typo="Typo.body2" Style="opacity:0.5;" Class="mb-3">@_result.TotalCount ta komik</MudText>
-        <MudGrid Spacing="2">
+        <div class="results-bar">
+            <span>@_result.TotalCount ta natija topildi</span>
+            <span>Sahifa @_page / @_result.TotalPages</span>
+        </div>
+
+        <div class="comics-grid">
             @foreach (var c in _result.Items)
             {
-                <MudItem xs="6" sm="4" md="3" lg="2"><ComicCard Comic="c" /></MudItem>
+                <ComicCard Comic="c" />
             }
-        </MudGrid>
+        </div>
+
         @if (_result.TotalPages > 1)
         {
-            <MudStack AlignItems="AlignItems.Center" Class="mt-6">
-                <MudPagination Count="@_result.TotalPages" Selected="@_page" SelectedChanged="@OnPage"
-                               Color="Color.Primary" ShowFirstButton="true" ShowLastButton="true" />
-            </MudStack>
+            <div class="pag-wrap">
+                <MudPagination Count="@_result.TotalPages"
+                               Selected="@_page"
+                               SelectedChanged="@OnPage"
+                               Color="Color.Primary"
+                               ShowFirstButton="true"
+                               ShowLastButton="true" />
+            </div>
         }
     }
     else
     {
-        <MudText Style="opacity:0.5;text-align:center;padding:40px;">Hech narsa topilmadi.</MudText>
+        <div style="text-align:center;padding:60px;opacity:0.45;font-size:15px;">
+            Hech narsa topilmadi.
+        </div>
     }
-</MudContainer>
+</div>
 
 @code {
-    [SupplyParameterFromQuery] public string? search { get; set; }
-    [SupplyParameterFromQuery] public string? sortBy { get; set; }
+    [SupplyParameterFromQuery] public string? search  { get; set; }
+    [SupplyParameterFromQuery] public string? sortBy  { get; set; }
+    [SupplyParameterFromQuery] public string? genre   { get; set; }
 
     PaginatedList<ComicDto>? _result;
     bool   _loading = true;
     int    _page    = 1;
     string _search  = "";
     string _sort    = "createdAt";
-    ComicStatus? _status;
-    ComicType?   _type;
+    string _status  = "";
+    string _type    = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -102,9 +231,24 @@
     {
         _loading = true;
         StateHasChanged();
-        _result = await Mediator.Send(new GetComicsQuery(PageNumber: _page, PageSize: 24,
+
+        ComicStatus? st = _status switch {
+            "Ongoing"   => ComicStatus.Ongoing,
+            "Completed" => ComicStatus.Completed,
+            "Hiatus"    => ComicStatus.Hiatus,
+            _           => null
+        };
+        ComicType? ty = _type switch {
+            "Manhwa" => ComicType.Manhwa,
+            "Manga"  => ComicType.Manga,
+            "Manhua" => ComicType.Manhua,
+            _        => null
+        };
+
+        _result = await Mediator.Send(new GetComicsQuery(
+            PageNumber: _page, PageSize: 24,
             Search: string.IsNullOrWhiteSpace(_search) ? null : _search,
-            Status: _status, Type: _type, SortBy: _sort));
+            Status: st, Type: ty, SortBy: _sort));
         _loading = false;
     }
 

@@ -27,4 +27,5 @@ public class Comic : BaseEntity
     public ICollection<Chapter> Chapters { get; set; } = new List<Chapter>();
     public ICollection<ComicGenre> ComicGenres { get; set; } = new List<ComicGenre>();
     public ICollection<ComicTag> ComicTags { get; set; } = new List<ComicTag>();
+    public ICollection<UserBookmark> UserBookmarks { get; set; } = new List<UserBookmark>();
 }

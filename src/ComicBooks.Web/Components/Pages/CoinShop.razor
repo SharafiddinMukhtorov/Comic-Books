@@ -1,4 +1,4 @@
-@page "/coins"
+﻿@page "/coins"
 @inject ICoinPackageService PackageSvc
 @inject NavigationManager Nav
 
@@ -19,7 +19,7 @@
         box-shadow: 0 20px 48px rgba(0,0,0,0.35);
     }
     .pkg-card.popular {
-        border: 2px solid #7c3aed;
+        border: 2px solid #1b13be;
         background: rgba(124,58,237,0.07);
     }
     .pkg-popular-badge {
@@ -27,7 +27,7 @@
         top: -13px;
         left: 50%;
         transform: translateX(-50%);
-        background: #7c3aed;
+        background: #1b13be;
         color: #fff;
         font-size: 10px;
         font-weight: 900;
@@ -59,7 +59,7 @@
 
     <!-- Header -->
     <div style="text-align:center;margin-bottom:40px;">
-        <span style="font-size:3.5rem;">🪙</span>
+        <span style="font-size:3.5rem;">рџЄ™</span>
         <MudText Typo="Typo.h4" Style="font-weight:900;margin-top:8px;">Coin sotib olish</MudText>
         <MudText Style="opacity:0.5;margin-top:6px;font-size:15px;">
             Qulflangan boblarni o'qish uchun coin to'plab boring
@@ -82,25 +82,25 @@
 
                         @if (pkg.IsPopular)
                         {
-                            <div class="pkg-popular-badge">⭐ ENG MASHHUR</div>
+                            <div class="pkg-popular-badge">в­ђ ENG MASHHUR</div>
                         }
 
-                        <div style="font-size:2.8rem;margin-bottom:4px;">🪙</div>
+                        <div style="font-size:2.8rem;margin-bottom:4px;">рџЄ™</div>
                         <div style="font-size:2.4rem;font-weight:900;color:#f59e0b;line-height:1;">
                             @pkg.CoinAmount
                         </div>
                         @if (pkg.BonusCoins > 0)
                         {
                             <div style="font-size:12px;color:#22c55e;font-weight:700;margin-top:2px;">
-                                +@pkg.BonusCoins bonus 🎁
+                                +@pkg.BonusCoins bonus рџЋЃ
                             </div>
                         }
                         <div style="font-size:12px;opacity:0.4;margin-bottom:16px;margin-top:2px;">
                             @(string.IsNullOrEmpty(pkg.Name) ? "coins" : pkg.Name)
                         </div>
 
-                        <button style="width:100%;background:@(pkg.IsPopular?"#7c3aed":"rgba(124,58,237,0.15)");
-                                       color:@(pkg.IsPopular?"#fff":"#a78bfa");
+                        <button style="width:100%;background:@(pkg.IsPopular?"#1b13be":"rgba(27,19,190,0.15)");
+                                       color:@(pkg.IsPopular?"#fff":"#92d4fc");
                                        border:none;border-radius:10px;padding:12px;
                                        font-size:15px;font-weight:800;cursor:pointer;
                                        box-shadow:@(pkg.IsPopular?"0 4px 20px rgba(124,58,237,0.4)":"none");"
@@ -127,17 +127,17 @@
                          @onclick="@(() => BuyDefault(pkg))">
                         @if (pkg.IsPopular)
                         {
-                            <div class="pkg-popular-badge">⭐ ENG MASHHUR</div>
+                            <div class="pkg-popular-badge">в­ђ ENG MASHHUR</div>
                         }
-                        <div style="font-size:2.8rem;margin-bottom:4px;">🪙</div>
+                        <div style="font-size:2.8rem;margin-bottom:4px;">рџЄ™</div>
                         <div style="font-size:2.4rem;font-weight:900;color:#f59e0b;line-height:1;">@pkg.Coins</div>
                         @if (pkg.Bonus > 0)
                         {
-                            <div style="font-size:12px;color:#22c55e;font-weight:700;margin-top:2px;">+@pkg.Bonus bonus 🎁</div>
+                            <div style="font-size:12px;color:#22c55e;font-weight:700;margin-top:2px;">+@pkg.Bonus bonus рџЋЃ</div>
                         }
                         <div style="font-size:12px;opacity:0.4;margin-bottom:16px;margin-top:2px;">coins</div>
-                        <button style="width:100%;background:@(pkg.IsPopular?"#7c3aed":"rgba(124,58,237,0.15)");
-                                       color:@(pkg.IsPopular?"#fff":"#a78bfa");
+                        <button style="width:100%;background:@(pkg.IsPopular?"#1b13be":"rgba(27,19,190,0.15)");
+                                       color:@(pkg.IsPopular?"#fff":"#92d4fc");
                                        border:none;border-radius:10px;padding:12px;
                                        font-size:15px;font-weight:800;cursor:pointer;">
                             @pkg.Price UZS
@@ -152,13 +152,13 @@
     <!-- How to buy -->
     <MudPaper Class="pa-5 mt-8" Elevation="1" Style="border-radius:14px;">
         <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">
-            📖 Qanday sotib olish kerak?
+            рџ“– Qanday sotib olish kerak?
         </MudText>
         <div style="display:flex;flex-direction:column;gap:14px;">
             @foreach (var (step, i) in Steps.Select((s, i) => (s, i + 1)))
             {
                 <div style="display:flex;gap:14px;align-items:flex-start;">
-                    <div style="width:30px;height:30px;border-radius:50%;background:#7c3aed;color:#fff;
+                    <div style="width:30px;height:30px;border-radius:50%;background:#1b13be;color:#fff;
                                 display:flex;align-items:center;justify-content:center;
                                 font-size:13px;font-weight:800;flex-shrink:0;margin-top:1px;">@i</div>
                     <div style="font-size:14px;padding-top:5px;">@step</div>
@@ -169,7 +169,7 @@
         <div style="margin-top:24px;padding:16px;border-radius:10px;
                     background:rgba(124,58,237,0.08);border:1px solid rgba(124,58,237,0.2);
                     display:flex;align-items:center;gap:14px;">
-            <span style="font-size:2rem;">💬</span>
+            <span style="font-size:2rem;">рџ’¬</span>
             <div>
                 <div style="font-weight:700;margin-bottom:4px;">Telegram orqali to'lov</div>
                 <div style="font-size:13px;opacity:0.6;">
@@ -177,10 +177,10 @@
                 </div>
             </div>
             <a href="https://t.me/MukhtorovSh" target="_blank"
-               style="margin-left:auto;background:#7c3aed;color:#fff;border-radius:8px;
+               style="margin-left:auto;background:#1b13be;color:#fff;border-radius:8px;
                       padding:8px 18px;font-weight:700;font-size:13px;text-decoration:none;
                       white-space:nowrap;flex-shrink:0;">
-                Telegram →
+                Telegram в†’
             </a>
         </div>
     </MudPaper>
@@ -204,10 +204,10 @@
     readonly List<string> Steps = new()
     {
         "Yuqoridagi paketlardan birini tanlang",
-        "Telegram botimizga o'tasiz — paket va miqdori ko'rsatiladi",
+        "Telegram botimizga o'tasiz вЂ” paket va miqdori ko'rsatiladi",
         "To'lovni amalga oshiring (Payme / Click / Uzum)",
         "Admin 5 daqiqa ichida coin balansini to'ldiradi",
-        "Coin bilan istalgan qulflangan bobni o'qing! 🎉"
+        "Coin bilan istalgan qulflangan bobni o'qing! рџЋ‰"
     };
 
     protected override async Task OnInitializedAsync()
@@ -226,7 +226,8 @@
     void BuyDefault(DefPkg pkg)
     {
         var total = pkg.Coins + pkg.Bonus;
-        var msg   = Uri.EscapeDataString($"Coin sotib olmoqchiman:\n{total} coins — {pkg.Price} UZS");
+        var msg   = Uri.EscapeDataString($"Coin sotib olmoqchiman:\n{total} coins вЂ” {pkg.Price} UZS");
         Nav.NavigateTo($"https://t.me/MukhtorovSh?text={msg}", forceLoad: true);
     }
 }
+

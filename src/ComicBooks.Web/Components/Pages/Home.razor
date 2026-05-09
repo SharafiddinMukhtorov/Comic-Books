@@ -198,7 +198,7 @@
     .hero-arrow.left  { left: 16px; }
     .hero-arrow.right { right: 16px; }
 
-    /* ── Popular section ── */
+    /* ── Section header ── */
     .section-header {
         display: flex;
         align-items: center;
@@ -219,7 +219,7 @@
         display: inline-block;
         width: 4px;
         height: 20px;
-        background: linear-gradient(180deg, #1b13be, #419fd9);
+        background: linear-gradient(180deg, #030082, #419fd9);
         border-radius: 2px;
     }
 
@@ -238,7 +238,9 @@
         flex: 0 0 160px;
         border-radius: 12px;
         overflow: hidden;
-        box-shadow: 0 8px 25px rgba(0,0,0,0.35);
+        background: var(--mud-palette-surface);
+        border: 1px solid var(--mud-palette-lines-default);
+        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         text-decoration: none;
         color: inherit;
@@ -246,7 +248,7 @@
         position: relative;
     }
 
-    .trending-card:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.5); }
+    .trending-card:hover { transform: translateY(-6px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
 
     .trending-card img {
         width: 100%;
@@ -268,38 +270,31 @@
         backdrop-filter: blur(4px);
     }
 
-    .trending-card-fav {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        background: rgba(0,0,0,0.55);
-        color: #fff;
-        width: 28px;
-        height: 28px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-        backdrop-filter: blur(4px);
-        cursor: pointer;
-    }
-
     .trending-info {
         padding: 10px 10px 12px;
+        background: var(--mud-palette-surface);
     }
+
+    .trending-info .tc-stars {
+        display: flex;
+        align-items: center;
+        gap: 1px;
+        margin-top: 4px;
+    }
+    .trending-info .tc-star      { font-size: 11px; color: #f59e0b; }
+    .trending-info .tc-star.empty{ color: rgba(128,128,128,0.35); }
 
     .latest-row {
         display: flex;
         gap: 10px;
         padding: 10px 8px;
-        border-bottom: 1px solid rgba(128,128,128,0.09);
+        border-bottom: 1px solid var(--mud-palette-lines-default);
         cursor: pointer;
         transition: background 0.15s;
         border-radius: 8px;
     }
 
-    .latest-row:hover { background: rgba(65,159,217,0.07); }
+    .latest-row:hover { background: rgba(65,159,217,0.08); }
 
     @@media (max-width: 768px) {
         .hero-content { padding: 32px 20px; }
@@ -321,7 +316,6 @@ else
 
     <!-- Hero Carousel -->
     <div class="hero-wrapper">
-        <!-- Blurred background -->
         @if (active != null)
         {
             <div class="hero-bg-blur"
@@ -329,14 +323,11 @@ else
             </div>
         }
 
-        <!-- Left arrow -->
         <button class="hero-arrow left" @onclick="PrevSlide">&#8249;</button>
 
-        <!-- Content -->
         <div class="hero-content">
             @if (active != null)
             {
-                <!-- Left: text info -->
                 <div class="hero-left">
                     <div class="hero-badge">⭐ Eng mashhur</div>
                     <h1 class="hero-title">@active.Title</h1>
@@ -353,7 +344,6 @@ else
                     </a>
                 </div>
 
-                <!-- Right: cover image -->
                 <div class="hero-right">
                     <img class="hero-cover"
                          src="@(active.CoverImageUrl ?? $"https://picsum.photos/seed/{active.Slug}/350/500")"
@@ -364,10 +354,8 @@ else
             }
         </div>
 
-        <!-- Right arrow -->
         <button class="hero-arrow right" @onclick="NextSlide">&#8250;</button>
 
-        <!-- Dot indicators -->
         <div class="hero-dots">
             @for (int i = 0; i < items.Count; i++)
             {
@@ -381,7 +369,7 @@ else
     <!-- BODY -->
     <div style="max-width:1300px;margin:0 auto;padding:32px 20px 80px;">
 
-        <!-- Mashhur (Popular cards like TopManga) -->
+        <!-- Mashhur (trending cards) -->
         <div style="margin-bottom:40px;">
             <div class="section-header">
                 <span class="section-title">Mashhur</span>
@@ -398,13 +386,19 @@ else
                              onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)t/300/420'"
                              alt="@c.Title" />
                         <div class="trending-card-rating">★ @c.AverageRating.ToString("F1")</div>
-                        <div class="trending-card-fav">♡</div>
                         <div class="trending-info">
                             <div style="font-weight:700;font-size:13px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                 @c.Title
                             </div>
-                            <div style="font-size:11px;opacity:0.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                                @string.Join(", ", c.Genres.Take(2))
+                            <div style="font-size:11px;opacity:0.5;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                Chapter @((int)(c.LatestChapterNumber ?? c.ChapterCount))
+                            </div>
+                            <div class="tc-stars">
+                                @for (int s = 1; s <= 5; s++)
+                                {
+                                    <span class="tc-star @(s <= (int)Math.Round(c.AverageRating/2) ? "" : "empty")">★</span>
+                                }
+                                <span style="font-size:10.5px;color:#f59e0b;font-weight:700;margin-left:3px;">@c.AverageRating.ToString("F1")</span>
                             </div>
                         </div>
                     </a>
@@ -412,8 +406,9 @@ else
             </div>
         </div>
 
-        <!-- Latest Updates + Popular -->
+        <!-- Latest Updates + Popular sidebar -->
         <div style="display:grid;grid-template-columns:1fr 300px;gap:32px;">
+
             <!-- Latest Updates -->
             <div>
                 <div class="section-header">
@@ -450,7 +445,7 @@ else
                 </div>
             </div>
 
-            <!-- Popular -->
+            <!-- Popular sidebar -->
             <div>
                 <div class="section-header" style="flex-wrap:wrap;gap:8px;">
                     <span class="section-title">Reytinglar</span>
@@ -461,9 +456,7 @@ else
                         }
                     </div>
                 </div>
-                @{
-                    int rk = 0;
-                }
+                @{ int rk = 0; }
                 @foreach (var c in TabList())
                 {
                     int r = ++rk;
@@ -496,12 +489,12 @@ else
 
     protected override async Task OnInitializedAsync()
     {
+        Theme.OnChange += Refresh;
         _featured = await Mediator.Send(new GetComicsQuery(PageSize: 12, IsFeatured: true, SortBy: "rating"));
         _trending = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "views"));
-        _popular = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true, SortBy: "rating"));
-        _latest = await Mediator.Send(new GetComicsQuery(PageSize: 14, SortBy: "createdAt"));
-
-        _loading = false;
+        _popular  = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true, SortBy: "rating"));
+        _latest   = await Mediator.Send(new GetComicsQuery(PageSize: 14, SortBy: "createdAt"));
+        _loading  = false;
 
         _autoTimer = new System.Threading.Timer(_ =>
         {
@@ -526,23 +519,21 @@ else
         _activeIndex = (_activeIndex - 1 + count) % count;
     }
 
-    private void NavigateToComic(ComicDto comic) => Nav.NavigateTo($"/comic/{comic.Slug}");
-
     List<ComicDto> TabList() =>
-        _tab == 0 ? (_trending?.Items?.Take(10).ToList() ?? new()) :
-                    (_popular?.Items?.Take(10).ToList() ?? new());
+        _tab == 0 ? (_trending?.Items?.Take(10).ToList() ?? new())
+                  : (_popular?.Items?.Take(10).ToList()  ?? new());
 
     string FmtDate(DateTime d)
     {
         var diff = DateTime.UtcNow - d;
-        if (diff.TotalHours < 1) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalHours < 1)  return $"{(int)diff.TotalMinutes}m ago";
         if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
-        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
-        return $"{(int)(diff.TotalDays / 7)}w ago";
+        if (diff.TotalDays  < 7)  return $"{(int)diff.TotalDays}d ago";
+        return $"{(int)(diff.TotalDays/7)}w ago";
     }
 
     string TabBtn(bool on) => on
-        ? "background:#1b13be;color:#fff;font-size:11px;font-weight:700;padding:6px 16px;border-radius:9999px;border:none;cursor:pointer;"
+        ? $"background:{(Theme.IsDark ? "#1b13be" : "#419fd9")};color:#fff;font-size:11px;font-weight:700;padding:6px 16px;border-radius:9999px;border:none;cursor:pointer;"
         : "background:transparent;color:inherit;font-size:11px;font-weight:600;padding:6px 16px;border-radius:9999px;border:1px solid rgba(128,128,128,0.3);cursor:pointer;";
 
     string RankStyle(int r) => r switch
@@ -550,11 +541,11 @@ else
         1 => "background:#f59e0b;color:#000;",
         2 => "background:#9ca3af;color:#000;",
         3 => "background:#b45309;color:#fff;",
-        _ => "background:rgba(124,58,237,0.15);color:#a78bfa;"
+        _ => Theme.IsDark
+            ? "background:rgba(27,19,190,0.15);color:#6baed6;"
+            : "background:rgba(65,159,217,0.12);color:#0e6fa8;"
     };
 
-    public void Dispose()
-    {
-        _autoTimer?.Dispose();
-    }
+    async void Refresh() => await InvokeAsync(StateHasChanged);
+    public void Dispose() { _autoTimer?.Dispose(); Theme.OnChange -= Refresh; }
 }

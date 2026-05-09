@@ -16,6 +16,8 @@ public interface IApplicationDbContext
     DbSet<CoinTransaction> CoinTransactions { get; }
     DbSet<UserChapterAccess> ChapterAccesses { get; }
     DbSet<CoinPackage> CoinPackages { get; }
+    DbSet<UserBookmark> UserBookmarks { get; }
+    DbSet<ComicView> ComicViews { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

@@ -7,8 +7,8 @@
 /* Scrollbar styling */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(124,58,237,0.4); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: #7c3aed; }
+::-webkit-scrollbar-thumb { background: rgba(27,19,190,0.4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #1b13be; }
 
 /* Hide scrollbar but keep scrolling */
 .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -20,7 +20,7 @@
 body {
     --text-muted: rgba(128,128,128,0.6);
     --border-subtle: rgba(128,128,128,0.12);
-    --hover-bg: rgba(124,58,237,0.07);
+    --hover-bg: rgba(27,19,190,0.07);
     --card-bg: var(--mud-palette-surface);
 }
 
@@ -53,7 +53,7 @@ input::placeholder {
 
 /* MudBlazor overrides */
 .mud-nav-link.active {
-    color: #7c3aed !important;
+    color: #419fd9 !important;
 }
 
 /* Smooth transitions */
@@ -68,8 +68,8 @@ input::placeholder {
 
 /* Genre chips */
 .genre-chip {
-    background: rgba(124,58,237,0.12) !important;
-    color: #7c3aed !important;
+    background: rgba(65,159,217,0.12) !important;
+    color: #419fd9 !important;
 }
 
 /* Font */

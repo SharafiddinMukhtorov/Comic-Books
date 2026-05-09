@@ -19,6 +19,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<CoinTransaction> CoinTransactions => Set<CoinTransaction>();
     public DbSet<UserChapterAccess> ChapterAccesses => Set<UserChapterAccess>();
     public DbSet<CoinPackage> CoinPackages => Set<CoinPackage>();
+    public DbSet<UserBookmark> UserBookmarks => Set<UserBookmark>();
+    public DbSet<ComicView> ComicViews => Set<ComicView>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

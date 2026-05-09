@@ -1,156 +1,196 @@
 @page "/admin"
 @layout AdminLayout
 @inject IMediator Mediator
+@using ComicBooks.Application.Features.Admin.Queries
+@using ComicBooks.Application.Features.Comics.Queries
 
 <PageTitle>Dashboard - Admin</PageTitle>
 
-<MudText Typo="Typo.h4" Class="mb-6 font-bold">Dashboard</MudText>
+<MudText Typo="Typo.h5" Class="mb-6" Style="font-weight:900;">📊 Boshqaruv paneli</MudText>
 
-<MudGrid Class="mb-6">
-    <MudItem xs="12" sm="6" md="3">
-        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid var(--mud-palette-primary);">
-            <div class="d-flex justify-space-between align-center">
-                <div>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6; text-transform:uppercase; letter-spacing:1px;">Total Comics</MudText>
-                    <MudText Typo="Typo.h4" Class="font-bold mt-1">@_totalComics</MudText>
-                </div>
-                <MudIcon Icon="@Icons.Material.Filled.MenuBook" Color="Color.Primary" Style="font-size:40px; opacity:0.3;" />
-            </div>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #4caf50;">
-            <div class="d-flex justify-space-between align-center">
-                <div>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6; text-transform:uppercase; letter-spacing:1px;">Total Chapters</MudText>
-                    <MudText Typo="Typo.h4" Class="font-bold mt-1">@_totalChapters</MudText>
-                </div>
-                <MudIcon Icon="@Icons.Material.Filled.AutoStories" Style="color:#4caf50; font-size:40px; opacity:0.3;" />
-            </div>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #ff9800;">
-            <div class="d-flex justify-space-between align-center">
-                <div>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6; text-transform:uppercase; letter-spacing:1px;">Genres</MudText>
-                    <MudText Typo="Typo.h4" Class="font-bold mt-1">@_totalGenres</MudText>
-                </div>
-                <MudIcon Icon="@Icons.Material.Filled.Label" Style="color:#ff9800; font-size:40px; opacity:0.3;" />
-            </div>
-        </MudPaper>
-    </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <MudPaper Elevation="2" Class="pa-5" Style="border-radius:12px; border-left:4px solid #9c27b0;">
-            <div class="d-flex justify-space-between align-center">
-                <div>
-                    <MudText Typo="Typo.caption" Style="opacity:0.6; text-transform:uppercase; letter-spacing:1px;">Tags</MudText>
-                    <MudText Typo="Typo.h4" Class="font-bold mt-1">@_totalTags</MudText>
-                </div>
-                <MudIcon Icon="@Icons.Material.Filled.Tag" Style="color:#9c27b0; font-size:40px; opacity:0.3;" />
-            </div>
-        </MudPaper>
-    </MudItem>
-</MudGrid>
-
-<MudText Typo="Typo.h6" Class="mb-4 font-bold">Quick Actions</MudText>
-<MudGrid Class="mb-6">
-    <MudItem xs="12" sm="6" md="3">
-        <MudButton Href="/admin/comics/create" Variant="Variant.Filled" Color="Color.Primary"
-                   FullWidth="true" Size="Size.Large"
-                   StartIcon="@Icons.Material.Filled.Add" Style="height:60px; border-radius:10px;">
-            Add Comic
-        </MudButton>
-    </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <MudButton Href="/admin/chapters" Variant="Variant.Outlined" Color="Color.Primary"
-                   FullWidth="true" Size="Size.Large"
-                   StartIcon="@Icons.Material.Filled.Add" Style="height:60px; border-radius:10px;">
-            Add Chapter
-        </MudButton>
-    </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <MudButton Href="/admin/genres" Variant="Variant.Outlined" Color="Color.Default"
-                   FullWidth="true" Size="Size.Large"
-                   StartIcon="@Icons.Material.Filled.Label" Style="height:60px; border-radius:10px;">
-            Manage Genres
-        </MudButton>
-    </MudItem>
-    <MudItem xs="12" sm="6" md="3">
-        <MudButton Href="/admin/comics" Variant="Variant.Outlined" Color="Color.Default"
-                   FullWidth="true" Size="Size.Large"
-                   StartIcon="@Icons.Material.Filled.MenuBook" Style="height:60px; border-radius:10px;">
-            All Comics
-        </MudButton>
-    </MudItem>
-</MudGrid>
-
-<MudText Typo="Typo.h6" Class="mb-4 font-bold">Recent Comics</MudText>
-
-@if (_recentComics != null)
+@if (_loading)
 {
-    <MudTable Items="@_recentComics.Items" Hover="true" Elevation="2" Style="border-radius:12px;">
-        <HeaderContent>
-            <MudTh>Title</MudTh>
-            <MudTh>Type</MudTh>
-            <MudTh>Status</MudTh>
-            <MudTh>Chapters</MudTh>
-            <MudTh>Views</MudTh>
-            <MudTh>Actions</MudTh>
-        </HeaderContent>
-        <RowTemplate>
-            <MudTd>
-                <div class="d-flex align-center gap-2">
-                    <MudAvatar Size="Size.Small" Image="@context.CoverImageUrl" />
-                    <MudText Typo="Typo.body2" Class="font-medium">@context.Title</MudText>
-                </div>
-            </MudTd>
-            <MudTd>
-                <MudChip T="string" Size="Size.Small" Label="true">@context.Type</MudChip>
-            </MudTd>
-            <MudTd>
-                <MudChip T="string" Size="Size.Small" Label="true" Color="@GetStatusColor(context.Status)">
-                    @context.Status
-                </MudChip>
-            </MudTd>
-            <MudTd>@context.ChapterCount</MudTd>
-            <MudTd>@context.ViewCount.ToString("N0")</MudTd>
-            <MudTd>
-                <MudIconButton Icon="@Icons.Material.Filled.Edit"
-                               Size="Size.Small"
-                               Color="Color.Primary"
-                               Href="@($"/admin/comics/edit/{context.Id}")" />
-                <MudIconButton Icon="@Icons.Material.Filled.Visibility"
-                               Size="Size.Small"
-                               Href="@($"/comic/{context.Slug}")" />
-            </MudTd>
-        </RowTemplate>
-    </MudTable>
+    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+}
+else if (_stats is not null)
+{
+    <!-- Stats cards row 1 -->
+    <MudGrid Class="mb-4">
+        <MudItem xs="6" sm="4" md="2">
+            @StatCard("📚", "Komiklar", _stats.TotalComics.ToString("N0"), "#419fd9")
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            @StatCard("📖", "Boblar", _stats.TotalChapters.ToString("N0"), "#4caf50")
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            @StatCard("👁️", "Ko'rishlar", Fmt(_stats.TotalViews), "#f59e0b")
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            @StatCard("👥", "Unikal o'quvchilar", Fmt(_stats.UniqueViewers), "#1b13be")
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            @StatCard("🔖", "Bookmarklar", Fmt(_stats.TotalBookmarks), "#e91e63")
+        </MudItem>
+        <MudItem xs="6" sm="4" md="2">
+            @StatCard("🏷️", "Janr & Teglar", (_stats.TotalGenres + _stats.TotalTags).ToString(), "#419fd9")
+        </MudItem>
+    </MudGrid>
+
+    <!-- Quick actions -->
+    <MudText Typo="Typo.h6" Class="mb-3 mt-2" Style="font-weight:800;">⚡ Tezkor harakatlar</MudText>
+    <MudGrid Class="mb-6">
+        <MudItem xs="12" sm="6" md="3">
+            <MudButton Href="/admin/comics/create" Variant="Variant.Filled" Color="Color.Primary"
+                       FullWidth="true" Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.Add" Style="height:52px;border-radius:10px;text-transform:none;font-weight:700;">
+                Komik qo'shish
+            </MudButton>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudButton Href="/admin/chapters" Variant="Variant.Outlined" Color="Color.Primary"
+                       FullWidth="true" Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.Add" Style="height:52px;border-radius:10px;text-transform:none;font-weight:700;">
+                Bob qo'shish
+            </MudButton>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudButton Href="/admin/genres" Variant="Variant.Outlined" Color="Color.Default"
+                       FullWidth="true" Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.Label" Style="height:52px;border-radius:10px;text-transform:none;font-weight:700;">
+                Janrlar
+            </MudButton>
+        </MudItem>
+        <MudItem xs="12" sm="6" md="3">
+            <MudButton Href="/admin/featured" Variant="Variant.Outlined" Color="Color.Default"
+                       FullWidth="true" Size="Size.Large"
+                       StartIcon="@Icons.Material.Filled.ViewCarousel" Style="height:52px;border-radius:10px;text-transform:none;font-weight:700;">
+                Carousel
+            </MudButton>
+        </MudItem>
+    </MudGrid>
+
+    <MudGrid>
+        <!-- Top viewed -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
+                <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight:800;">👁️ Eng ko'p ko'rilgan</MudText>
+                @foreach (var (c, i) in _stats.TopViewed.Select((x, i) => (x, i + 1)))
+                {
+                    <div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--mud-palette-lines-default);">
+                        <span style="@RankStyle(i)width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;">@i</span>
+                        <MudAvatar Size="Size.Small" Image="@c.CoverImageUrl" />
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
+                            <div style="font-size:11px;opacity:0.5;">@c.ChapterCount bob</div>
+                        </div>
+                        <div style="font-size:13px;font-weight:800;color:#f59e0b;white-space:nowrap;">@Fmt(c.ViewCount) 👁</div>
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <!-- Top bookmarked -->
+        <MudItem xs="12" md="6">
+            <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
+                <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight:800;">🔖 Eng ko'p saqlangan</MudText>
+                @foreach (var (c, i) in _stats.TopBookmarked.Select((x, i) => (x, i + 1)))
+                {
+                    <div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--mud-palette-lines-default);">
+                        <span style="@RankStyle(i)width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;">@i</span>
+                        <MudAvatar Size="Size.Small" Image="@c.CoverImageUrl" />
+                        <div style="flex:1;min-width:0;">
+                            <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
+                            <div style="font-size:11px;opacity:0.5;">@c.ChapterCount bob</div>
+                        </div>
+                        <div style="font-size:13px;font-weight:800;color:#e91e63;white-space:nowrap;">@Fmt(c.BookmarkCount) 🔖</div>
+                    </div>
+                }
+            </MudPaper>
+        </MudItem>
+
+        <!-- Recent comics table -->
+        <MudItem xs="12">
+            <MudPaper Elevation="2" Class="pa-4 mt-2" Style="border-radius:12px;">
+                <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight:800;">📋 So'nggi komiklar</MudText>
+                <MudTable Items="@_recent" Hover="true" Elevation="0" Dense="true">
+                    <HeaderContent>
+                        <MudTh>Komik</MudTh>
+                        <MudTh>Turi</MudTh>
+                        <MudTh>Holat</MudTh>
+                        <MudTh>Boblar</MudTh>
+                        <MudTh>Ko'rishlar</MudTh>
+                        <MudTh>Reyting</MudTh>
+                        <MudTh></MudTh>
+                    </HeaderContent>
+                    <RowTemplate>
+                        <MudTd>
+                            <div style="display:flex;align-items:center;gap:8px;">
+                                <MudAvatar Size="Size.Small" Image="@context.CoverImageUrl" />
+                                <span style="font-weight:600;font-size:13px;">@context.Title</span>
+                            </div>
+                        </MudTd>
+                        <MudTd><MudChip T="string" Size="Size.Small" Label="true">@context.Type</MudChip></MudTd>
+                        <MudTd>
+                            <MudChip T="string" Size="Size.Small" Label="true" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
+                        </MudTd>
+                        <MudTd>@context.ChapterCount</MudTd>
+                        <MudTd>@Fmt(context.ViewCount)</MudTd>
+                        <MudTd>
+                            <span style="color:#f59e0b;font-weight:700;">★ @context.AverageRating.ToString("F1")</span>
+                        </MudTd>
+                        <MudTd>
+                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
+                                           Color="Color.Primary" Href="@($"/admin/comics/edit/{context.Id}")" />
+                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
+                                           Href="@($"/comic/{context.Slug}")" Target="_blank" />
+                        </MudTd>
+                    </RowTemplate>
+                </MudTable>
+            </MudPaper>
+        </MudItem>
+    </MudGrid>
 }
 
 @code {
-    private PaginatedList<ComicDto>? _recentComics;
-    private int _totalComics, _totalChapters, _totalGenres, _totalTags;
+    private AdminStatsDto? _stats;
+    private List<ComicDto> _recent = new();
+    private bool _loading = true;
 
     protected override async Task OnInitializedAsync()
     {
-        _recentComics = await Mediator.Send(new GetComicsQuery(PageSize: 10));
-        _totalComics = _recentComics.TotalCount;
-        _totalChapters = _recentComics.Items.Sum(c => c.ChapterCount);
-
-        var genres = await Mediator.Send(new GetAllGenresQuery());
-        _totalGenres = genres.Count;
-
-        var tags = await Mediator.Send(new GetAllTagsQuery());
-        _totalTags = tags.Count;
+        _stats = await Mediator.Send(new GetAdminStatsQuery());
+        var r = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "createdAt"));
+        _recent = r.Items;
+        _loading = false;
     }
 
-    private Color GetStatusColor(ComicStatus s) => s switch
+    RenderFragment StatCard(string icon, string label, string value, string color) => __builder =>
     {
-        ComicStatus.Ongoing => Color.Success,
+        <MudPaper Elevation="2" Class="pa-4" Style="@($"border-radius:12px;border-left:3px solid {color};")">
+            <div style="font-size:1.5rem;margin-bottom:4px;">@icon</div>
+            <div style="font-size:1.4rem;font-weight:900;line-height:1;">@value</div>
+            <div style="font-size:11px;opacity:0.5;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">@label</div>
+        </MudPaper>;
+    };
+
+    string Fmt(int v) => v >= 1_000_000 ? $"{v / 1_000_000.0:F1}M"
+                       : v >= 1_000     ? $"{v / 1_000.0:F1}K"
+                       : v.ToString();
+
+    string RankStyle(int r) => r switch
+    {
+        1 => "background:#f59e0b;color:#000;",
+        2 => "background:#9ca3af;color:#000;",
+        3 => "background:#b45309;color:#fff;",
+        _ => "background:rgba(65,159,217,0.15);color:#419fd9;"
+    };
+
+    Color GetStatusColor(ComicStatus s) => s switch
+    {
+        ComicStatus.Ongoing   => Color.Success,
         ComicStatus.Completed => Color.Primary,
-        ComicStatus.Hiatus => Color.Warning,
+        ComicStatus.Hiatus    => Color.Warning,
         ComicStatus.Cancelled => Color.Error,
-        _ => Color.Default
+        _                     => Color.Default
     };
 }

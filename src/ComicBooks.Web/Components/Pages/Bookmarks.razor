@@ -4,12 +4,12 @@
 @inject NavigationManager Nav
 @implements IDisposable
 
-<PageTitle>My Bookmarks - AsuraComic</PageTitle>
+<PageTitle>Saqlanganlar - Manga Dunyo</PageTitle>
 
 <div style="max-width:1400px; margin:0 auto; padding:24px 16px;">
     <div style="display:flex; align-items:center; gap:12px; margin-bottom:24px;">
         <MudIcon Icon="@Icons.Material.Filled.Bookmark" Color="Color.Primary" Style="font-size:32px;" />
-        <MudText Typo="Typo.h4" Class="font-bold">My Bookmarks</MudText>
+        <MudText Typo="Typo.h4" Class="font-bold">Saqlanganlar</MudText>
     </div>
 
     @if (_loading)
@@ -20,16 +20,16 @@
     {
         <MudPaper Elevation="1" Class="pa-12 text-center" Style="border-radius:16px;">
             <MudIcon Icon="@Icons.Material.Outlined.BookmarkBorder" Style="font-size:64px; opacity:0.3;" />
-            <MudText Typo="Typo.h6" Class="mt-4" Style="opacity:0.6;">No bookmarks yet</MudText>
-            <MudText Typo="Typo.body2" Style="opacity:0.4;" Class="mt-2">Browse comics and click the bookmark icon to save them here.</MudText>
+            <MudText Typo="Typo.h6" Class="mt-4" Style="opacity:0.6;">Hali hech narsa saqlanmagan</MudText>
+            <MudText Typo="Typo.body2" Style="opacity:0.4;" Class="mt-2">Komikni bookmark qilish uchun detail sahifada tugmani bosing.</MudText>
             <MudButton Href="/comics" Variant="Variant.Filled" Color="Color.Primary" Class="mt-6" Style="border-radius:20px;">
-                Browse Comics
+                Komiklar katalogi
             </MudButton>
         </MudPaper>
     }
     else
     {
-        <MudText Typo="Typo.body2" Style="opacity:0.6;" Class="mb-4">@_bookmarked.Count bookmarked</MudText>
+        <MudText Typo="Typo.body2" Style="opacity:0.6;" Class="mb-4">@_bookmarked.Count ta saqlangan</MudText>
         <MudGrid Spacing="2">
             @foreach (var comic in _bookmarked)
             {
@@ -45,10 +45,17 @@
     private List<ComicDto> _bookmarked = new();
     private bool _loading = true;
 
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
         BookmarkSvc.OnChanged += OnBookmarkChanged;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        await BookmarkSvc.EnsureLoadedAsync();
         await LoadBookmarks();
+        await InvokeAsync(StateHasChanged);
     }
 
     private async Task LoadBookmarks()
@@ -57,12 +64,16 @@
         var ids = BookmarkSvc.GetAll();
         if (!ids.Any()) { _loading = false; return; }
 
-        var all = await Mediator.Send(new GetComicsQuery(PageSize: 200));
+        var all = await Mediator.Send(new GetComicsQuery(PageSize: 500));
         _bookmarked = all.Items.Where(c => ids.Contains(c.Id)).ToList();
         _loading = false;
     }
 
-    private void OnBookmarkChanged() => InvokeAsync(async () => await LoadBookmarks());
+    private void OnBookmarkChanged() => InvokeAsync(async () =>
+    {
+        await LoadBookmarks();
+        await InvokeAsync(StateHasChanged);
+    });
 
     public void Dispose() => BookmarkSvc.OnChanged -= OnBookmarkChanged;
 }
