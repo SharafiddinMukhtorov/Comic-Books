@@ -4,10 +4,109 @@
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+@inject AuthenticationStateProvider AuthState
 
 <PageTitle>@(IsEdit ? "Tahrirlash" : "Yangi komik") - Admin</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-4">@(IsEdit ? "✏️ Komikni tahrirlash" : "➕ Yangi komik")</MudText>
+<style>
+    .cf-title {
+        font-size: 1.6rem;
+        font-weight: 900;
+        margin: 0 0 6px;
+        background: linear-gradient(135deg, #fff, #60a5fa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .cf-sub { opacity: 0.55; font-size: 13px; margin-bottom: 22px; }
+
+    .cf-card {
+        background: rgba(255,255,255,0.04);
+        backdrop-filter: blur(14px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 18px;
+    }
+    .cf-section-title {
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        opacity: 0.6;
+        margin: 0 0 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .cf-section-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
+    }
+
+    .adm-file-input { display: none; }
+    .adm-file-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #419fd9, #1b13be);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+        border: none;
+        transition: filter 0.15s, transform 0.15s;
+        box-shadow: 0 4px 14px rgba(27,19,190,0.35);
+    }
+    .adm-file-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+
+    .cf-cover-box {
+        position: relative;
+        width: 130px;
+        flex-shrink: 0;
+    }
+    .cf-cover-box img {
+        width: 130px;
+        height: 176px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+    .cf-banner-box img {
+        width: 240px;
+        height: 96px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+    .cf-rm-btn {
+        position: absolute;
+        top: -8px; right: -8px;
+        width: 26px; height: 26px;
+        border-radius: 50%;
+        background: #ef4444;
+        color: #fff;
+        border: 2px solid rgba(15,15,28,1);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cf-rm-btn:hover { background: #dc2626; }
+</style>
+
+<h1 class="cf-title">@(IsEdit ? "✏️ Komikni tahrirlash" : "➕ Yangi komik qo'shish")</h1>
+<p class="cf-sub">Komik haqida to'liq ma'lumot kiriting</p>
 
 @if (_loading)
 {
@@ -18,20 +117,94 @@ else
 {
 <MudGrid>
     <MudItem xs="12" md="8">
-        <MudPaper Class="pa-4 mb-4">
+        <!-- Asosiy ma'lumotlar -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">📋 Asosiy ma'lumotlar</h3>
             <MudTextField @bind-Value="_title"     Label="Nomi *"       Variant="Variant.Outlined" Class="mb-3" />
-            <MudTextField @bind-Value="_altTitles" Label="Boshqa nomlar" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_altTitles" Label="Boshqa nomlar (ixtiyoriy)" Variant="Variant.Outlined" Class="mb-3" />
             <MudTextField @bind-Value="_desc"      Label="Tavsif"        Variant="Variant.Outlined" Lines="5" Class="mb-3" />
             <MudGrid>
                 <MudItem xs="6"><MudTextField @bind-Value="_author" Label="Muallif" Variant="Variant.Outlined" /></MudItem>
                 <MudItem xs="6"><MudTextField @bind-Value="_artist" Label="Rassom"  Variant="Variant.Outlined" /></MudItem>
             </MudGrid>
-            <MudTextField @bind-Value="_coverUrl"  Label="Muqova URL"  Variant="Variant.Outlined" Class="mt-3" />
-            <MudTextField @bind-Value="_bannerUrl" Label="Banner URL"   Variant="Variant.Outlined" Class="mt-3" />
-        </MudPaper>
+        </div>
 
-        <MudPaper Class="pa-4">
-            <MudText Typo="Typo.h6" Class="mb-3">Janrlar va Teglar</MudText>
+        <!-- Rasmlar -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">🖼️ Muqova va Banner</h3>
+
+            <!-- Muqova rasmi -->
+            <div style="margin-bottom:20px;">
+                <div style="font-size:12px;font-weight:700;opacity:0.75;margin-bottom:10px;">
+                    📷 Muqova rasmi <span style="color:#ef4444;">*</span>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+                    @if (!string.IsNullOrEmpty(_coverUrl))
+                    {
+                        <div class="cf-cover-box">
+                            <img src="@_coverUrl" alt="Cover" />
+                            <button type="button" @onclick="@(() => _coverUrl = "")" class="cf-rm-btn">✕</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="cf-cover-box" style="display:flex;align-items:center;justify-content:center;
+                                                       width:130px;height:176px;border-radius:10px;
+                                                       background:rgba(255,255,255,0.03);
+                                                       border:2px dashed rgba(255,255,255,0.12);
+                                                       color:rgba(255,255,255,0.3);font-size:32px;">
+                            📷
+                        </div>
+                    }
+                    <div style="flex:1;min-width:240px;">
+                        <InputFile OnChange="@(e => UploadAsync(e, "cover"))" accept="image/*" class="adm-file-input" id="cover-file" />
+                        <label for="cover-file" class="adm-file-btn">
+                            @if (_uploadingCover) { <text>⏳ Yuklanmoqda...</text> }
+                            else { <text>📁 @(string.IsNullOrEmpty(_coverUrl) ? "Kompyuterdan tanlash" : "Almashtirish")</text> }
+                        </label>
+                        <div style="font-size:11px;opacity:0.45;margin-top:6px;">JPG · PNG · WEBP · 20MB gacha</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Banner rasmi -->
+            <div>
+                <div style="font-size:12px;font-weight:700;opacity:0.75;margin-bottom:10px;">
+                    🎨 Banner rasmi <span style="opacity:0.5;">(ixtiyoriy)</span>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+                    @if (!string.IsNullOrEmpty(_bannerUrl))
+                    {
+                        <div class="cf-banner-box" style="position:relative;">
+                            <img src="@_bannerUrl" alt="Banner" />
+                            <button type="button" @onclick="@(() => _bannerUrl = "")" class="cf-rm-btn">✕</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="display:flex;align-items:center;justify-content:center;
+                                    width:240px;height:96px;border-radius:10px;
+                                    background:rgba(255,255,255,0.03);
+                                    border:2px dashed rgba(255,255,255,0.12);
+                                    color:rgba(255,255,255,0.3);font-size:28px;">
+                            🎨
+                        </div>
+                    }
+                    <div style="flex:1;min-width:200px;">
+                        <InputFile OnChange="@(e => UploadAsync(e, "banner"))" accept="image/*" class="adm-file-input" id="banner-file" />
+                        <label for="banner-file" class="adm-file-btn">
+                            @if (_uploadingBanner) { <text>⏳ Yuklanmoqda...</text> }
+                            else { <text>📁 @(string.IsNullOrEmpty(_bannerUrl) ? "Bannerni tanlash" : "Almashtirish")</text> }
+                        </label>
+                        <div style="font-size:11px;opacity:0.45;margin-top:6px;">Keng formatdagi rasm (16:9 yoki 21:9)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Janrlar va teglar -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">🏷️ Janrlar va Teglar</h3>
             <MudSelect T="Guid" @bind-SelectedValues="_genreIds" Label="Janrlar"
                        MultiSelection="true" Variant="Variant.Outlined" Class="mb-3">
                 @foreach (var g in _genres)
@@ -42,19 +215,23 @@ else
                 @foreach (var t in _tags)
                 { <MudSelectItem T="Guid" Value="@t.Id">@t.Name</MudSelectItem> }
             </MudSelect>
-        </MudPaper>
+        </div>
     </MudItem>
 
     <MudItem xs="12" md="4">
         @if (!string.IsNullOrEmpty(_coverUrl))
         {
-            <MudPaper Class="pa-4 mb-4">
-                <MudText Typo="Typo.subtitle2" Class="mb-2">Muqova</MudText>
-                <img src="@_coverUrl" style="width:100%;border-radius:8px;max-height:280px;object-fit:cover;" onerror="this.style.display='none'" />
-            </MudPaper>
+            <div class="cf-card" style="padding:14px;">
+                <h3 class="cf-section-title">👁️ Ko'rinish</h3>
+                <img src="@_coverUrl" style="width:100%;border-radius:10px;max-height:340px;object-fit:cover;display:block;"
+                     onerror="this.style.display='none'" />
+            </div>
         }
 
-        <MudPaper Class="pa-4">
+        <!-- Sozlamalar -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">⚙️ Sozlamalar</h3>
+
             <MudSelect T="ComicStatus" @bind-Value="_status" Label="Holati" Variant="Variant.Outlined" Class="mb-3">
                 <MudSelectItem T="ComicStatus" Value="@ComicStatus.Ongoing">Davom etmoqda</MudSelectItem>
                 <MudSelectItem T="ComicStatus" Value="@ComicStatus.Completed">Tugallangan</MudSelectItem>
@@ -77,17 +254,24 @@ else
 
             <MudNumericField T="int?" @bind-Value="_year" Label="Yil" Variant="Variant.Outlined" Class="mb-3" Min="1950" Max="2030" />
 
-            <MudCheckBox T="bool" @bind-Checked="_featured" Label="Featured" Color="Color.Primary" Class="mb-1" />
-            <MudCheckBox T="bool" @bind-Checked="_popular"  Label="Mashhur"  Color="Color.Secondary" Class="mb-4" />
+            <div style="background:rgba(91,159,217,0.06);border:1px solid rgba(91,159,217,0.15);
+                        border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+                <MudCheckBox T="bool" @bind-Checked="_featured" Label="🌟 Featured (Carousel)" Color="Color.Primary" Class="mb-0" />
+                <MudCheckBox T="bool" @bind-Checked="_popular"  Label="🔥 Mashhur" Color="Color.Secondary" Class="mb-0" />
+            </div>
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
-                       OnClick="@Save" Disabled="@_saving" Style="height:48px;text-transform:none;font-weight:700;">
-                @(_saving ? "Saqlanmoqda..." : (IsEdit ? "Saqlash" : "Qo'shish"))
+                       OnClick="@Save" Disabled="@_saving"
+                       Style="height:48px;text-transform:none;font-weight:800;border-radius:10px;
+                              background:linear-gradient(135deg,#419fd9,#1b13be);
+                              box-shadow:0 6px 18px rgba(27,19,190,0.4);">
+                @(_saving ? "⏳ Saqlanmoqda..." : (IsEdit ? "💾 Saqlash" : "➕ Qo'shish"))
             </MudButton>
-            <MudButton Href="/admin/comics" Variant="Variant.Outlined" FullWidth="true" Class="mt-2" Style="text-transform:none;">
+            <MudButton Href="/admin/comics" Variant="Variant.Outlined" FullWidth="true" Class="mt-2"
+                       Style="text-transform:none;border-radius:10px;height:42px;">
                 ← Orqaga
             </MudButton>
-        </MudPaper>
+        </div>
     </MudItem>
 </MudGrid>
 }
@@ -109,10 +293,75 @@ else
     List<TagDto>   _tags   = new();
     bool _loading = true;
     bool _saving  = false;
+    bool _uploadingCover  = false;
+    bool _uploadingBanner = false;
     Guid _loadedId;
+    Guid _currentUid = Guid.Empty;
+
+    async Task UploadAsync(InputFileChangeEventArgs e, string kind)
+    {
+        var file = e.File;
+        if (file is null) return;
+
+        var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        if (!allowed.Contains(ext))
+        {
+            Snackbar.Add("❌ Faqat jpg/png/webp/gif", Severity.Error);
+            return;
+        }
+
+        if (kind == "cover")  _uploadingCover  = true;
+        if (kind == "banner") _uploadingBanner = true;
+        StateHasChanged();
+
+        try
+        {
+            // Uploads katalogi
+            var uploadsPath = Config["Uploads:Path"];
+            if (string.IsNullOrWhiteSpace(uploadsPath))
+            {
+                uploadsPath = Env.IsDevelopment()
+                    ? Path.Combine(Env.ContentRootPath, "wwwroot", "uploads")
+                    : "/var/www/comicbooks/uploads";
+            }
+            var sub = kind == "cover" ? "covers" : "banners";
+            var dir = Path.Combine(uploadsPath, sub);
+            Directory.CreateDirectory(dir);
+
+            var name     = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid():N}{ext}";
+            var fullPath = Path.Combine(dir, name);
+
+            // 30MB chegara
+            using var stream = file.OpenReadStream(maxAllowedSize: 30 * 1024 * 1024);
+            await using (var fs = new FileStream(fullPath, FileMode.Create))
+            {
+                await stream.CopyToAsync(fs);
+            }
+
+            var url = $"/uploads/{sub}/{name}";
+            if (kind == "cover")  _coverUrl  = url;
+            if (kind == "banner") _bannerUrl = url;
+            Snackbar.Add("✅ Yuklandi", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"❌ Xato: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _uploadingCover  = false;
+            _uploadingBanner = false;
+            StateHasChanged();
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        var st = await AuthState.GetAuthenticationStateAsync();
+        if (Guid.TryParse(st.User.FindFirst("app_user_id")?.Value, out var uid))
+            _currentUid = uid;
+
         _genres = await Mediator.Send(new GetAllGenresQuery());
         _tags   = await Mediator.Send(new GetAllTagsQuery());
 
@@ -174,7 +423,7 @@ else
         try
         {
             if (!IsEdit)
-                await Mediator.Send(new CreateComicCommand(_title, _altTitles, _desc, _coverUrl, _bannerUrl, _status, _type, _rating, _author, _artist, _year, _featured, _popular, _genreIds.ToList(), _tagIds.ToList()));
+                await Mediator.Send(new CreateComicCommand(_title, _altTitles, _desc, _coverUrl, _bannerUrl, _status, _type, _rating, _author, _artist, _year, _featured, _popular, _genreIds.ToList(), _tagIds.ToList(), _currentUid == Guid.Empty ? null : _currentUid));
             else
                 await Mediator.Send(new UpdateComicCommand(Id, _title, _altTitles, _desc, _coverUrl, _bannerUrl, _status, _type, _rating, _author, _artist, _year, _featured, _popular, _genreIds.ToList(), _tagIds.ToList()));
 

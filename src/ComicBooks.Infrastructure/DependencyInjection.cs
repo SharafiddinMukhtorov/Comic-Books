@@ -2,6 +2,7 @@ using ComicBooks.Application.Common.Interfaces;
 using ComicBooks.Infrastructure.Data;
 using ComicBooks.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +20,11 @@ public static class DependencyInjection
                 options.UseSqlite(connectionString);
             else
                 options.UseSqlServer(connectionString ?? "Data Source=comicbooks.db");
+
+            // EF Core 9: model snapshot mismatch warning ni suppress qilish
+            // (bo'sh migrationlar orqali model snapshot yangilangan, schema o'zgarmagan)
+            options.ConfigureWarnings(w =>
+                w.Ignore(RelationalEventId.PendingModelChangesWarning));
         });
 
         services.AddScoped<IApplicationDbContext>(provider =>
@@ -28,6 +34,7 @@ public static class DependencyInjection
         services.AddScoped<ICoinService, CoinService>();
         services.AddScoped<IChapterPricingService, ChapterPricingService>();
         services.AddScoped<ICoinPackageService, CoinPackageService>();
+        services.AddScoped<IAuthService, AuthService>();
 
         return services;
     }

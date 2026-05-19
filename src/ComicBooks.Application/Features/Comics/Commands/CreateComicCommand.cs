@@ -22,7 +22,8 @@ public record CreateComicCommand(
     bool IsFeatured,
     bool IsPopular,
     List<Guid> GenreIds,
-    List<Guid> TagIds
+    List<Guid> TagIds,
+    Guid? UploaderId = null
 ) : IRequest<Guid>;
 
 // Validator
@@ -65,7 +66,8 @@ public class CreateComicCommandHandler : IRequestHandler<CreateComicCommand, Gui
             ReleaseYear = request.ReleaseYear,
             IsFeatured = request.IsFeatured,
             IsPopular = request.IsPopular,
-            Slug = slug
+            Slug = slug,
+            UploaderId = request.UploaderId
         };
 
         foreach (var genreId in request.GenreIds)

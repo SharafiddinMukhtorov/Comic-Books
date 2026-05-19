@@ -1,196 +1,590 @@
 @page "/admin"
 @layout AdminLayout
 @inject IMediator Mediator
+@inject AuthenticationStateProvider AuthState
 @using ComicBooks.Application.Features.Admin.Queries
 @using ComicBooks.Application.Features.Comics.Queries
+@using ComicBooks.Application.Features.Revenue.Queries
+@using System.Globalization
+@using MudBlazor
 
 <PageTitle>Dashboard - Admin</PageTitle>
 
-<MudText Typo="Typo.h5" Class="mb-6" Style="font-weight:900;">📊 Boshqaruv paneli</MudText>
+<style>
+    /* Glassmorphism cards */
+    .glass {
+        background: rgba(255,255,255,0.04);
+        backdrop-filter: blur(14px) saturate(180%);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+        position: relative;
+        overflow: hidden;
+    }
+    .glass::before {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; right: 0; height: 1px;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+    }
+
+    .dash-title {
+        font-size: 1.7rem;
+        font-weight: 900;
+        margin: 0 0 6px;
+        background: linear-gradient(135deg, #fff, #60a5fa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .dash-sub {
+        opacity: 0.55;
+        font-size: 13px;
+        margin: 0 0 24px;
+    }
+
+    /* Stat cards grid */
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 14px;
+        margin-bottom: 26px;
+    }
+    .stat-card {
+        padding: 18px 18px 16px;
+        position: relative;
+    }
+    .stat-card .icon-circle {
+        position: absolute;
+        top: 16px;
+        right: 16px;
+        width: 38px;
+        height: 38px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+    }
+    .stat-card .label {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        opacity: 0.5;
+        margin-bottom: 8px;
+    }
+    .stat-card .value {
+        font-size: 1.9rem;
+        font-weight: 900;
+        line-height: 1;
+        color: #fff;
+    }
+    .stat-card .trend {
+        font-size: 11px;
+        margin-top: 8px;
+        opacity: 0.6;
+    }
+
+    /* Color variants */
+    .c-blue   .icon-circle { background: rgba(65,159,217,0.18); color: #5b9fd9; }
+    .c-blue   .value       { color: #5b9fd9; }
+    .c-green  .icon-circle { background: rgba(34,197,94,0.18);  color: #4ade80; }
+    .c-green  .value       { color: #4ade80; }
+    .c-amber  .icon-circle { background: rgba(245,158,11,0.18); color: #fbbf24; }
+    .c-amber  .value       { color: #fbbf24; }
+    .c-pink   .icon-circle { background: rgba(236,72,153,0.18); color: #f472b6; }
+    .c-pink   .value       { color: #f472b6; }
+    .c-indigo .icon-circle { background: rgba(99,102,241,0.18); color: #818cf8; }
+    .c-indigo .value       { color: #818cf8; }
+
+    /* Bar chart */
+    .chart-card {
+        padding: 22px;
+        margin-bottom: 22px;
+    }
+    .chart-title {
+        font-size: 14px;
+        font-weight: 800;
+        margin: 0 0 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .bars {
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+        height: 220px;
+        padding: 0 8px;
+    }
+    .bar-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        height: 100%;
+    }
+    .bar-fill {
+        width: 100%;
+        background: linear-gradient(180deg, #5b9fd9, #1b13be);
+        border-radius: 8px 8px 4px 4px;
+        position: relative;
+        transition: height 0.6s cubic-bezier(0.3,0.85,0.45,1);
+        box-shadow: 0 0 14px rgba(91,159,217,0.35);
+        min-height: 4px;
+    }
+    .bar-fill::after {
+        content: attr(data-val);
+        position: absolute;
+        top: -22px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 11px;
+        font-weight: 700;
+        color: #fbbf24;
+        white-space: nowrap;
+    }
+    .bar-label {
+        font-size: 10px;
+        opacity: 0.55;
+        text-align: center;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 80px;
+        font-weight: 600;
+    }
+
+    /* Two-col layout */
+    .two-col {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+    }
+    @@media (max-width: 900px) {
+        .two-col { grid-template-columns: 1fr; }
+    }
+
+    /* List card */
+    .list-card { padding: 20px; }
+    .list-row {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.05);
+    }
+    .list-row:last-child { border-bottom: none; }
+    .list-row img { width: 42px; height: 56px; object-fit: cover; border-radius: 7px; flex-shrink: 0; }
+    .list-row .rank {
+        width: 26px; height: 26px;
+        border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 12px; font-weight: 900; flex-shrink: 0;
+    }
+    .rank-1 { background: linear-gradient(135deg, #fbbf24, #d97706); color: #1a1a1a; }
+    .rank-2 { background: linear-gradient(135deg, #cbd5e1, #94a3b8); color: #1a1a1a; }
+    .rank-3 { background: linear-gradient(135deg, #b45309, #92400e); color: #fff; }
+    .rank-x { background: rgba(91,159,217,0.18); color: #5b9fd9; }
+
+    /* Revenue bar */
+    .rev-stat-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 12px;
+        margin-bottom: 22px;
+    }
+    @@media (max-width: 700px) {
+        .rev-stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    /* MudChart wrap & theming */
+    .mud-chart-wrap {
+        position: relative;
+        padding: 6px 0 4px;
+    }
+    .mud-chart-wrap .mud-chart {
+        background: transparent !important;
+    }
+    .mud-chart-wrap text {
+        fill: rgba(255,255,255,0.6) !important;
+        font-size: 11px !important;
+    }
+    .mud-chart-wrap .mud-charts-xaxis text,
+    .mud-chart-wrap .mud-charts-yaxis text {
+        font-weight: 600;
+    }
+    /* Series colors override */
+    .mud-chart-wrap path.mud-chart-serie {
+        stroke-width: 2.5 !important;
+    }
+
+    /* Users table */
+    .users-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .users-table th {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        opacity: 0.5;
+        text-align: left;
+        padding: 10px 12px;
+        letter-spacing: 0.5px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+    }
+    .users-table td {
+        font-size: 13px;
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+    }
+    .users-table tr:hover td { background: rgba(91,159,217,0.04); }
+    .user-ava {
+        width: 32px; height: 32px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #419fd9, #1b13be);
+        color: #fff;
+        font-weight: 800;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+        margin-right: 10px;
+        vertical-align: middle;
+    }
+    .user-ava img { width: 100%; height: 100%; object-fit: cover; }
+    .badge-auth {
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        display: inline-block;
+        margin-right: 4px;
+    }
+    .badge-google   { background: rgba(34,197,94,0.18); color: #4ade80; border: 1px solid rgba(34,197,94,0.3); }
+    .badge-password { background: rgba(91,159,217,0.18); color: #5b9fd9; border: 1px solid rgba(91,159,217,0.3); }
+    .badge-admin    { background: rgba(245,158,11,0.18); color: #fbbf24; border: 1px solid rgba(245,158,11,0.3); }
+</style>
 
 @if (_loading)
 {
-    <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
+    <div style="display:flex;justify-content:center;padding:80px;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </div>
 }
 else if (_stats is not null)
 {
-    <!-- Stats cards row 1 -->
-    <MudGrid Class="mb-4">
-        <MudItem xs="6" sm="4" md="2">
-            @StatCard("📚", "Komiklar", _stats.TotalComics.ToString("N0"), "#419fd9")
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            @StatCard("📖", "Boblar", _stats.TotalChapters.ToString("N0"), "#4caf50")
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            @StatCard("👁️", "Ko'rishlar", Fmt(_stats.TotalViews), "#f59e0b")
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            @StatCard("👥", "Unikal o'quvchilar", Fmt(_stats.UniqueViewers), "#1b13be")
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            @StatCard("🔖", "Bookmarklar", Fmt(_stats.TotalBookmarks), "#e91e63")
-        </MudItem>
-        <MudItem xs="6" sm="4" md="2">
-            @StatCard("🏷️", "Janr & Teglar", (_stats.TotalGenres + _stats.TotalTags).ToString(), "#419fd9")
-        </MudItem>
-    </MudGrid>
+    <h1 class="dash-title">📊 Boshqaruv paneli</h1>
+    <p class="dash-sub">Manga Dunyo platformasining umumiy holati</p>
 
-    <!-- Quick actions -->
-    <MudText Typo="Typo.h6" Class="mb-3 mt-2" Style="font-weight:800;">⚡ Tezkor harakatlar</MudText>
-    <MudGrid Class="mb-6">
-        <MudItem xs="12" sm="6" md="3">
-            <MudButton Href="/admin/comics/create" Variant="Variant.Filled" Color="Color.Primary"
-                       FullWidth="true" Size="Size.Large"
-                       StartIcon="@Icons.Material.Filled.Add" Style="height:52px;border-radius:10px;text-transform:none;font-weight:700;">
-                Komik qo'shish
-            </MudButton>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudButton Href="/admin/chapters" Variant="Variant.Outlined" Color="Color.Primary"
-                       FullWidth="true" Size="Size.Large"
-                       StartIcon="@Icons.Material.Filled.Add" Style="height:52px;border-radius:10px;text-transform:none;font-weight:700;">
-                Bob qo'shish
-            </MudButton>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudButton Href="/admin/genres" Variant="Variant.Outlined" Color="Color.Default"
-                       FullWidth="true" Size="Size.Large"
-                       StartIcon="@Icons.Material.Filled.Label" Style="height:52px;border-radius:10px;text-transform:none;font-weight:700;">
-                Janrlar
-            </MudButton>
-        </MudItem>
-        <MudItem xs="12" sm="6" md="3">
-            <MudButton Href="/admin/featured" Variant="Variant.Outlined" Color="Color.Default"
-                       FullWidth="true" Size="Size.Large"
-                       StartIcon="@Icons.Material.Filled.ViewCarousel" Style="height:52px;border-radius:10px;text-transform:none;font-weight:700;">
-                Carousel
-            </MudButton>
-        </MudItem>
-    </MudGrid>
+    <!-- Main stats -->
+    <div class="stats-grid">
+        <div class="glass stat-card c-blue">
+            <div class="icon-circle">📚</div>
+            <div class="label">Komiklar</div>
+            <div class="value">@_stats.TotalComics.ToString("N0")</div>
+        </div>
+        <div class="glass stat-card c-green">
+            <div class="icon-circle">📖</div>
+            <div class="label">Boblar</div>
+            <div class="value">@_stats.TotalChapters.ToString("N0")</div>
+        </div>
+        <div class="glass stat-card c-amber">
+            <div class="icon-circle">👁️</div>
+            <div class="label">Ko'rishlar</div>
+            <div class="value">@Fmt(_stats.TotalViews)</div>
+        </div>
+        <div class="glass stat-card c-indigo">
+            <div class="icon-circle">👥</div>
+            <div class="label">O'quvchilar</div>
+            <div class="value">@Fmt(_stats.UniqueViewers)</div>
+        </div>
+        <div class="glass stat-card c-pink">
+            <div class="icon-circle">🔖</div>
+            <div class="label">Bookmarklar</div>
+            <div class="value">@Fmt(_stats.TotalBookmarks)</div>
+        </div>
+    </div>
 
-    <MudGrid>
-        <!-- Top viewed -->
-        <MudItem xs="12" md="6">
-            <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
-                <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight:800;">👁️ Eng ko'p ko'rilgan</MudText>
-                @foreach (var (c, i) in _stats.TopViewed.Select((x, i) => (x, i + 1)))
-                {
-                    <div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--mud-palette-lines-default);">
-                        <span style="@RankStyle(i)width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;">@i</span>
-                        <MudAvatar Size="Size.Small" Image="@c.CoverImageUrl" />
-                        <div style="flex:1;min-width:0;">
-                            <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
-                            <div style="font-size:11px;opacity:0.5;">@c.ChapterCount bob</div>
-                        </div>
-                        <div style="font-size:13px;font-weight:800;color:#f59e0b;white-space:nowrap;">@Fmt(c.ViewCount) 👁</div>
+    @if (_role == "super" && _revenue is not null)
+    {
+        <!-- Revenue stats — faqat super admin -->
+        <div class="rev-stat-grid">
+            <div class="glass stat-card c-amber">
+                <div class="icon-circle">💰</div>
+                <div class="label">Jami daromad</div>
+                <div class="value">@_revenue.TotalCoins</div>
+                <div class="trend">@FmtSom(_revenue.TotalSom) so'm</div>
+            </div>
+            <div class="glass stat-card c-green">
+                <div class="icon-circle">🏦</div>
+                <div class="label">Platform (20%)</div>
+                <div class="value" style="font-size:1.4rem;">@FmtSom(_revenue.PlatformSom)</div>
+                <div class="trend">so'm</div>
+            </div>
+            <div class="glass stat-card c-blue">
+                <div class="icon-circle">👤</div>
+                <div class="label">Yuklovchilarga (80%)</div>
+                <div class="value" style="font-size:1.4rem;">@FmtSom(_revenue.UploaderSom)</div>
+                <div class="trend">so'm</div>
+            </div>
+            <div class="glass stat-card c-indigo">
+                <div class="icon-circle">🛒</div>
+                <div class="label">Sotuvlar soni</div>
+                <div class="value">@_revenue.TotalPurchases</div>
+            </div>
+        </div>
+
+    }
+
+    <!-- 15 kunlik faollik — MudChart -->
+    @if (_daily is not null && _daily.Views.Any())
+    {
+        <div class="glass chart-card">
+            <h3 class="chart-title">📈 Oxirgi 15 kunlik faollik</h3>
+            <div class="mud-chart-wrap">
+                <MudChart ChartType="ChartType.Line"
+                          ChartSeries="@_chartSeries"
+                          XAxisLabels="@_chartLabels"
+                          Width="100%" Height="360px"
+                          ChartOptions="@_chartOptions">
+                </MudChart>
+            </div>
+        </div>
+    }
+
+    <!-- Two columns -->
+    <div class="two-col">
+        <div class="glass list-card">
+            <h3 class="chart-title">🏆 Eng ko'p ko'rilgan</h3>
+            @{ int rk = 0; }
+            @foreach (var c in _stats.TopViewed.Take(5))
+            {
+                rk++;
+                <div class="list-row">
+                    <span class="rank @(rk <= 3 ? $"rank-{rk}" : "rank-x")">@rk</span>
+                    <img src="@(c.CoverImageUrl ?? "")" alt="@c.Title" />
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
+                        <div style="font-size:11px;opacity:0.5;">@c.ChapterCount bob</div>
                     </div>
-                }
-            </MudPaper>
-        </MudItem>
+                    <div style="font-size:13px;font-weight:800;color:#fbbf24;white-space:nowrap;">@Fmt(c.ViewCount) 👁</div>
+                </div>
+            }
+        </div>
 
-        <!-- Top bookmarked -->
-        <MudItem xs="12" md="6">
-            <MudPaper Elevation="2" Class="pa-4" Style="border-radius:12px;">
-                <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight:800;">🔖 Eng ko'p saqlangan</MudText>
-                @foreach (var (c, i) in _stats.TopBookmarked.Select((x, i) => (x, i + 1)))
-                {
-                    <div style="display:flex;gap:12px;align-items:center;padding:8px 0;border-bottom:1px solid var(--mud-palette-lines-default);">
-                        <span style="@RankStyle(i)width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:900;flex-shrink:0;">@i</span>
-                        <MudAvatar Size="Size.Small" Image="@c.CoverImageUrl" />
-                        <div style="flex:1;min-width:0;">
-                            <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
-                            <div style="font-size:11px;opacity:0.5;">@c.ChapterCount bob</div>
-                        </div>
-                        <div style="font-size:13px;font-weight:800;color:#e91e63;white-space:nowrap;">@Fmt(c.BookmarkCount) 🔖</div>
+        <div class="glass list-card">
+            <h3 class="chart-title">🔖 Eng ko'p saqlangan</h3>
+            @{ int bk = 0; }
+            @foreach (var c in _stats.TopBookmarked.Take(5))
+            {
+                bk++;
+                <div class="list-row">
+                    <span class="rank @(bk <= 3 ? $"rank-{bk}" : "rank-x")">@bk</span>
+                    <img src="@(c.CoverImageUrl ?? "")" alt="@c.Title" />
+                    <div style="flex:1;min-width:0;">
+                        <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@c.Title</div>
+                        <div style="font-size:11px;opacity:0.5;">@c.ChapterCount bob</div>
                     </div>
-                }
-            </MudPaper>
-        </MudItem>
+                    <div style="font-size:13px;font-weight:800;color:#f472b6;white-space:nowrap;">@Fmt(c.BookmarkCount) 🔖</div>
+                </div>
+            }
+        </div>
+    </div>
 
-        <!-- Recent comics table -->
-        <MudItem xs="12">
-            <MudPaper Elevation="2" Class="pa-4 mt-2" Style="border-radius:12px;">
-                <MudText Typo="Typo.subtitle1" Class="mb-3" Style="font-weight:800;">📋 So'nggi komiklar</MudText>
-                <MudTable Items="@_recent" Hover="true" Elevation="0" Dense="true">
-                    <HeaderContent>
-                        <MudTh>Komik</MudTh>
-                        <MudTh>Turi</MudTh>
-                        <MudTh>Holat</MudTh>
-                        <MudTh>Boblar</MudTh>
-                        <MudTh>Ko'rishlar</MudTh>
-                        <MudTh>Reyting</MudTh>
-                        <MudTh></MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd>
-                            <div style="display:flex;align-items:center;gap:8px;">
-                                <MudAvatar Size="Size.Small" Image="@context.CoverImageUrl" />
-                                <span style="font-weight:600;font-size:13px;">@context.Title</span>
-                            </div>
-                        </MudTd>
-                        <MudTd><MudChip T="string" Size="Size.Small" Label="true">@context.Type</MudChip></MudTd>
-                        <MudTd>
-                            <MudChip T="string" Size="Size.Small" Label="true" Color="@GetStatusColor(context.Status)">@context.Status</MudChip>
-                        </MudTd>
-                        <MudTd>@context.ChapterCount</MudTd>
-                        <MudTd>@Fmt(context.ViewCount)</MudTd>
-                        <MudTd>
-                            <span style="color:#f59e0b;font-weight:700;">★ @context.AverageRating.ToString("F1")</span>
-                        </MudTd>
-                        <MudTd>
-                            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small"
-                                           Color="Color.Primary" Href="@($"/admin/comics/edit/{context.Id}")" />
-                            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small"
-                                           Href="@($"/comic/{context.Slug}")" Target="_blank" />
-                        </MudTd>
-                    </RowTemplate>
-                </MudTable>
-            </MudPaper>
-        </MudItem>
-    </MudGrid>
+    <!-- Recent comics table -->
+    <div class="glass list-card" style="margin-top:22px;">
+        <h3 class="chart-title">🆕 So'nggi qo'shilgan komiklar</h3>
+        @foreach (var c in _recent.Take(8))
+        {
+            <div class="list-row">
+                <img src="@(c.CoverImageUrl ?? "")" alt="@c.Title" />
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:700;font-size:13px;">@c.Title</div>
+                    <div style="font-size:11px;opacity:0.5;">@c.Type · @c.ChapterCount bob · @Fmt(c.ViewCount) ko'rish</div>
+                </div>
+                <a href="/admin/comics/edit/@c.Id"
+                   style="background:rgba(91,159,217,0.18);color:#5b9fd9;border:1px solid rgba(91,159,217,0.3);
+                          padding:6px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:700;">
+                    ✏️ Tahrirlash
+                </a>
+            </div>
+        }
+    </div>
+
+    @* ════ Foydalanuvchilar — faqat super admin ════ *@
+    @if (_role == "super" && _users.Any())
+    {
+        <div class="glass list-card" style="margin-top:22px;">
+            <h3 class="chart-title" style="justify-content:space-between;width:100%;display:flex;">
+                <span>
+                    👥 Ro'yxatdan o'tgan foydalanuvchilar
+                    <span style="font-size:13px;opacity:0.5;font-weight:600;margin-left:6px;">(@_users.Count)</span>
+                </span>
+                <a href="/admin/users" style="font-size:12px;font-weight:700;color:#5b9fd9;text-decoration:none;
+                                              padding:6px 14px;background:rgba(91,159,217,0.12);border-radius:8px;
+                                              border:1px solid rgba(91,159,217,0.3);">
+                    Hammasini ko'rish →
+                </a>
+            </h3>
+            <div style="overflow-x:auto;">
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Foydalanuvchi</th>
+                            <th>Email</th>
+                            <th>Kirish</th>
+                            <th>Coin</th>
+                            <th>Ro'yxatdan o'tgan</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var u in _users.Take(20))
+                        {
+                            <tr>
+                                <td>
+                                    <div class="user-ava">
+                                        @if (!string.IsNullOrEmpty(u.Picture))
+                                        {
+                                            <img src="@u.Picture" alt="@u.Name" />
+                                        }
+                                        else
+                                        {
+                                            @(u.Name.Length > 0 ? u.Name[0].ToString().ToUpper() : "?")
+                                        }
+                                    </div>
+                                    <span style="vertical-align:middle;font-weight:700;">@u.Name</span>
+                                    @if (u.IsAdmin)
+                                    {
+                                        <span class="badge-auth badge-admin" style="margin-left:6px;">ADMIN</span>
+                                    }
+                                </td>
+                                <td style="opacity:0.75;">@u.Email</td>
+                                <td>
+                                    @if (u.HasGoogle)
+                                    {
+                                        <span class="badge-auth badge-google">G Google</span>
+                                    }
+                                    @if (u.HasPassword)
+                                    {
+                                        <span class="badge-auth badge-password">🔒 Parol</span>
+                                    }
+                                </td>
+                                <td style="font-weight:700;color:#fbbf24;">@u.CoinBalance</td>
+                                <td style="opacity:0.7;font-size:12px;">@FmtDate(u.CreatedAt)</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
 }
 
 @code {
-    private AdminStatsDto? _stats;
-    private List<ComicDto> _recent = new();
-    private bool _loading = true;
+    private AdminStatsDto?     _stats;
+    private RevenueResultDto?  _revenue;
+    private DailyStatsDto?     _daily;
+    private List<ComicDto>     _recent = new();
+    private List<AdminUserDto> _users  = new();
+    private bool   _loading = true;
+    private string _role    = "regular";
+
+    // MudChart ma'lumotlari
+    private List<ChartSeries> _chartSeries = new();
+    private string[]          _chartLabels = Array.Empty<string>();
+    private ChartOptions      _chartOptions = new()
+    {
+        InterpolationOption = InterpolationOption.NaturalSpline,
+        LineStrokeWidth     = 2.5,
+        YAxisTicks          = 5,
+        ChartPalette        = new[] { "#5b9fd9", "#4ade80", "#fbbf24" }
+    };
 
     protected override async Task OnInitializedAsync()
     {
+        var st = await AuthState.GetAuthenticationStateAsync();
+        _role = st.User.FindFirst("admin_role")?.Value ?? "regular";
+
         _stats = await Mediator.Send(new GetAdminStatsQuery());
         var r = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "createdAt"));
         _recent = r.Items;
+
+        // 15 kunlik faollik (hammaga)
+        try { _daily = await Mediator.Send(new GetDailyStatsQuery(15)); }
+        catch { _daily = null; }
+
+        BuildChartData();
+
+        // Super admin uchun qo'shimcha ma'lumotlar
+        if (_role == "super")
+        {
+            try { _revenue = await Mediator.Send(new GetGlobalRevenueQuery()); }
+            catch { _revenue = null; }
+
+            try { _users = await Mediator.Send(new GetUsersListQuery(50)); }
+            catch { _users = new(); }
+        }
+
         _loading = false;
     }
 
-    RenderFragment StatCard(string icon, string label, string value, string color) => __builder =>
+    // ── MudChart uchun ma'lumotlarni tayyorlash ──
+    void BuildChartData()
     {
-        <MudPaper Elevation="2" Class="pa-4" Style="@($"border-radius:12px;border-left:3px solid {color};")">
-            <div style="font-size:1.5rem;margin-bottom:4px;">@icon</div>
-            <div style="font-size:1.4rem;font-weight:900;line-height:1;">@value</div>
-            <div style="font-size:11px;opacity:0.5;margin-top:3px;text-transform:uppercase;letter-spacing:0.5px;">@label</div>
-        </MudPaper>;
-    };
+        if (_daily is null || _daily.Views.Count == 0)
+        {
+            _chartSeries = new();
+            _chartLabels = Array.Empty<string>();
+            return;
+        }
+
+        _chartLabels = _daily.Views
+            .Select(p => p.Day.ToString("dd.MM", CultureInfo.InvariantCulture))
+            .ToArray();
+
+        _chartSeries = new()
+        {
+            new ChartSeries
+            {
+                Name = "Ko'rishlar",
+                Data = _daily.Views.Select(p => (double)p.Count).ToArray()
+            }
+        };
+
+        // Super admin uchun qo'shimcha qatorlar
+        if (_role == "super")
+        {
+            _chartSeries.Add(new ChartSeries
+            {
+                Name = "Ro'yxatdan o'tganlar",
+                Data = _daily.Registrations.Select(p => (double)p.Count).ToArray()
+            });
+            _chartSeries.Add(new ChartSeries
+            {
+                Name = "Sotuvlar",
+                Data = _daily.Purchases.Select(p => (double)p.Count).ToArray()
+            });
+        }
+    }
 
     string Fmt(int v) => v >= 1_000_000 ? $"{v / 1_000_000.0:F1}M"
                        : v >= 1_000     ? $"{v / 1_000.0:F1}K"
                        : v.ToString();
 
-    string RankStyle(int r) => r switch
+    static string FmtSom(decimal s)
     {
-        1 => "background:#f59e0b;color:#000;",
-        2 => "background:#9ca3af;color:#000;",
-        3 => "background:#b45309;color:#fff;",
-        _ => "background:rgba(65,159,217,0.15);color:#419fd9;"
-    };
+        if (s >= 1_000_000) return (s / 1_000_000m).ToString("F2") + "M";
+        if (s >= 1_000)     return (s / 1_000m).ToString("F1") + "K";
+        return s.ToString("N0", System.Globalization.CultureInfo.InvariantCulture).Replace(",", " ");
+    }
 
-    Color GetStatusColor(ComicStatus s) => s switch
+    static string FmtDate(DateTime d)
     {
-        ComicStatus.Ongoing   => Color.Success,
-        ComicStatus.Completed => Color.Primary,
-        ComicStatus.Hiatus    => Color.Warning,
-        ComicStatus.Cancelled => Color.Error,
-        _                     => Color.Default
-    };
+        return d.ToString("d MMM yyyy, HH:mm", System.Globalization.CultureInfo.InvariantCulture);
+    }
 }

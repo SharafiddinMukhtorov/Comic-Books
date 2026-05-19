@@ -30,6 +30,7 @@ public class GetChaptersByComicQueryHandler : IRequestHandler<GetChaptersByComic
                 Title = ch.Title,
                 ViewCount = ch.ViewCount,
                 IsLocked = ch.IsLocked,
+                CoinPrice = ch.CoinPrice,
                 PublishedAt = ch.PublishedAt,
                 Slug = ch.Slug,
                 CreatedAt = ch.CreatedAt,
@@ -64,16 +65,18 @@ public class GetChapterWithPagesQueryHandler : IRequestHandler<GetChapterWithPag
         {
             Id = chapter.Id,
             ComicId = chapter.ComicId,
-            ComicTitle = chapter.Comic.Title,
+            ComicTitle    = chapter.Comic.Title,
+            ComicSlug     = chapter.Comic.Slug,      // ← to'g'ri slug
             ComicCoverUrl = chapter.Comic.CoverImageUrl,
             ChapterNumber = chapter.ChapterNumber,
-            Title = chapter.Title,
-            ViewCount = chapter.ViewCount,
-            IsLocked = chapter.IsLocked,
-            PublishedAt = chapter.PublishedAt,
-            Slug = chapter.Slug,
-            CreatedAt = chapter.CreatedAt,
-            PageCount = chapter.Pages.Count
+            Title         = chapter.Title,
+            ViewCount     = chapter.ViewCount,
+            IsLocked      = chapter.IsLocked,
+            CoinPrice     = chapter.CoinPrice,
+            PublishedAt   = chapter.PublishedAt,
+            Slug          = chapter.Slug,
+            CreatedAt     = chapter.CreatedAt,
+            PageCount     = chapter.Pages.Count
         };
 
         var pages = chapter.Pages

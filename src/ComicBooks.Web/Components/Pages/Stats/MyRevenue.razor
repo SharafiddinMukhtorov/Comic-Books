@@ -1,0 +1,285 @@
+@page "/admin/revenue"
+@page "/my-revenue"
+@layout AdminLayout
+@using ComicBooks.Application.Features.Revenue.Queries
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthState
+
+<PageTitle>Daromad statistikasi - Admin</PageTitle>
+
+<style>
+    .rev-wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 28px 18px 100px;
+    }
+
+    .rev-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 22px;
+    }
+    .rev-head h1 {
+        font-size: 1.4rem;
+        font-weight: 900;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .rev-head .badge {
+        background: rgba(245,158,11,0.15);
+        color: #f59e0b;
+        padding: 4px 12px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+    }
+
+    /* Total stats cards */
+    .rev-totals {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 14px;
+        margin-bottom: 28px;
+    }
+    .rev-stat {
+        background: var(--mud-palette-surface);
+        border: 1px solid rgba(128,128,128,0.14);
+        border-radius: 14px;
+        padding: 16px 18px;
+    }
+    .rev-stat .lbl {
+        font-size: 11px;
+        opacity: 0.5;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 6px;
+    }
+    .rev-stat .val {
+        font-size: 22px;
+        font-weight: 900;
+        line-height: 1;
+    }
+    .rev-stat .sub { font-size: 12px; opacity: 0.55; margin-top: 4px; }
+
+    .rev-stat.gold .val      { color: #f59e0b; }
+    .rev-stat.platform .val  { color: #22c55e; }
+    .rev-stat.uploader .val  { color: #f59e0b; }
+    .rev-stat.purchases .val { color: #1b13be; }
+
+    /* Per-comic table */
+    .rev-section-title {
+        font-size: 1rem;
+        font-weight: 900;
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .rev-section-title::before {
+        content: '';
+        display: inline-block;
+        width: 4px;
+        height: 18px;
+        background: linear-gradient(180deg, #f59e0b, #b45309);
+        border-radius: 2px;
+    }
+
+    .rev-list {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .rev-row {
+        background: var(--mud-palette-surface);
+        border: 1px solid rgba(128,128,128,0.14);
+        border-radius: 14px;
+        padding: 14px 16px;
+        display: grid;
+        grid-template-columns: 60px 1fr auto;
+        align-items: center;
+        gap: 14px;
+        text-decoration: none;
+        color: inherit;
+        transition: transform 0.15s, border-color 0.15s;
+    }
+    .rev-row:hover {
+        transform: translateY(-1px);
+        border-color: rgba(245,158,11,0.4);
+    }
+    .rev-row img {
+        width: 60px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 8px;
+    }
+    .rev-row-info .title {
+        font-weight: 800;
+        font-size: 14px;
+        margin-bottom: 6px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 360px;
+    }
+    .rev-row-info .meta {
+        font-size: 12px;
+        opacity: 0.6;
+    }
+    .rev-row-money {
+        text-align: right;
+    }
+    .rev-row-money .coins {
+        font-weight: 900;
+        color: #f59e0b;
+        font-size: 16px;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .rev-row-money .som  { font-size: 12px; opacity: 0.7; margin-top: 2px; }
+
+    .rev-empty {
+        background: var(--mud-palette-surface);
+        border: 1px dashed rgba(128,128,128,0.3);
+        border-radius: 14px;
+        padding: 50px 20px;
+        text-align: center;
+    }
+
+    @@media (max-width: 700px) {
+        .rev-totals { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .rev-stat .val { font-size: 18px; }
+        .rev-row { grid-template-columns: 52px 1fr; gap: 12px; }
+        .rev-row img { width: 52px; height: 70px; }
+        .rev-row-money { grid-column: 1 / 3; text-align: left; padding-top: 6px; border-top: 1px solid rgba(128,128,128,0.12); display: flex; gap: 14px; align-items: center; }
+        .rev-row-money .som  { margin-top: 0; }
+    }
+</style>
+
+@if (_loading)
+{
+    <div style="display:flex;justify-content:center;padding:80px;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </div>
+}
+else if (!_isLoggedIn)
+{
+    <div class="rev-wrap">
+        <div class="rev-empty">
+            <div style="font-size:3rem;margin-bottom:14px;">🔒</div>
+            <div style="font-weight:800;font-size:16px;margin-bottom:8px;">Tizimga kiring</div>
+            <div style="opacity:0.6;font-size:13px;margin-bottom:20px;">Daromad statistikasini ko'rish uchun</div>
+            <a href="/login" class="mud-button mud-button-filled mud-button-filled-primary mud-ripple"
+               style="background:#1b13be;color:#fff;padding:10px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
+                Kirish
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="rev-wrap">
+        <div class="rev-head">
+            <h1>
+                <span style="font-size:1.4rem;">💰</span>
+                Daromad statistikasi
+            </h1>
+            <span class="badge">@(_data?.Comics?.Count ?? 0) ta kitob</span>
+        </div>
+
+        @if (_data is null || !_data.Comics.Any())
+        {
+            <div class="rev-empty">
+                <div style="font-size:2.5rem;margin-bottom:14px;">📚</div>
+                <div style="font-weight:800;font-size:16px;margin-bottom:8px;">Hozircha kitoblaringiz yo'q</div>
+                <div style="opacity:0.6;font-size:13px;">
+                    Kitob yuklaganingizdan keyin daromad shu yerda ko'rinadi.
+                </div>
+            </div>
+        }
+        else
+        {
+            <!-- Total stats -->
+            <div class="rev-totals">
+                <div class="rev-stat gold">
+                    <div class="lbl">Jami daromad</div>
+                    <div class="val">@_data.TotalCoins <img src="/img/coin.svg" style="width:18px;height:18px;vertical-align:-2px;" /></div>
+                    <div class="sub">@FmtSom(_data.TotalSom) so'm</div>
+                </div>
+                <div class="rev-stat platform">
+                    <div class="lbl">Platforma ulushi (20%)</div>
+                    <div class="val">@FmtSom(_data.PlatformSom) so'm</div>
+                    <div class="sub">Manga Dunyoga</div>
+                </div>
+                <div class="rev-stat uploader">
+                    <div class="lbl">Sizning ulushingiz (80%)</div>
+                    <div class="val">@FmtSom(_data.UploaderSom) so'm</div>
+                    <div class="sub">qo'lingizga</div>
+                </div>
+                <div class="rev-stat purchases">
+                    <div class="lbl">Sotuv soni</div>
+                    <div class="val">@_data.TotalPurchases</div>
+                    <div class="sub">marta sotib olingan</div>
+                </div>
+            </div>
+
+            <div class="rev-section-title">Kitoblar bo'yicha tushum</div>
+            <div class="rev-list">
+                @foreach (var c in _data.Comics)
+                {
+                    <a class="rev-row" href="/comic/@c.Slug">
+                        <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/60/80")" alt="@c.Title" />
+                        <div class="rev-row-info">
+                            <div class="title">@c.Title</div>
+                            <div class="meta">@c.ChapterCount bob · @c.TotalPurchases sotuv</div>
+                        </div>
+                        <div class="rev-row-money">
+                            <div class="coins">
+                                @c.TotalCoins <img src="/img/coin.svg" style="width:14px;height:14px;" />
+                            </div>
+                            <div class="som">≈ @FmtSom(c.UploaderSom) so'm</div>
+                        </div>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    bool _loading = true;
+    bool _isLoggedIn;
+    bool _isAdmin;
+    RevenueResultDto? _data;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var st = await AuthState.GetAuthenticationStateAsync();
+        _isLoggedIn = st.User.Identity?.IsAuthenticated == true;
+        var role    = st.User.FindFirst("admin_role")?.Value;
+        _isAdmin    = _isLoggedIn && role == "super";   // Faqat super admin
+
+        // Super admin emas — redirect
+        if (!_isAdmin)
+        {
+            Nav.NavigateTo("/admin", replace: true);
+            return;
+        }
+
+        // Super admin — barcha kitoblarning global daromadi
+        _data = await Mediator.Send(new GetGlobalRevenueQuery());
+        _loading = false;
+    }
+
+    static string FmtSom(decimal s)
+    {
+        if (s >= 1_000_000) return (s / 1_000_000m).ToString("F2") + " mln";
+        return s.ToString("N0", System.Globalization.CultureInfo.InvariantCulture).Replace(",", " ");
+    }
+}

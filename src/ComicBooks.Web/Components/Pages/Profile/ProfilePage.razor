@@ -1,0 +1,505 @@
+@page "/profile"
+@using ComicBooks.Application.Features.Profile.Queries
+@using ComicBooks.Application.Features.Comics.Queries
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthState
+@inject BookmarkService BookmarkSvc
+
+<PageTitle>Profil – Manga Dunyo</PageTitle>
+
+<style>
+    .pf-wrap {
+        max-width: 720px;
+        margin: 0 auto;
+        padding: 24px 18px 110px;
+    }
+
+    .pf-card {
+        background: var(--mud-palette-surface);
+        border: 1px solid rgba(245,158,11,0.18);
+        border-radius: 18px;
+        padding: 28px 24px 24px;
+        text-align: center;
+        margin-bottom: 22px;
+        position: relative;
+    }
+
+    .pf-avatar-wrap {
+        position: relative;
+        width: 96px;
+        height: 96px;
+        margin: 0 auto 14px;
+    }
+    .pf-avatar {
+        width: 96px; height: 96px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.04);
+        border: 2.5px solid #f59e0b;
+        display: flex; align-items: center; justify-content: center;
+        overflow: hidden;
+        object-fit: cover;
+        font-size: 38px;
+        font-weight: 900;
+        color: #f59e0b;
+        box-shadow: 0 0 24px rgba(245,158,11,0.25);
+    }
+    .pf-avatar img { width:100%; height:100%; object-fit:cover; }
+    .pf-cam-btn {
+        position: absolute;
+        right: 4px; bottom: 4px;
+        width: 28px; height: 28px;
+        background: #f59e0b;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        border: 2px solid var(--mud-palette-surface);
+        color: #fff;
+        cursor: pointer;
+    }
+
+    .pf-name {
+        font-size: 1.3rem;
+        font-weight: 900;
+        margin: 4px 0 6px;
+    }
+    .pf-row {
+        font-size: 13px;
+        opacity: 0.7;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-bottom: 5px;
+    }
+
+    .pf-stats-row {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-top: 14px;
+        flex-wrap: wrap;
+    }
+    .pf-stat-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(245,158,11,0.1);
+        color: #f59e0b;
+        padding: 5px 13px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        border: 1px solid rgba(245,158,11,0.25);
+    }
+
+    .pf-actions {
+        display: flex;
+        gap: 8px;
+        justify-content: center;
+        margin-top: 14px;
+        flex-wrap: wrap;
+    }
+    .pf-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background: rgba(245,158,11,0.13);
+        border: 1px solid rgba(245,158,11,0.3);
+        color: #f59e0b;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 700;
+        cursor: pointer;
+        text-decoration: none;
+    }
+    .pf-btn:hover { background: rgba(245,158,11,0.22); color: #f59e0b; }
+
+    /* Balance card */
+    .pf-balance {
+        background: var(--mud-palette-surface);
+        border: 1px solid rgba(245,158,11,0.18);
+        border-radius: 16px;
+        padding: 18px 20px 14px;
+        margin-bottom: 22px;
+    }
+    .pf-balance h3 {
+        font-size: 0.95rem;
+        font-weight: 800;
+        margin: 0 0 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #f59e0b;
+    }
+    .pf-balance-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        gap: 12px;
+        margin-bottom: 14px;
+    }
+    .pf-balance-cur {
+        font-size: 11px;
+        opacity: 0.5;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .pf-balance-amount {
+        font-size: 1.9rem;
+        font-weight: 900;
+        color: #f59e0b;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        line-height: 1;
+    }
+    .pf-balance-amount img { width: 26px; height: 26px; }
+    .pf-topup {
+        display: inline-block;
+        width: 100%;
+        text-align: center;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: #fff;
+        padding: 11px;
+        border-radius: 12px;
+        font-weight: 800;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    .pf-topup:hover { color: #fff; filter: brightness(1.07); }
+
+    /* Tabs */
+    .pf-tabs {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 14px;
+        background: var(--mud-palette-surface);
+        padding: 6px;
+        border-radius: 12px;
+        border: 1px solid rgba(128,128,128,0.14);
+    }
+    .pf-tab {
+        flex: 1;
+        padding: 9px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        text-align: center;
+        background: transparent;
+        color: inherit;
+        border: none;
+        transition: all 0.15s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+    }
+    .pf-tab.active {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: #fff;
+    }
+
+    .pf-empty {
+        text-align: center;
+        padding: 38px 16px;
+        background: var(--mud-palette-surface);
+        border: 1px dashed rgba(128,128,128,0.25);
+        border-radius: 14px;
+        color: rgba(128,128,128,0.7);
+    }
+    .pf-fav-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 12px;
+    }
+    .pf-fav {
+        background: var(--mud-palette-surface);
+        border-radius: 12px;
+        overflow: hidden;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid rgba(128,128,128,0.12);
+    }
+    .pf-fav:hover { border-color: rgba(245,158,11,0.4); }
+    .pf-fav img {
+        width: 100%;
+        aspect-ratio: 3/4;
+        object-fit: cover;
+    }
+    .pf-fav-name {
+        padding: 8px 10px 10px;
+        font-size: 12px;
+        font-weight: 700;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* Password modal */
+    .pf-modal-bg {
+        position: fixed; inset: 0;
+        background: rgba(0,0,0,0.65);
+        z-index: 9999;
+        display: flex; align-items: center; justify-content: center;
+        padding: 20px;
+    }
+    .pf-modal {
+        background: var(--mud-palette-surface);
+        border-radius: 16px;
+        padding: 24px;
+        max-width: 380px;
+        width: 100%;
+        border: 1px solid rgba(245,158,11,0.25);
+    }
+    .pf-modal h3 { margin: 0 0 14px; font-weight: 800; }
+    .pf-modal label { display:block; font-size:11px; font-weight:700; margin: 10px 0 4px; opacity:0.7; text-transform:uppercase; }
+    .pf-modal input {
+        width: 100%;
+        padding: 9px 12px;
+        background: rgba(0,0,0,0.18);
+        border: 1px solid rgba(128,128,128,0.25);
+        border-radius: 8px;
+        color: inherit;
+        outline: none;
+        font-size: 14px;
+    }
+    .pf-modal input:focus { border-color: #f59e0b; }
+
+    .pf-alert {
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        margin-bottom: 14px;
+    }
+    .pf-alert.ok   { background: rgba(34,197,94,0.12); color: #34d399; border: 1px solid rgba(34,197,94,0.25); }
+    .pf-alert.err  { background: rgba(239,68,68,0.12); color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
+</style>
+
+@if (_loading)
+{
+    <div style="padding:80px;text-align:center;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </div>
+}
+else if (_profile is null)
+{
+    <div class="pf-wrap">
+        <div class="pf-empty">
+            <div style="font-size:3rem;margin-bottom:12px;">🔒</div>
+            <div style="font-weight:800;margin-bottom:8px;color:var(--mud-palette-text-primary);">Tizimga kiring</div>
+            <a href="/login" class="pf-topup" style="display:inline-block;width:auto;padding:10px 28px;">Kirish</a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="pf-wrap">
+
+        @if (_pwdMsg != null)
+        {
+            <div class="pf-alert @(_pwdOk ? "ok" : "err")">@_pwdMsg</div>
+        }
+
+        <!-- Profile card -->
+        <div class="pf-card">
+            <div class="pf-avatar-wrap">
+                <div class="pf-avatar">
+                    @if (!string.IsNullOrEmpty(_profile.Picture))
+                    {
+                        <img src="@_profile.Picture" alt="@_profile.Name" />
+                    }
+                    else
+                    {
+                        @(_profile.Name.Length > 0 ? _profile.Name[0].ToString().ToUpper() : "?")
+                    }
+                </div>
+                <div class="pf-cam-btn" title="Rasm o'zgartirish (tez orada)">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                    </svg>
+                </div>
+            </div>
+
+            <div class="pf-name">@_profile.Name</div>
+
+            <div class="pf-row">
+                <span>📧</span> @_profile.Email
+            </div>
+            <br />
+            <div class="pf-row">
+                <span>📅</span> Ro'yxatdan o'tgan: @FmtDate(_profile.CreatedAt)
+            </div>
+
+            <div class="pf-stats-row">
+                <span class="pf-stat-chip">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/>
+                    </svg>
+                    @_bookmarkCount Sevimli
+                </span>
+                @if (_profile.HasGoogle)
+                {
+                    <span class="pf-stat-chip" style="background:rgba(27,19,190,0.12);color:#5b9fd9;border-color:rgba(27,19,190,0.3);">
+                        G Google
+                    </span>
+                }
+            </div>
+
+            <div class="pf-actions">
+                <a class="pf-btn" href="/bookmarks">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/>
+                    </svg>
+                    Sevimlilar
+                </a>
+                <button class="pf-btn" @onclick="@(() => _showPwd = true)">
+                    🔒 Parolni o'zgartirish
+                </button>
+            </div>
+        </div>
+
+        <!-- Balance card -->
+        <div class="pf-balance">
+            <h3>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="2" y="6" width="20" height="13" rx="2"/>
+                    <line x1="2" y1="10" x2="22" y2="10"/>
+                </svg>
+                Balans va obunalar
+            </h3>
+            <div class="pf-balance-row">
+                <div>
+                    <div class="pf-balance-cur">Joriy balans</div>
+                    <div class="pf-balance-amount">
+                        <img src="/img/coin.svg" alt="coin" />
+                        @_profile.CoinBalance
+                    </div>
+                </div>
+            </div>
+            <a href="/coins" class="pf-topup">
+                💳 Balans to'ldirish
+            </a>
+        </div>
+
+        <!-- Favorites section -->
+        <div class="pf-tabs">
+            <div class="pf-tab active">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/>
+                </svg>
+                Sevimlilar
+            </div>
+        </div>
+
+        @if (_favorites.Count == 0)
+        {
+            <div class="pf-empty">
+                <div style="font-size:2.4rem;margin-bottom:10px;">
+                    <svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="opacity:0.5;">
+                        <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/>
+                    </svg>
+                </div>
+                <div style="font-weight:800;margin-bottom:6px;color:var(--mud-palette-text-primary);">Sevimlilar topilmadi</div>
+                <div style="font-size:12px;">Sevimli mangalaringizni qo'shish uchun katalogni ko'rib chiqing</div>
+            </div>
+        }
+        else
+        {
+            <div class="pf-fav-grid">
+                @foreach (var c in _favorites)
+                {
+                    <a class="pf-fav" href="/comic/@c.Slug">
+                        <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/120/160")" alt="@c.Title" />
+                        <div class="pf-fav-name">@c.Title</div>
+                    </a>
+                }
+            </div>
+        }
+    </div>
+
+    @if (_showPwd)
+    {
+        <div class="pf-modal-bg" @onclick="@(() => _showPwd = false)">
+            <div class="pf-modal" @onclick:stopPropagation="true">
+                <h3>🔒 Parolni o'zgartirish</h3>
+                <form method="post" action="/auth/change-password">
+                    @if (_profile.HasPassword)
+                    {
+                        <label>Hozirgi parol</label>
+                        <input type="password" name="current" required minlength="6" />
+                    }
+                    else
+                    {
+                        <div style="font-size:12px;opacity:0.65;margin-bottom:10px;">
+                            Sizda hali parol o'rnatilmagan (faqat Google bilan kirgansiz).
+                            Yangi parol o'rnating:
+                        </div>
+                    }
+                    <label>Yangi parol</label>
+                    <input type="password" name="new" required minlength="6" />
+
+                    <div style="display:flex;gap:8px;margin-top:16px;">
+                        <button type="button" class="pf-btn" style="flex:1;justify-content:center;background:rgba(128,128,128,0.1);color:inherit;border-color:rgba(128,128,128,0.25);"
+                                @onclick="@(() => _showPwd = false)">
+                            Bekor qilish
+                        </button>
+                        <button type="submit" class="pf-topup" style="flex:1;padding:9px;">
+                            Saqlash
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    bool _loading = true;
+    bool _showPwd = false;
+    UserProfileDto? _profile;
+    List<ComicDto> _favorites = new();
+    int _bookmarkCount = 0;
+    string? _pwdMsg;
+    bool _pwdOk;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var st = await AuthState.GetAuthenticationStateAsync();
+        if (st.User.Identity?.IsAuthenticated == true
+            && Guid.TryParse(st.User.FindFirst("app_user_id")?.Value, out var uid))
+        {
+            _profile = await Mediator.Send(new GetUserProfileQuery(uid));
+
+            // Sevimlilarni session orqali olamiz
+            await BookmarkSvc.EnsureLoadedAsync();
+            var ids = BookmarkSvc.GetAll();
+            _bookmarkCount = ids.Count;
+            if (_bookmarkCount > 0)
+            {
+                var all = await Mediator.Send(new GetComicsQuery(PageSize: 200));
+                _favorites = all.Items.Where(c => ids.Contains(c.Id)).ToList();
+            }
+        }
+
+        // Password change feedback
+        var qs = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(new Uri(Nav.Uri).Query);
+        if (qs.TryGetValue("pwd", out var p))
+        {
+            if (p == "ok")  { _pwdOk = true;  _pwdMsg = "✅ Parol muvaffaqiyatli o'zgartirildi"; }
+            if (p == "err") { _pwdOk = false; _pwdMsg = "❌ Parolni o'zgartirib bo'lmadi (eski parol noto'g'ri yoki yangi parol qisqa)"; }
+        }
+        _loading = false;
+    }
+
+    static string FmtDate(DateTime d)
+    {
+        return d.ToString("d MMM yyyy, HH:mm", System.Globalization.CultureInfo.GetCultureInfo("uz-UZ"));
+    }
+}

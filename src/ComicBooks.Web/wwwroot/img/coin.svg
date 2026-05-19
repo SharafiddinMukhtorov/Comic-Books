@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="coinRing" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#fde68a"/>
+      <stop offset="30%"  stop-color="#fbbf24"/>
+      <stop offset="65%"  stop-color="#f59e0b"/>
+      <stop offset="100%" stop-color="#b45309"/>
+    </linearGradient>
+    <linearGradient id="coinInner" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#fbcc4c"/>
+      <stop offset="100%" stop-color="#c4720a"/>
+    </linearGradient>
+    <radialGradient id="coinHi" cx="0.4" cy="0.25" r="0.55">
+      <stop offset="0%"   stop-color="#fffbeb" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#fffbeb" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="coinM" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%"   stop-color="#fbbf24"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer thick ring -->
+  <circle cx="50" cy="50" r="48" fill="url(#coinRing)"/>
+  <!-- Inner cutout (transparent center) -->
+  <circle cx="50" cy="50" r="36" fill="url(#coinInner)"/>
+  <circle cx="50" cy="50" r="36" fill="rgba(0,0,0,0.06)"/>
+  <!-- Glossy highlight -->
+  <circle cx="50" cy="50" r="48" fill="url(#coinHi)"/>
+
+  <!-- M shape (two humps, central valley) -->
+  <path d="M 24 76
+           C 24 50, 32 30, 40 30
+           C 47 30, 50 42, 50 52
+           C 50 42, 53 30, 60 30
+           C 68 30, 76 50, 76 76
+           L 66 76
+           C 66 56, 62 42, 57 42
+           C 53 42, 52 54, 52 68
+           L 48 68
+           C 48 54, 47 42, 43 42
+           C 38 42, 34 56, 34 76
+           Z"
+        fill="url(#coinM)"
+        stroke="#92400e"
+        stroke-width="0.6"/>
+</svg>

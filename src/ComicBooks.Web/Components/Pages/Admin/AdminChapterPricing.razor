@@ -12,12 +12,13 @@
     Qaysi boblar coin talab qilishini va narxini belgilang.
 </MudText>
 
+<!-- Comic selector -->
 <MudPaper Class="pa-4 mb-4" Elevation="1" Style="border-radius:12px;">
     <MudSelect T="Guid?" Value="@_comicId" ValueChanged="ComicChanged"
                Label="Komik tanlang" Variant="Variant.Outlined" Clearable="true">
         @foreach (var c in _comics)
         {
-            <MudSelectItem T="Guid?" Value="@c.Id">
+            <MudSelectItem T="Guid?" Value="@((Guid?)c.Id)">
                 @c.Title (@c.ChapterCount bob)
             </MudSelectItem>
         }
@@ -32,69 +33,121 @@ else if (_comicId.HasValue && _chapters.Any())
 {
     <MudPaper Class="pa-4" Elevation="2" Style="border-radius:12px;">
 
-        <!-- Quick Actions -->
+        <!-- Toolbar row: quick-set + search + save -->
         <div style="display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;">
-            <span style="font-size:13px;opacity:0.6;">Barchasiga:</span>
 
-            <MudButton Size="Size.Small" Variant="Variant.Outlined" Style="text-transform:none;"
+            <!-- Quick-set buttons -->
+            <span style="font-size:13px;opacity:0.6;flex-shrink:0;">Barchasiga:</span>
+
+            <MudButton Size="Size.Small" Variant="Variant.Outlined"
+                       Style="text-transform:none;flex-shrink:0;"
                        OnClick="SetAllFree">Bepul</MudButton>
 
             @foreach (int p in new[] { 5, 10, 20 })
             {
+                int price = p;
                 <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Warning"
-                           Style="text-transform:none;"
-                           OnClick="@(() => SetAllPrice(p))">@p 🪙</MudButton>
+                           Style="text-transform:none;flex-shrink:0;gap:4px;"
+                           OnClick="@(() => SetAllPrice(price))">
+                    @price
+                    <img src="/img/coin.svg" style="width:16px;height:16px;vertical-align:middle;" alt="coin" />
+                </MudButton>
+            }
+
+            <!-- Search box -->
+            <div style="position:relative;flex:1;min-width:160px;max-width:280px;">
+                <input @bind="_search" @bind:event="oninput"
+                       placeholder="Bob qidirish..."
+                       style="width:100%;height:36px;padding:0 36px 0 12px;
+                              border-radius:8px;border:1px solid rgba(128,128,128,0.25);
+                              background:var(--mud-palette-surface);
+                              color:var(--mud-palette-text-primary);
+                              font-size:13px;outline:none;font-family:inherit;" />
+                <span style="position:absolute;right:10px;top:50%;transform:translateY(-50%);
+                             opacity:0.35;pointer-events:none;font-size:15px;">🔍</span>
+            </div>
+
+            <!-- Locked count badge -->
+            @{
+                var lockedCount = _chapters.Count(x => x.IsLocked);
+            }
+            @if (lockedCount > 0)
+            {
+                <span style="font-size:12px;padding:3px 10px;border-radius:20px;
+                             background:rgba(245,158,11,0.12);color:#f59e0b;
+                             font-weight:700;flex-shrink:0;">
+                    🔒 @lockedCount qulflangan
+                </span>
             }
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
                        OnClick="SaveAll" Disabled="@_saving"
-                       Style="margin-left:auto;text-transform:none;">
+                       Style="margin-left:auto;text-transform:none;flex-shrink:0;">
                 @(_saving ? "Saqlanmoqda..." : "✅ Hammasini saqlash")
             </MudButton>
         </div>
 
-        <MudTable Items="@_chapters" Dense Hover Elevation="0">
-            <HeaderContent>
-                <MudTh>Bob</MudTh>
-                <MudTh>Sarlavha</MudTh>
-                <MudTh>Qulflangan</MudTh>
-                <MudTh>Narx (coin)</MudTh>
-            </HeaderContent>
-            <RowTemplate Context="ch">
-                <MudTd>
-                    <MudChip T="string" Size="Size.Small" Color="Color.Primary">Ch.@ch.ChapterNumber</MudChip>
-                </MudTd>
-                <MudTd><span style="opacity:0.6;">@(ch.Title ?? "—")</span></MudTd>
-                <MudTd>
-                    <MudSwitch T="bool"
-                               Checked="@ch.IsLocked"
-                               CheckedChanged="@((bool v) => OnLockChanged(ch, v))"
-                               Color="Color.Warning" />
-                </MudTd>
-                <MudTd>
-                    @if (ch.IsLocked)
-                    {
-                        <MudNumericField T="int"
-                                         Value="@ch.CoinPrice"
-                                         ValueChanged="@((int v) => ch.CoinPrice = v)"
-                                         Min="1" Max="999"
-                                         Variant="Variant.Outlined"
-                                         Margin="Margin.Dense"
-                                         Adornment="Adornment.End"
-                                         AdornmentText="🪙"
-                                         Style="max-width:120px;" />
-                    }
-                    else
-                    {
-                        <span style="opacity:0.35;">Bepul</span>
-                    }
-                </MudTd>
-            </RowTemplate>
-        </MudTable>
+        <!-- Table -->
+        @{
+            var visible = Filtered();
+        }
+        @if (visible.Any())
+        {
+            <MudTable Items="@visible" Dense="true" Hover="true" Elevation="0">
+                <HeaderContent>
+                    <MudTh>Bob</MudTh>
+                    <MudTh>Sarlavha</MudTh>
+                    <MudTh>Qulflangan</MudTh>
+                    <MudTh>Narx (coin)</MudTh>
+                </HeaderContent>
+                <RowTemplate Context="ch">
+                    <MudTd>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary" Label="true">
+                            Ch.@ch.ChapterNumber
+                        </MudChip>
+                    </MudTd>
+                    <MudTd>
+                        <span style="opacity:0.6;">@(ch.Title ?? "—")</span>
+                    </MudTd>
+                    <MudTd>
+                        <MudSwitch T="bool"
+                                   Value="@ch.IsLocked"
+                                   ValueChanged="@((bool v) => OnLockChanged(ch, v))"
+                                   Color="Color.Warning" />
+                    </MudTd>
+                    <MudTd>
+                        @if (ch.IsLocked)
+                        {
+                            <div style="display:flex;align-items:center;gap:6px;">
+                                <MudNumericField T="int"
+                                                 Value="@ch.CoinPrice"
+                                                 ValueChanged="@((int v) => { ch.CoinPrice = Math.Max(1, v); StateHasChanged(); })"
+                                                 Min="1" Max="999"
+                                                 Variant="Variant.Outlined"
+                                                 Margin="Margin.Dense"
+                                                 Style="max-width:100px;" />
+                                <img src="/img/coin.svg" style="width:20px;height:20px;flex-shrink:0;" alt="coin" />
+                            </div>
+                        }
+                        else
+                        {
+                            <span style="opacity:0.35;font-size:13px;">Bepul</span>
+                        }
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <div style="text-align:center;padding:32px;opacity:0.4;">
+                "@_search" bo'yicha bob topilmadi.
+            </div>
+        }
 
         <div style="display:flex;justify-content:flex-end;margin-top:16px;">
             <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                       OnClick="SaveAll" Disabled="@_saving" Style="text-transform:none;">
+                       OnClick="SaveAll" Disabled="@_saving"
+                       Style="text-transform:none;">
                 @(_saving ? "Saqlanmoqda..." : "✅ Saqlash")
             </MudButton>
         </div>
@@ -106,15 +159,16 @@ else if (_comicId.HasValue)
 }
 
 @code {
-    List<ComicDto>             _comics   = new();
-    List<ChapterPriceItemDto>  _chapters = new();
+    List<ComicDto>            _comics          = new();
+    List<ChapterPriceItemDto> _chapters        = new();
     Guid? _comicId;
     bool  _saving          = false;
     bool  _loadingChapters = false;
+    string _search         = "";
 
     protected override async Task OnInitializedAsync()
     {
-        var r  = await Mediator.Send(new GetComicsQuery(PageSize: 500));
+        var r   = await Mediator.Send(new GetComicsQuery(PageSize: 500));
         _comics = r.Items;
     }
 
@@ -122,6 +176,7 @@ else if (_comicId.HasValue)
     {
         _comicId  = id;
         _chapters = new();
+        _search   = "";
         if (!id.HasValue) return;
 
         _loadingChapters = true;
@@ -130,25 +185,42 @@ else if (_comicId.HasValue)
         _loadingChapters = false;
     }
 
+    List<ChapterPriceItemDto> Filtered()
+    {
+        if (string.IsNullOrWhiteSpace(_search)) return _chapters;
+        var q = _search.Trim();
+        return _chapters
+            .Where(c => c.ChapterNumber.ToString().Contains(q)
+                     || (c.Title ?? "").Contains(q, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
     void OnLockChanged(ChapterPriceItemDto ch, bool isLocked)
     {
         ch.IsLocked = isLocked;
-        if (!isLocked) ch.CoinPrice = 0;
+        if (!isLocked)
+            ch.CoinPrice = 0;
+        else if (ch.CoinPrice < 1)
+            ch.CoinPrice = 5;   // default price when locking
+        StateHasChanged();
     }
 
     void SetAllFree()
     {
         foreach (var ch in _chapters) { ch.IsLocked = false; ch.CoinPrice = 0; }
+        StateHasChanged();
     }
 
     void SetAllPrice(int price)
     {
         foreach (var ch in _chapters) { ch.IsLocked = true; ch.CoinPrice = price; }
+        StateHasChanged();
     }
 
     async Task SaveAll()
     {
         _saving = true;
+        StateHasChanged();
         try
         {
             await PricingSvc.SaveChapterPricingAsync(_chapters);

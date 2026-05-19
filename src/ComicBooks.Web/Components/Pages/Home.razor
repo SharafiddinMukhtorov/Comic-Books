@@ -13,6 +13,9 @@
         width: 100%;
         overflow: hidden;
         background: #0a0a14;
+        margin: 0;
+        padding: 0;
+        margin-top: -1px;  /* navbar bilan zazor olib tashlash */
     }
 
     .hero-bg-blur {
@@ -126,8 +129,9 @@
         width: 175px;
         height: 250px;
         object-fit: cover;
-        border-radius: 14px;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.7), 0 0 0 3px rgba(255,255,255,0.08);
+        border-radius: 10px;
+        box-shadow: 0 12px 30px rgba(0,0,0,0.55);
+        border: 1px solid rgba(255,255,255,0.12);
         transition: opacity 0.4s ease;
     }
 
@@ -173,31 +177,6 @@
         border-radius: 4px;
     }
 
-    /* Nav arrows */
-    .hero-arrow {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        z-index: 6;
-        background: rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-        color: #fff;
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        backdrop-filter: blur(4px);
-        transition: background 0.2s;
-        font-size: 18px;
-    }
-
-    .hero-arrow:hover { background: rgba(255,255,255,0.2); }
-    .hero-arrow.left  { left: 16px; }
-    .hero-arrow.right { right: 16px; }
-
     /* ── Section header ── */
     .section-header {
         display: flex;
@@ -223,24 +202,23 @@
         border-radius: 2px;
     }
 
-    /* Trending */
+    /* Trending — 4-col grid */
     .trending-scroll {
-        display: flex;
-        gap: 14px;
-        overflow-x: auto;
-        padding-bottom: 12px;
-        scrollbar-width: none;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
     }
 
-    .trending-scroll::-webkit-scrollbar { display: none; }
+    @@media (max-width: 1100px) and (min-width: 769px) {
+        .trending-scroll { grid-template-columns: repeat(3, 1fr); }
+    }
 
     .trending-card {
-        flex: 0 0 160px;
-        border-radius: 12px;
+        border-radius: 14px;
         overflow: hidden;
         background: var(--mud-palette-surface);
         border: 1px solid var(--mud-palette-lines-default);
-        box-shadow: 0 4px 16px rgba(0,0,0,0.18);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.22);
         transition: transform 0.3s ease, box-shadow 0.3s ease;
         text-decoration: none;
         color: inherit;
@@ -248,27 +226,46 @@
         position: relative;
     }
 
-    .trending-card:hover { transform: translateY(-6px); box-shadow: 0 12px 32px rgba(0,0,0,0.3); }
+    .trending-card:hover { transform: translateY(-6px); box-shadow: 0 14px 36px rgba(0,0,0,0.34); }
 
     .trending-card img {
         width: 100%;
-        height: 225px;
+        aspect-ratio: 3/4;
         object-fit: cover;
         display: block;
     }
 
     .trending-card-rating {
         position: absolute;
-        top: 8px;
+        bottom: 8px;
         left: 8px;
-        background: rgba(0,0,0,0.65);
+        background: rgba(0,0,0,0.78);
         color: #f59e0b;
-        font-size: 11px;
+        font-size: 12px;
         font-weight: 800;
-        padding: 3px 8px;
-        border-radius: 6px;
+        padding: 3px 9px;
+        border-radius: 7px;
         backdrop-filter: blur(4px);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
     }
+    .trending-card-views {
+        position: absolute;
+        bottom: 8px;
+        right: 8px;
+        background: rgba(0,0,0,0.78);
+        color: rgba(255,255,255,0.9);
+        font-size: 12px;
+        font-weight: 700;
+        padding: 3px 9px;
+        border-radius: 7px;
+        backdrop-filter: blur(4px);
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .trending-card-img-wrap { position: relative; }
 
     .trending-info {
         padding: 10px 10px 12px;
@@ -284,6 +281,32 @@
     .trending-info .tc-star      { font-size: 11px; color: #f59e0b; }
     .trending-info .tc-star.empty{ color: rgba(128,128,128,0.35); }
 
+    /* Rating pagination */
+    .rating-pagination {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 6px;
+        margin-top: 16px;
+        padding-top: 14px;
+    }
+    .rp-btn {
+        min-width: 34px;
+        height: 34px;
+        border-radius: 8px;
+        border: 1px solid rgba(128,128,128,0.25);
+        background: transparent;
+        color: inherit;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 0 8px;
+        transition: all 0.15s;
+    }
+    .rp-btn:hover:not(:disabled) { background: rgba(27,19,190,0.12); border-color: rgba(27,19,190,0.4); }
+    .rp-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .rp-btn.active { background: #1b13be; color: #fff; border-color: #1b13be; }
+
     .latest-row {
         display: flex;
         gap: 10px;
@@ -296,10 +319,56 @@
 
     .latest-row:hover { background: rgba(65,159,217,0.08); }
 
+    /* ── Latest grid (desktop: 2-col, mobile: 1-col) ── */
+    .latest-grid {
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 32px;
+    }
+
     @@media (max-width: 768px) {
-        .hero-content { padding: 32px 20px; }
-        .hero-right { display: none; }
-        .hero-title { font-size: 22px; }
+        /* Hero adjustments */
+        .hero-content {
+            padding: 14px 16px 24px;
+            min-height: 0;          /* tepada bo'sh joy bo'lmasin */
+            align-items: flex-start; /* kontent yuqorida tursin, markazda emas */
+            gap: 14px;
+        }
+        .hero-badge {
+            margin-bottom: 8px !important;
+        }
+        .hero-wrapper { min-height: auto; }
+        .hero-bg, .hero-bg-grad { min-height: auto; }
+        .hero-right {
+            flex-shrink: 0;
+        }
+        .hero-cover {
+            width: 110px;
+            height: 158px;
+        }
+        .hero-title  { font-size: 20px; }
+        .hero-badge  { font-size: 11px; padding: 4px 11px; }
+        .hero-read-btn { padding: 11px 22px; font-size: 14px; }
+        .hero-meta   { gap: 10px; margin-bottom: 18px; }
+
+        /* Body container */
+        .home-body { padding: 20px 14px 80px !important; }
+
+        /* Trending: 2 ustun mobilda */
+        .trending-scroll { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .trending-card img { aspect-ratio: 3/4; }
+
+        /* Latest grid: single column on mobile */
+        .latest-grid {
+            grid-template-columns: 1fr;
+            gap: 0;
+        }
+
+        /* Latest rows: full width, single column */
+        .latest-updates-grid { grid-template-columns: 1fr !important; }
+
+        /* Ratings sidebar: smaller padding */
+        .ratings-sidebar { padding-top: 28px; border-top: 1px solid var(--mud-palette-lines-default); margin-top: 24px; }
     }
 </style>
 
@@ -322,8 +391,6 @@ else
                  style="background-image: url('@(active.CoverImageUrl ?? $"https://picsum.photos/seed/{active.Slug}/1200/500")');">
             </div>
         }
-
-        <button class="hero-arrow left" @onclick="PrevSlide">&#8249;</button>
 
         <div class="hero-content">
             @if (active != null)
@@ -354,8 +421,6 @@ else
             }
         </div>
 
-        <button class="hero-arrow right" @onclick="NextSlide">&#8250;</button>
-
         <div class="hero-dots">
             @for (int i = 0; i < items.Count; i++)
             {
@@ -367,7 +432,7 @@ else
     </div>
 
     <!-- BODY -->
-    <div style="max-width:1300px;margin:0 auto;padding:32px 20px 80px;">
+    <div class="home-body" style="max-width:1300px;margin:0 auto;padding:32px 20px 80px;">
 
         <!-- Mashhur (trending cards) -->
         <div style="margin-bottom:40px;">
@@ -379,13 +444,22 @@ else
                 </a>
             </div>
             <div class="trending-scroll">
-                @foreach (var c in _trending?.Items ?? new())
+                @foreach (var c in (_trending?.Items ?? new()).Take(8))
                 {
                     <a href="/comic/@c.Slug" class="trending-card">
-                        <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/300/420")"
-                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)t/300/420'"
-                             alt="@c.Title" />
-                        <div class="trending-card-rating">★ @c.AverageRating.ToString("F1")</div>
+                        <div class="trending-card-img-wrap">
+                            <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/300/420")"
+                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)t/300/420'"
+                                 alt="@c.Title" />
+                            <div class="trending-card-rating">★ @c.AverageRating.ToString("F1")</div>
+                            <div class="trending-card-views">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                                    <circle cx="12" cy="12" r="3"/>
+                                </svg>
+                                @FmtViews(c.ViewCount)
+                            </div>
+                        </div>
                         <div class="trending-info">
                             <div style="font-weight:700;font-size:13px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
                                 @c.Title
@@ -407,14 +481,14 @@ else
         </div>
 
         <!-- Latest Updates + Popular sidebar -->
-        <div style="display:grid;grid-template-columns:1fr 300px;gap:32px;">
+        <div class="latest-grid">
 
             <!-- Latest Updates -->
             <div>
                 <div class="section-header">
                     <span class="section-title">So'nggi yangilanishlar</span>
                 </div>
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+                <div class="latest-updates-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
                     @foreach (var c in _latest?.Items ?? new())
                     {
                         <a href="/comic/@c.Slug" style="text-decoration:none;color:inherit;">
@@ -434,7 +508,7 @@ else
                                         {
                                             <div style="font-size:12px;color:@(Theme.IsDark ? "#5b8af0" : "#2563eb");display:flex;justify-content:space-between;">
                                                 <span>Ch. @((int)c.LatestChapterNumber.Value - 1)</span>
-                                                <span style="opacity:0.35;font-size:11px;">last week</span>
+                                                <span style="opacity:0.35;font-size:11px;">o'tgan hafta</span>
                                             </div>
                                         }
                                     }
@@ -446,18 +520,18 @@ else
             </div>
 
             <!-- Popular sidebar -->
-            <div>
+            <div class="ratings-sidebar">
                 <div class="section-header" style="flex-wrap:wrap;gap:8px;">
                     <span class="section-title">Reytinglar</span>
                     <div style="display:flex;gap:4px;">
-                        @foreach (var (label, ti) in new[] { ("Haftalik", 0), ("Oylik", 1), ("All Time", 2) })
+                        @foreach (var (label, ti) in new[] { ("Haftalik", 0), ("Oylik", 1), ("Hammasi", 2) })
                         {
-                            <button @onclick="@(() => _tab = ti)" style="@TabBtn(_tab == ti)">@label</button>
+                            <button @onclick="@(() => { _tab = ti; _ratingPage = 1; })" style="@TabBtn(_tab == ti)">@label</button>
                         }
                     </div>
                 </div>
-                @{ int rk = 0; }
-                @foreach (var c in TabList())
+                @{ int rk = (_ratingPage - 1) * RatingPageSize; }
+                @foreach (var c in TabListPaged())
                 {
                     int r = ++rk;
                     <a href="/comic/@c.Slug" style="text-decoration:none;color:inherit;">
@@ -474,6 +548,20 @@ else
                         </div>
                     </a>
                 }
+
+                @{ var total = TotalRatingPages(); }
+                @if (total > 1)
+                {
+                    <div class="rating-pagination">
+                        <button class="rp-btn" disabled="@(_ratingPage <= 1)" @onclick="@(() => SetRatingPage(_ratingPage - 1))">‹</button>
+                        @for (int p = 1; p <= total; p++)
+                        {
+                            int pg = p;
+                            <button class="rp-btn @(pg == _ratingPage ? "active" : "")" @onclick="@(() => SetRatingPage(pg))">@pg</button>
+                        }
+                        <button class="rp-btn" disabled="@(_ratingPage >= total)" @onclick="@(() => SetRatingPage(_ratingPage + 1))">›</button>
+                    </div>
+                }
             </div>
         </div>
     </div>
@@ -486,13 +574,15 @@ else
     PaginatedList<ComicDto>? _featured, _trending, _popular, _latest;
     bool _loading = true;
     int _tab = 0;
+    int _ratingPage = 1;
+    const int RatingPageSize = 5;
 
     protected override async Task OnInitializedAsync()
     {
         Theme.OnChange += Refresh;
         _featured = await Mediator.Send(new GetComicsQuery(PageSize: 12, IsFeatured: true, SortBy: "rating"));
-        _trending = await Mediator.Send(new GetComicsQuery(PageSize: 10, SortBy: "views"));
-        _popular  = await Mediator.Send(new GetComicsQuery(PageSize: 10, IsPopular: true, SortBy: "rating"));
+        _trending = await Mediator.Send(new GetComicsQuery(PageSize: 25, SortBy: "views"));
+        _popular  = await Mediator.Send(new GetComicsQuery(PageSize: 25, IsPopular: true, SortBy: "rating"));
         _latest   = await Mediator.Send(new GetComicsQuery(PageSize: 14, SortBy: "createdAt"));
         _loading  = false;
 
@@ -520,16 +610,38 @@ else
     }
 
     List<ComicDto> TabList() =>
-        _tab == 0 ? (_trending?.Items?.Take(10).ToList() ?? new())
-                  : (_popular?.Items?.Take(10).ToList()  ?? new());
+        (_tab == 0 ? _trending?.Items : _popular?.Items) ?? new List<ComicDto>();
+
+    List<ComicDto> TabListPaged() =>
+        TabList().Skip((_ratingPage - 1) * RatingPageSize).Take(RatingPageSize).ToList();
+
+    int TotalRatingPages()
+    {
+        var total = TabList().Count;
+        if (total == 0) return 0;
+        return (int)Math.Ceiling(total / (double)RatingPageSize);
+    }
+
+    void SetRatingPage(int p)
+    {
+        var max = TotalRatingPages();
+        _ratingPage = Math.Clamp(p, 1, Math.Max(max, 1));
+    }
+
+    static string FmtViews(int n)
+    {
+        if (n >= 1_000_000) return (n / 1_000_000.0).ToString("F1") + "M";
+        if (n >= 1_000)     return (n / 1_000.0).ToString("F1") + "K";
+        return n.ToString();
+    }
 
     string FmtDate(DateTime d)
     {
         var diff = DateTime.UtcNow - d;
-        if (diff.TotalHours < 1)  return $"{(int)diff.TotalMinutes}m ago";
-        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours}h ago";
-        if (diff.TotalDays  < 7)  return $"{(int)diff.TotalDays}d ago";
-        return $"{(int)(diff.TotalDays/7)}w ago";
+        if (diff.TotalHours < 1)  return $"{(int)diff.TotalMinutes} daq oldin";
+        if (diff.TotalHours < 24) return $"{(int)diff.TotalHours} soat oldin";
+        if (diff.TotalDays  < 7)  return $"{(int)diff.TotalDays} kun oldin";
+        return $"{(int)(diff.TotalDays/7)} hafta oldin";
     }
 
     string TabBtn(bool on) => on

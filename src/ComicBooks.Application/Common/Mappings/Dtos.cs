@@ -35,6 +35,7 @@ public class ChapterDto
     public Guid Id { get; set; }
     public Guid ComicId { get; set; }
     public string? ComicTitle { get; set; }
+    public string? ComicSlug { get; set; }   // ← comic sahifasiga qaytish uchun
     public string? ComicCoverUrl { get; set; }
     public double ChapterNumber { get; set; }
     public string? Title { get; set; }

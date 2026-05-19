@@ -42,7 +42,7 @@ public class ChapterPageConfiguration : IEntityTypeConfiguration<ChapterPage>
     public void Configure(EntityTypeBuilder<ChapterPage> builder)
     {
         builder.HasKey(p => p.Id);
-        builder.Property(p => p.ImageUrl).IsRequired().HasMaxLength(2000);
+        builder.Property(p => p.ImageUrl).IsRequired().HasColumnType("nvarchar(max)");
         // PageNumber unique per chapter
         builder.HasIndex(p => new { p.ChapterId, p.PageNumber }).IsUnique();
         builder.HasOne(p => p.Chapter)

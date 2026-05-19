@@ -1,0 +1,387 @@
+@page "/login"
+@layout MinimalLayout
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthState
+
+<PageTitle>Kirish – Manga Dunyo</PageTitle>
+
+<div class="login-bg">
+    <div class="login-card">
+        <!-- Logo + title -->
+        <div class="login-logo">
+            <img src="/img/logo-dark.svg" width="48" height="48" alt="Manga Dunyo" />
+        </div>
+        <h1 class="login-title">WELCOME TO</h1>
+        <h2 class="login-title-accent">MANGA DUNYO</h2>
+        <p class="login-sub">Manhwa, Manga, Manhua o'qish platformasi</p>
+
+        <!-- Google sign-in button -->
+        <a href="/auth/google" class="login-google-btn">
+            <img src="/img/google.svg" width="20" height="20" alt="Google" />
+            <span>Continue with Google</span>
+        </a>
+
+        <div class="login-or">
+            <span>OR</span>
+        </div>
+
+        @if (_err != null)
+        {
+            <div class="login-error">@_err</div>
+        }
+
+        @if (_mode == "login")
+        {
+            <!-- LOGIN form -->
+            <form method="post" action="/auth/login" class="login-form">
+                <label class="login-label">Email manzil</label>
+                <div class="login-input-wrap">
+                    <span class="login-icon">📧</span>
+                    <input type="email" name="email" placeholder="you@example.com" required />
+                </div>
+
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-top:14px;">
+                    <label class="login-label" style="margin:0;">Parol</label>
+                    <button type="button" class="login-forgot" @onclick="@(() => _showForgot = true)">
+                        Parolni unutdingizmi?
+                    </button>
+                </div>
+                <div class="login-input-wrap">
+                    <span class="login-icon">🔒</span>
+                    <input type="password" name="password" placeholder="Parolingiz" required minlength="6" />
+                </div>
+
+                <button type="submit" class="login-submit">Log In</button>
+            </form>
+
+            <p class="login-bottom">
+                Akkountingiz yo'qmi?
+                <button type="button" class="login-link" @onclick="@SwitchToRegister">
+                    Sign up
+                </button>
+            </p>
+        }
+        else
+        {
+            <!-- REGISTER form -->
+            <form method="post" action="/auth/register" class="login-form">
+                <label class="login-label">Ismingiz</label>
+                <div class="login-input-wrap">
+                    <span class="login-icon">👤</span>
+                    <input type="text" name="name" placeholder="Sizning ismingiz" />
+                </div>
+
+                <label class="login-label">Email manzil</label>
+                <div class="login-input-wrap">
+                    <span class="login-icon">📧</span>
+                    <input type="email" name="email" placeholder="you@example.com" required />
+                </div>
+
+                <label class="login-label">Parol</label>
+                <div class="login-input-wrap">
+                    <span class="login-icon">🔒</span>
+                    <input type="password" name="password" placeholder="Kamida 6 ta belgi" required minlength="6" />
+                </div>
+
+                <button type="submit" class="login-submit">Ro'yxatdan o'tish</button>
+            </form>
+
+            <p class="login-bottom">
+                Allaqachon akkount bor?
+                <button type="button" class="login-link" @onclick="@SwitchToLogin">
+                    Log in
+                </button>
+            </p>
+        }
+
+        <a href="/" class="login-back">← Bosh sahifaga qaytish</a>
+    </div>
+</div>
+
+<!-- Forgot password modal -->
+@if (_showForgot)
+{
+    <div class="fp-backdrop" @onclick="@(() => _showForgot = false)">
+        <div class="fp-modal" @onclick:stopPropagation="true">
+            <div style="font-size:2.5rem;margin-bottom:12px;">🔑</div>
+            <h3 style="font-weight:800;margin:0 0 8px;color:#fff;">Parolni tiklash</h3>
+            <p style="font-size:13px;opacity:0.7;margin:0 0 18px;color:#fff;">
+                Bu xizmat tez orada qo'shiladi. Hozircha Google bilan kirishni sinab ko'ring.
+            </p>
+            <button class="login-submit" @onclick="@(() => _showForgot = false)">
+                Yopish
+            </button>
+        </div>
+    </div>
+}
+
+<style>
+    .login-bg {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background:
+            radial-gradient(ellipse at top, rgba(65,159,217,0.20) 0%, transparent 50%),
+            radial-gradient(ellipse at bottom, rgba(3,0,130,0.28) 0%, transparent 50%),
+            #0a0a14;
+        padding: 24px;
+    }
+
+    .login-card {
+        background: rgba(15,15,28,0.85);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 20px;
+        padding: 32px 30px 26px;
+        width: 100%;
+        max-width: 400px;
+        text-align: center;
+        box-shadow: 0 24px 64px rgba(0,0,0,0.6);
+    }
+
+    .login-logo {
+        background: linear-gradient(135deg, rgba(65,159,217,0.22), rgba(27,19,190,0.22));
+        border-radius: 18px;
+        width: 72px;
+        height: 72px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 14px;
+        border: 1px solid rgba(65,159,217,0.4);
+        box-shadow: 0 6px 22px rgba(27,19,190,0.4);
+    }
+
+    .login-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: rgba(255,255,255,0.8);
+        margin: 0;
+        letter-spacing: 1px;
+    }
+    .login-title-accent {
+        font-size: 1.7rem;
+        font-weight: 900;
+        color: #5b9fd9;
+        letter-spacing: -0.5px;
+        margin: 0 0 8px;
+        text-shadow: 0 0 24px rgba(65,159,217,0.45);
+    }
+
+    .login-sub {
+        color: rgba(255,255,255,0.45);
+        font-size: 0.825rem;
+        margin: 0 0 22px;
+    }
+
+    .login-google-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        width: 100%;
+        padding: 12px 18px;
+        background: #fff;
+        color: #1a1a2e;
+        border-radius: 12px;
+        text-decoration: none;
+        font-weight: 700;
+        font-size: 14px;
+        transition: all 0.2s ease;
+        margin-bottom: 16px;
+    }
+
+    .login-google-btn:hover {
+        background: #f5f5f5;
+        transform: translateY(-1px);
+        color: #1a1a2e;
+    }
+
+    .login-or {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 16px 0 18px;
+        color: rgba(255,255,255,0.4);
+        font-size: 12px;
+        font-weight: 600;
+    }
+    .login-or::before, .login-or::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: rgba(255,255,255,0.1);
+    }
+
+    .login-form {
+        text-align: left;
+    }
+
+    .login-label {
+        display: block;
+        color: rgba(255,255,255,0.7);
+        font-size: 12px;
+        font-weight: 700;
+        margin: 0 0 6px;
+    }
+
+    .login-input-wrap {
+        position: relative;
+        margin-bottom: 4px;
+    }
+    .login-input-wrap input {
+        width: 100%;
+        padding: 11px 14px 11px 40px;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 10px;
+        color: #fff;
+        font-size: 14px;
+        outline: none;
+        transition: border-color 0.15s, background 0.15s;
+    }
+    .login-input-wrap input:focus {
+        border-color: #419fd9;
+        background: rgba(255,255,255,0.07);
+    }
+    .login-input-wrap input::placeholder {
+        color: rgba(255,255,255,0.32);
+    }
+    .login-icon {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 15px;
+        opacity: 0.55;
+    }
+
+    .login-forgot {
+        background: none;
+        border: none;
+        color: #5b9fd9;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        padding: 0;
+    }
+    .login-forgot:hover { text-decoration: underline; }
+
+    .login-submit {
+        width: 100%;
+        padding: 12px;
+        background: linear-gradient(135deg, #419fd9, #1b13be);
+        color: #fff;
+        border: none;
+        border-radius: 10px;
+        font-weight: 800;
+        font-size: 14px;
+        cursor: pointer;
+        margin-top: 18px;
+        box-shadow: 0 6px 20px rgba(27,19,190,0.5);
+        transition: filter 0.15s, transform 0.15s;
+    }
+    .login-submit:hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+    .login-bottom {
+        text-align: center;
+        font-size: 13px;
+        color: rgba(255,255,255,0.55);
+        margin: 18px 0 6px;
+    }
+
+    .login-link {
+        background: none;
+        border: none;
+        color: #5b9fd9;
+        font-weight: 800;
+        font-size: 13px;
+        cursor: pointer;
+        padding: 0;
+    }
+    .login-link:hover { text-decoration: underline; }
+
+    .login-back {
+        display: inline-block;
+        margin-top: 12px;
+        color: rgba(255,255,255,0.4);
+        font-size: 12px;
+        text-decoration: none;
+    }
+    .login-back:hover { color: rgba(255,255,255,0.7); }
+
+    .login-error {
+        background: rgba(239,68,68,0.13);
+        border: 1px solid rgba(239,68,68,0.32);
+        color: #fca5a5;
+        padding: 9px 12px;
+        border-radius: 10px;
+        font-size: 12px;
+        font-weight: 600;
+        margin-bottom: 12px;
+        text-align: center;
+    }
+
+    /* Forgot password modal */
+    .fp-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        backdrop-filter: blur(6px);
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    .fp-modal {
+        background: #15152a;
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 16px;
+        padding: 24px 24px 22px;
+        max-width: 340px;
+        width: 100%;
+        text-align: center;
+    }
+
+    @@media (max-width: 480px) {
+        .login-card { padding: 28px 22px 20px; }
+        .login-title-accent { font-size: 1.4rem; }
+    }
+</style>
+
+@code {
+    string  _mode = "login";   // "login" yoki "register"
+    string? _err  = null;
+    bool    _showForgot = false;
+
+    void SwitchToRegister() { _mode = "register"; _err = null; }
+    void SwitchToLogin()    { _mode = "login";    _err = null; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        if (state.User.Identity?.IsAuthenticated == true)
+        {
+            Nav.NavigateTo("/", replace: true);
+            return;
+        }
+
+        // Xato xabarini URL dan o'qiymiz
+        var uri  = new Uri(Nav.Uri);
+        var qs   = Microsoft.AspNetCore.WebUtilities.QueryHelpers.ParseQuery(uri.Query);
+        if (qs.TryGetValue("err", out var e))
+        {
+            _err = e.ToString() switch
+            {
+                "invalid" => "Email yoki parol noto'g'ri",
+                "exists"  => "Bu email allaqachon ro'yxatdan o'tgan",
+                "short"   => "Parol kamida 6 ta belgi bo'lishi kerak",
+                "missing" => "Email va parolni to'liq kiriting",
+                _ => "Xatolik yuz berdi"
+            };
+            if (e == "exists" || e == "short") _mode = "register";
+        }
+    }
+}

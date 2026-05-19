@@ -1,51 +1,589 @@
-﻿@page "/chapter/{ChapterId:guid}"
+@page "/chapter/{ChapterId:guid}"
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
+@inject AuthenticationStateProvider AuthState
 
 <PageTitle>@GetTitle()</PageTitle>
 
 <style>
     .reader-page { background: #000; }
 
-    /* Settings popup */
+    /* ── Settings popup (desktop: bubble above FAB) ── */
     .settings-popup {
         position: fixed;
         z-index: 9999;
         background: var(--mud-palette-surface);
         border: 1px solid rgba(128,128,128,0.18);
         border-radius: 14px;
-        padding: 20px 22px 16px;
+        padding: 20px 22px 18px;
         width: 340px;
         box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.2);
         animation: popup-in 0.18s cubic-bezier(0.34,1.56,0.64,1);
+        top: 116px;
+        right: 14px;
     }
     @@keyframes popup-in {
         from { opacity:0; transform: translateY(10px) scale(0.96); }
         to   { opacity:1; transform: translateY(0)   scale(1);    }
     }
-    /* Arrow pointing down to button */
     .settings-popup::after {
         content: '';
         position: absolute;
-        bottom: -8px;
-        right: 18px;
+        top: -8px;
+        right: 16px;
         width: 14px;
         height: 14px;
         background: var(--mud-palette-surface);
-        border-right: 1px solid rgba(128,128,128,0.18);
-        border-bottom: 1px solid rgba(128,128,128,0.18);
+        border-left: 1px solid rgba(128,128,128,0.18);
+        border-top: 1px solid rgba(128,128,128,0.18);
         transform: rotate(45deg);
     }
 
-    .px-slider-track {
-        height: 6px;
-        background: rgba(124,58,237,0.2);
-        border-radius: 3px;
-        position: relative;
+    /* ── Mobile: bottom sheet ── */
+    @@media (max-width: 600px) {
+        .settings-popup {
+            bottom: 0 !important;
+            right:  0 !important;
+            left:   0 !important;
+            width: auto !important;
+            border-radius: 20px 20px 0 0 !important;
+            padding: 18px 20px 32px;
+        }
+        .settings-popup::after { display: none; }
+        /* width control hidden on mobile (screen already narrower than min-width) */
+        .width-ctrl { display: none !important; }
+        /* zoom control shown on all sizes */
+    }
+    @@media (min-width: 601px) {
+        /* zoom control shown on desktop too */
+    }
+
+    /* ── Zoom % badge ── */
+    .zoom-badge {
+        display: inline-block;
+        min-width: 54px;
+        text-align: center;
+        font-size: 15px;
+        font-weight: 800;
+        color: #1b13be;
+    }
+
+    /* ── Ctrl row ── */
+    .ctrl-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+    .ctrl-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 9px;
+        border: none;
+        background: #1b13be;
+        color: #fff;
+        font-size: 20px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: opacity 0.15s;
+    }
+    .ctrl-btn:hover  { opacity: 0.82; }
+    .ctrl-btn.reset  { background: rgba(27,19,190,0.14); color: #1b13be; font-size: 17px; }
+
+    .ctrl-track {
         flex: 1;
+        position: relative;
+        height: 6px;
+        background: rgba(27,19,190,0.18);
+        border-radius: 3px;
         cursor: pointer;
     }
+    .ctrl-fill {
+        position: absolute;
+        left: 0; top: 0;
+        height: 100%;
+        border-radius: 3px;
+        background: #1b13be;
+        transition: width 0.1s;
+    }
+    .ctrl-thumb {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 18px;
+        height: 18px;
+        border-radius: 50%;
+        background: #1b13be;
+        box-shadow: 0 0 0 3px rgba(27,19,190,0.28);
+    }
+    .ctrl-input {
+        position: absolute;
+        inset: -8px 0;
+        opacity: 0;
+        cursor: pointer;
+        width: 100%;
+        margin: 0;
+    }
+
+    /* ── Toolbar back button highlight ── */
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 13px;
+        font-weight: 700;
+        color: inherit;
+        text-decoration: none;
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid rgba(128,128,128,0.2);
+        transition: background 0.15s;
+        flex-shrink: 0;
+        white-space: nowrap;
+    }
+    .back-btn:hover { background: rgba(128,128,128,0.08); }
+
+    /* ── Mobile toolbar: compact ── */
+    @@media (max-width: 600px) {
+        .reader-toolbar { gap: 6px !important; padding: 6px 10px !important; flex-wrap: nowrap !important; }
+        .reader-toolbar .chapter-title { display: none; }
+        .reader-toolbar .page-count    { display: none; }
+    }
+
+    /* ── Lazy page shimmer ── */
+    .lr-wrap {
+        position: relative;
+        background: #111;
+        min-height: 260px;
+        margin-bottom: 2px;
+        overflow: hidden;
+    }
+    .lr-wrap::before {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(90deg,
+            #161616 0%, #222 40%, #2a2a2a 50%, #222 60%, #161616 100%);
+        background-size: 300% 100%;
+        animation: lr-shimmer 1.6s ease-in-out infinite;
+    }
+    .lr-wrap.lr-done::before { display: none; }
+    @@keyframes lr-shimmer {
+        0%   { background-position: 100% 0; }
+        100% { background-position: -100% 0; }
+    }
+    .lr-wrap img {
+        width: 100%;
+        display: block;
+        opacity: 0;
+        transition: opacity 0.35s ease;
+        position: relative;
+        z-index: 1;
+    }
+    .lr-wrap img.lr-loaded { opacity: 1; }
+
+    /* ── Top compact bar ── */
+    .rdr-top {
+        position: sticky;
+        top: 64px;
+        z-index: 200;
+        background: var(--mud-palette-surface);
+        border-bottom: 1px solid rgba(128,128,128,0.12);
+        padding: 8px 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .rdr-icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid rgba(128,128,128,0.2);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        text-decoration: none;
+        transition: background 0.15s;
+        position: relative;
+    }
+    .rdr-icon-btn:hover { background: rgba(27,19,190,0.1); }
+    .rdr-icon-btn svg { width: 18px; height: 18px; }
+    .rdr-badge {
+        position: absolute;
+        top: -4px;
+        right: -4px;
+        min-width: 16px;
+        height: 16px;
+        background: #ef4444;
+        color: #fff;
+        border-radius: 8px;
+        font-size: 10px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+    }
+    .rdr-breadcrumb {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        overflow: hidden;
+    }
+    .rdr-bc-cover {
+        width: 28px; height: 28px;
+        object-fit: cover; border-radius: 6px; flex-shrink: 0;
+    }
+    .rdr-bc-text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        opacity: 0.92;
+    }
+    .rdr-bc-text .bc-comic { font-weight: 700; font-size: 11px; opacity: 0.6; display: block; line-height: 1.2; }
+    .rdr-bc-text .bc-ch    { font-weight: 700; font-size: 14px; }
+
+    /* ── Bottom sticky nav bar ── */
+    .rdr-bottom {
+        position: fixed;
+        bottom: 16px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 250;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: rgba(20,20,30,0.92);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 8px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+        max-width: calc(100vw - 32px);
+    }
+    .rdr-bottom .nav-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 40px;
+        padding: 0 16px;
+        border-radius: 10px;
+        font-weight: 700;
+        font-size: 13px;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        white-space: nowrap;
+        color: #fff;
+        background: linear-gradient(135deg, #419fd9, #1b13be);
+        transition: filter 0.15s;
+    }
+    .rdr-bottom .nav-btn:hover { filter: brightness(1.12); }
+    .rdr-bottom .nav-btn:disabled,
+    .rdr-bottom .nav-btn.disabled {
+        background: rgba(255,255,255,0.07);
+        color: rgba(255,255,255,0.32);
+        cursor: not-allowed;
+        pointer-events: none;
+    }
+    .rdr-bottom .ch-picker {
+        flex: 1;
+        height: 40px;
+        padding: 0 14px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.05);
+        color: #fff;
+        font-weight: 700;
+        font-size: 13px;
+        border: 1px solid rgba(255,255,255,0.07);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-width: 140px;
+    }
+    .rdr-bottom .ch-picker:hover { background: rgba(255,255,255,0.1); }
+
+    /* Chapter dropdown (slides UP above the bar) */
+    .ch-dropdown {
+        position: fixed;
+        bottom: 76px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 251;
+        width: 280px;
+        max-width: calc(100vw - 32px);
+        max-height: 320px;
+        overflow-y: auto;
+        background: rgba(20,20,30,0.97);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 6px;
+        box-shadow: 0 12px 36px rgba(0,0,0,0.55);
+    }
+    .ch-dropdown-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 9px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.85);
+        text-decoration: none;
+        cursor: pointer;
+    }
+    .ch-dropdown-item:hover { background: rgba(255,255,255,0.07); }
+    .ch-dropdown-item.current {
+        background: rgba(27,19,190,0.22);
+        color: #fff;
+    }
+    .ch-dropdown-item .lock { color: #f59e0b; font-size: 12px; }
+
+    /* Back-to-top floating button */
+    .rdr-top-btn {
+        position: fixed;
+        bottom: 80px;
+        right: 24px;
+        z-index: 240;
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: linear-gradient(135deg, #419fd9, #1b13be);
+        color: #fff;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 6px 20px rgba(27,19,190,0.5);
+        transition: transform 0.2s;
+    }
+    .rdr-top-btn:hover { transform: translateY(-3px); }
+    .rdr-top-btn svg { width: 22px; height: 22px; }
+
+    /* Comments panel */
+    .comments-section {
+        max-width: 840px;
+        margin: 40px auto 130px;
+        padding: 24px 20px;
+        background: var(--mud-palette-surface);
+        border: 1px solid rgba(128,128,128,0.14);
+        border-radius: 14px;
+    }
+    .comments-section h3 {
+        font-size: 16px;
+        font-weight: 800;
+        margin: 0 0 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .comments-empty {
+        text-align: center;
+        padding: 28px 16px;
+        color: rgba(128,128,128,0.6);
+        font-size: 13px;
+    }
+
+    /* Comment write form */
+    .cmt-write {
+        background: rgba(128,128,128,0.05);
+        border: 1px solid rgba(128,128,128,0.14);
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 18px;
+    }
+    .cmt-write textarea {
+        width: 100%;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: inherit;
+        font-size: 14px;
+        resize: vertical;
+        min-height: 60px;
+        font-family: inherit;
+    }
+    .cmt-write textarea::placeholder { color: rgba(128,128,128,0.5); }
+    .cmt-submit {
+        background: linear-gradient(135deg, #419fd9, #1b13be);
+        color: #fff;
+        border: none;
+        padding: 8px 18px;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 700;
+        cursor: pointer;
+        transition: filter 0.15s;
+    }
+    .cmt-submit:hover:not(:disabled) { filter: brightness(1.1); }
+    .cmt-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    /* Comment list */
+    .cmt-list {
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+    }
+    .cmt-item {
+        display: flex;
+        gap: 10px;
+        padding: 12px;
+        background: rgba(128,128,128,0.04);
+        border-radius: 10px;
+        border: 1px solid rgba(128,128,128,0.08);
+    }
+    .cmt-ava {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, #419fd9, #1b13be);
+        color: #fff;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        overflow: hidden;
+    }
+    .cmt-ava img { width: 100%; height: 100%; object-fit: cover; }
+    .cmt-body { flex: 1; min-width: 0; }
+    .cmt-head {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 4px;
+        flex-wrap: wrap;
+    }
+    .cmt-name { font-weight: 700; font-size: 13px; }
+    .cmt-time { font-size: 11px; opacity: 0.45; }
+    .cmt-text {
+        font-size: 13.5px;
+        line-height: 1.55;
+        word-wrap: break-word;
+        white-space: pre-wrap;
+    }
+    .cmt-delete {
+        background: none;
+        border: none;
+        color: #ef4444;
+        font-size: 11px;
+        cursor: pointer;
+        padding: 4px 0 0;
+        opacity: 0.6;
+    }
+    .cmt-delete:hover { opacity: 1; }
+
+    @@media (max-width: 600px) {
+        .rdr-top { padding: 6px 10px; gap: 6px; }
+        .rdr-bc-text .bc-comic { display: none; }
+        .rdr-icon-btn { width: 34px; height: 34px; }
+        .rdr-bottom { padding: 6px; gap: 5px; bottom: 10px; }
+        .rdr-bottom .nav-btn { padding: 0 12px; font-size: 12px; height: 38px; }
+        .rdr-bottom .ch-picker { padding: 0 10px; font-size: 12px; min-width: 110px; height: 38px; }
+        .rdr-top-btn { width: 44px; height: 44px; bottom: 70px; right: 14px; }
+    }
+
+    /* ── Locked gate (sariq tema) ── */
+    .locked-gate-wrap {
+        display: flex;
+        justify-content: center;
+        padding: 60px 18px;
+    }
+    .locked-gate {
+        max-width: 380px;
+        width: 100%;
+        background: linear-gradient(180deg, #0d0d18, #14141e);
+        border: 1px solid rgba(245,158,11,0.18);
+        border-radius: 18px;
+        padding: 32px 28px 24px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.45),
+                    inset 0 0 60px rgba(245,158,11,0.04);
+    }
+    .locked-gate-lock {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 16px;
+    }
+    .locked-gate-lock svg { width: 100%; height: 100%; }
+    .locked-gate-title {
+        font-size: 1.25rem;
+        font-weight: 900;
+        color: #fff;
+        margin-bottom: 10px;
+    }
+    .locked-gate-desc {
+        font-size: 0.9rem;
+        color: rgba(255,255,255,0.6);
+        margin-bottom: 18px;
+        line-height: 1.55;
+    }
+    .locked-gate-desc strong {
+        color: #fbbf24;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    .locked-gate-desc img,
+    .locked-gate-balance img { width: 16px; height: 16px; vertical-align: -3px; }
+    .locked-gate-balance {
+        font-size: 14px;
+        color: rgba(255,255,255,0.75);
+        margin-bottom: 22px;
+    }
+    .locked-gate-balance strong {
+        color: #fbbf24;
+        font-weight: 800;
+    }
+
+    .locked-gate-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        width: 100%;
+        padding: 13px 20px;
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: #fff !important;
+        border: none;
+        border-radius: 12px;
+        font-weight: 800;
+        font-size: 14px;
+        cursor: pointer;
+        text-decoration: none;
+        box-shadow: 0 6px 18px rgba(245,158,11,0.4);
+        transition: filter 0.15s, transform 0.15s;
+    }
+    .locked-gate-btn img { width: 18px; height: 18px; }
+    .locked-gate-btn:hover:not(:disabled) { filter: brightness(1.1); transform: translateY(-1px); }
+    .locked-gate-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .locked-gate-back {
+        display: inline-block;
+        margin-top: 18px;
+        font-size: 12.5px;
+        color: rgba(255,255,255,0.5);
+        text-decoration: none;
+    }
+    .locked-gate-back:hover { color: #fbbf24; }
 </style>
 
 @if (_loading)
@@ -54,207 +592,358 @@
 }
 else if (_chapter is null)
 {
-    <div style="text-align:center;padding:80px;">
-        <MudText Typo="Typo.h5" Class="mb-4">Bob topilmadi</MudText>
-        <MudButton Href="/" Variant="Variant.Filled" Color="Color.Primary" Style="text-transform:none;">Bosh sahifa</MudButton>
+    <div style="text-align:center;padding:80px 20px;">
+        <div style="font-size:3rem;margin-bottom:16px;">😕</div>
+        <MudText Typo="Typo.h5" Class="mb-2" Style="font-weight:800;">Bob topilmadi</MudText>
+        <MudText Style="opacity:0.5;margin-bottom:28px;">Bu bob mavjud emas yoki o'chirilgan.</MudText>
+        <a href="/" class="back-btn" style="display:inline-flex;">← Bosh sahifa</a>
     </div>
 }
 else
 {
-    <!-- TOP TOOLBAR -->
-    <div style="position:sticky;top:64px;z-index:200;
-                background:var(--mud-palette-appbar-background);
-                border-bottom:1px solid rgba(128,128,128,0.12);
-                padding:8px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <!-- ════ TOP COMPACT BAR ════ -->
+    <div class="rdr-top">
+        <!-- Uy (Home) -->
+        <a class="rdr-icon-btn" href="/" title="Bosh sahifa">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1V9.5z"/>
+            </svg>
+        </a>
 
-        <MudButton Href="@($"/comic/{ComicSlug()}")"
-                   Variant="Variant.Text" Size="Size.Small"
-                   StartIcon="@Icons.Material.Filled.ArrowBack"
-                   Style="text-transform:none;flex-shrink:0;">Back</MudButton>
+        <!-- Komik › Bob breadcrumb -->
+        <a class="rdr-breadcrumb" href="/comic/@(_chapter.ComicSlug ?? "")"
+           style="text-decoration:none;color:inherit;">
+            @if (!string.IsNullOrEmpty(_chapter.ComicCoverUrl))
+            {
+                <img src="@_chapter.ComicCoverUrl" class="rdr-bc-cover" alt="" />
+            }
+            <div class="rdr-bc-text">
+                <span class="bc-comic">@_chapter.ComicTitle</span>
+                <span class="bc-ch">Bob @((int)_chapter.ChapterNumber)</span>
+            </div>
+        </a>
 
-        <div style="flex:1;min-width:0;font-size:13px;font-weight:600;
-                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-            @_chapter.ComicTitle вЂє Chapter @_chapter.ChapterNumber
-            @if (!string.IsNullOrEmpty(_chapter.Title)) { <text> вЂ“ @_chapter.Title</text> }
-        </div>
+        <!-- Koment -->
+        <button class="rdr-icon-btn" @onclick="@ScrollToComments" title="Komentariyalar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+            </svg>
+        </button>
 
-        <span style="font-size:12px;opacity:0.4;flex-shrink:0;">@_pages.Count pages</span>
-
-        @if (_prevId != Guid.Empty)
-        {
-            <MudButton Href="@($"/chapter/{_prevId}")" Variant="Variant.Outlined"
-                       Size="Size.Small" Color="Color.Primary"
-                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">в†ђ Prev</MudButton>
-        }
-        @if (_nextId != Guid.Empty)
-        {
-            <MudButton Href="@($"/chapter/{_nextId}")" Variant="Variant.Filled"
-                       Size="Size.Small" Color="Color.Primary"
-                       Style="border-radius:20px;text-transform:none;flex-shrink:0;">Next в†’</MudButton>
-        }
-
-        <!-- Settings button in toolbar вЂ” popup opens above FAB, so toolbar button stays simple -->
-        <div style="position:relative;">
-            <MudIconButton Icon="@Icons.Material.Filled.Tune"
-                           Size="Size.Small" Color="Color.Inherit"
-                           OnClick="@ToggleSettings" />
-        </div>
+        <!-- Settings -->
+        <button class="rdr-icon-btn" @onclick="@ToggleSettings" title="Moslamalar">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                 stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/>
+                <line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/>
+                <line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/>
+                <line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/>
+                <line x1="17" y1="16" x2="23" y2="16"/>
+            </svg>
+        </button>
     </div>
 
-    <!-- LOCKED GATE -->
+    <!-- ════ LOCKED GATE ════ -->
     @if (_isLocked && !_hasAccess)
     {
-        <div style="max-width:600px;margin:40px auto;padding:0 16px;">
-            <MudPaper Class="pa-8" Style="border-radius:16px;text-align:center;">
-                <span style="font-size:3rem;">рџ”ђ</span>
-                <MudText Typo="Typo.h5" Style="font-weight:800;margin:12px 0 8px;">
-                    Bu bob qulflangan
-                </MudText>
-                <MudText Style="opacity:0.55;margin-bottom:20px;">
-                    Ushbu bobni o'qish uchun <strong>@_chapter?.CoinPrice рџЄ™ coin</strong> kerak.
-                </MudText>
-                <MudText Style="font-size:14px;margin-bottom:16px;">
-                    Sizda: <strong>@_userBalance рџЄ™ coins</strong>
-                </MudText>
+        <div class="locked-gate-wrap">
+            <div class="locked-gate">
+                <div class="locked-gate-lock">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#fbbf24" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" fill="rgba(251,191,36,0.13)"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                </div>
+                <div class="locked-gate-title">Bu bob qulflangan</div>
+                <div class="locked-gate-desc">
+                    Ushbu bobni o'qish uchun
+                    <strong>
+                        @_chapter?.CoinPrice
+                        <img src="/img/coin.svg" alt="coin" />
+                        coin
+                    </strong>
+                    kerak.
+                </div>
+                <div class="locked-gate-balance">
+                    Sizda: <strong>
+                        @_userBalance
+                        <img src="/img/coin.svg" alt="coin" />
+                        coins
+                    </strong>
+                </div>
+
                 @if (_userBalance >= (_chapter?.CoinPrice ?? 0))
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Warning"
-                               Size="Size.Large" OnClick="@BuyChapter"
-                               Disabled="@_buying"
-                               Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
-                        @(_buying ? "..." : $"рџЄ™ {_chapter?.CoinPrice} coin sarflab o'qish")
-                    </MudButton>
+                    <button class="locked-gate-btn buy" @onclick="@BuyChapter" disabled="@_buying">
+                        @if (_buying)
+                        {
+                            <text>⏳ ...</text>
+                        }
+                        else
+                        {
+                            <img src="/img/coin.svg" alt="coin" />
+                            <span>@_chapter?.CoinPrice coin sarflab o'qish</span>
+                        }
+                    </button>
                 }
                 else
                 {
-                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                               Size="Size.Large" Href="/coins"
-                               Style="border-radius:10px;text-transform:none;font-weight:700;height:48px;min-width:200px;">
-                        рџЄ™ Coin sotib olish
-                    </MudButton>
+                    <a class="locked-gate-btn" href="/coins">
+                        <img src="/img/coin.svg" alt="coin" />
+                        <span>Coin sotib olish</span>
+                    </a>
                 }
-                <div style="margin-top:20px;">
-                    <MudButton Href="@($"/comic/{ComicSlug()}")" Variant="Variant.Text"
-                               Style="text-transform:none;opacity:0.6;">в†ђ Komikga qaytish</MudButton>
-                </div>
-            </MudPaper>
+                <a href="/comic/@(_chapter?.ComicSlug ?? "")" class="locked-gate-back">← Komikga qaytish</a>
+            </div>
         </div>
     }
     else
     {
-        <!-- PAGES -->
-        <div style="max-width:@(_width)px;margin:0 auto;background:#000;transition:max-width 0.2s;">
-            @foreach (var p in _pages.OrderBy(x => x.PageNumber))
-            {
-                <img src="@p.ImageUrl"
-                     alt="Page @p.PageNumber"
-                     style="width:100%;display:block;margin-bottom:1px;"
-                     loading="lazy"
-                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/pg@(p.PageNumber)/800/1200'" />
-            }
-        </div>
+        <!-- ════ PAGES ════ -->
+        @if (!_pages.Any())
+        {
+            <div style="text-align:center;padding:80px 20px;background:#000;min-height:60vh;
+                        display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                <div style="font-size:3rem;margin-bottom:16px;">📭</div>
+                <div style="color:rgba(255,255,255,0.7);font-size:16px;font-weight:700;margin-bottom:8px;">
+                    Bu bobda sahifalar yo'q
+                </div>
+                <div style="color:rgba(255,255,255,0.35);font-size:13px;">
+                    Admin panel orqali sahifalarni qo'shing.
+                </div>
+            </div>
+        }
+        else
+        {
+            <div style="max-width:@(_width)px;margin:0 auto;background:#000;
+                        zoom:@(_zoom)%;
+                        transition:max-width 0.2s, zoom 0.15s;">
+                @foreach (var p in _pages.OrderBy(x => x.PageNumber))
+                {
+                    <div class="lr-wrap">
+                        <img data-lazy="@p.ImageUrl"
+                             alt="Sahifa @p.PageNumber"
+                             src="" />
+                    </div>
+                }
+            </div>
+        }
 
-        <!-- BOTTOM NAV -->
-        <div style="display:flex;justify-content:center;gap:12px;
-                    padding:32px 16px 100px;flex-wrap:wrap;
-                    background:var(--mud-palette-background);">
-            @if (_prevId != Guid.Empty)
+        <!-- ════ COMMENTS SECTION ════ -->
+        <div id="comments-section" class="comments-section">
+            <h3>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+                </svg>
+                Komentariyalar
+                <span style="font-size:13px;opacity:0.5;font-weight:600;margin-left:6px;">(@_comments.Count)</span>
+            </h3>
+
+            <!-- Yangi koment yozish -->
+            @if (_currentUserId != Guid.Empty)
             {
-                <MudButton Href="@($"/chapter/{_prevId}")" Variant="Variant.Outlined"
-                           Color="Color.Primary" Size="Size.Large"
-                           Style="border-radius:10px;text-transform:none;font-weight:700;">
-                    в†ђ Previous Chapter
-                </MudButton>
+                <div class="cmt-write">
+                    <textarea @bind="_newComment" placeholder="Fikringizni yozing..."
+                              maxlength="1000" rows="3"></textarea>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                        <span style="font-size:11px;opacity:0.45;">@_newComment.Length / 1000</span>
+                        <button class="cmt-submit"
+                                @onclick="@PostComment"
+                                disabled="@(_postingComment || string.IsNullOrWhiteSpace(_newComment) || _newComment.Trim().Length < 2)">
+                            @(_postingComment ? "⏳ Yuborilmoqda..." : "📩 Yuborish")
+                        </button>
+                    </div>
+                </div>
             }
-            <MudButton Href="@($"/comic/{ComicSlug()}")" Variant="Variant.Text"
-                       Size="Size.Large" Style="text-transform:none;">Comic Page</MudButton>
-            @if (_nextId != Guid.Empty)
+            else
             {
-                <MudButton Href="@($"/chapter/{_nextId}")" Variant="Variant.Filled"
-                           Color="Color.Primary" Size="Size.Large"
-                           Style="border-radius:10px;text-transform:none;font-weight:700;">
-                    Next Chapter в†’
-                </MudButton>
+                <div style="background:rgba(65,159,217,0.08);border:1px solid rgba(65,159,217,0.2);
+                            border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;font-size:13px;">
+                    🔒 Komentariya qoldirish uchun
+                    <a href="/login" style="color:#419fd9;font-weight:700;">tizimga kiring</a>
+                </div>
+            }
+
+            <!-- Komentlar ro'yxati -->
+            @if (_loadingComments)
+            {
+                <div style="text-align:center;padding:20px;opacity:0.5;">⏳ Yuklanmoqda...</div>
+            }
+            else if (_comments.Count == 0)
+            {
+                <div class="comments-empty">
+                    💬 Hozircha komentariyalar yo'q. Birinchi bo'lib o'z fikringizni yozing!
+                </div>
+            }
+            else
+            {
+                <div class="cmt-list">
+                    @foreach (var c in _comments)
+                    {
+                        <div class="cmt-item">
+                            <div class="cmt-ava">
+                                @if (!string.IsNullOrEmpty(c.UserPicture))
+                                {
+                                    <img src="@c.UserPicture" alt="@c.UserName" />
+                                }
+                                else
+                                {
+                                    <span>@(c.UserName.Length > 0 ? c.UserName[0].ToString().ToUpper() : "?")</span>
+                                }
+                            </div>
+                            <div class="cmt-body">
+                                <div class="cmt-head">
+                                    <span class="cmt-name">@c.UserName</span>
+                                    <span class="cmt-time">@FmtCommentTime(c.CreatedAt)</span>
+                                </div>
+                                <div class="cmt-text">@c.Content</div>
+                                @if (c.UserId == _currentUserId || _isAdmin)
+                                {
+                                    <button class="cmt-delete" @onclick="@(() => DeleteComment(c.Id))">
+                                        🗑️ O'chirish
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
             }
         </div>
     }
 
-    <!-- FLOATING SETTINGS BUTTON (anchor for popup) -->
-    <div id="fab-settings" style="position:fixed;bottom:24px;right:24px;z-index:300;">
-        <MudFab Color="Color.Primary"
-                StartIcon="@Icons.Material.Filled.Tune"
-                Label="O'qish moslamasi"
-                Size="Size.Medium"
-                OnClick="@ToggleSettings"
-                Style="box-shadow:0 4px 20px rgba(124,58,237,0.5);" />
+    <!-- ════ STICKY BOTTOM NAV ════ -->
+    <div class="rdr-bottom">
+        @if (_prevId != Guid.Empty)
+        {
+            <a class="nav-btn" href="/chapter/@_prevId">‹ Prev</a>
+        }
+        else
+        {
+            <span class="nav-btn disabled">‹ Prev</span>
+        }
+
+        <button class="ch-picker" @onclick="@(() => _showChapters = !_showChapters)"
+                @onclick:stopPropagation="true">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"/>
+                <line x1="3" y1="12" x2="21" y2="12"/>
+                <line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+            Bob @((int)_chapter.ChapterNumber)
+            <span style="opacity:0.7;font-size:11px;">▾</span>
+        </button>
+
+        @if (_nextId != Guid.Empty)
+        {
+            <a class="nav-btn" href="/chapter/@_nextId">Next ›</a>
+        }
+        else
+        {
+            <span class="nav-btn disabled">Next ›</span>
+        }
     </div>
 
-    <!-- SETTINGS POPUP вЂ” tugma tepasida -->
+    <!-- Chapter dropdown -->
+    @if (_showChapters)
+    {
+        <div style="position:fixed;inset:0;z-index:250;" @onclick="@(() => _showChapters = false)"></div>
+        <div class="ch-dropdown" @onclick:stopPropagation="true">
+            @foreach (var ch in _allChapters.OrderByDescending(c => c.ChapterNumber))
+            {
+                bool current = ch.Id == ChapterId;
+                <a class="ch-dropdown-item @(current ? "current" : "")" href="/chapter/@ch.Id">
+                    <span>
+                        @if (ch.IsLocked) { <span class="lock">🔒</span> }
+                        Bob @((int)ch.ChapterNumber)
+                    </span>
+                    @if (current)
+                    {
+                        <span style="font-size:11px;opacity:0.7;">hozir</span>
+                    }
+                </a>
+            }
+        </div>
+    }
+
+    <!-- Back-to-top -->
+    <button class="rdr-top-btn" @onclick="@ScrollToTop" title="Yuqoriga">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+             stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="18 15 12 9 6 15"/>
+        </svg>
+    </button>
+
+    <!-- ════ SETTINGS POPUP ════ -->
     @if (_showSettings)
     {
-        <!-- Backdrop (click outside = close) -->
+        <!-- Backdrop -->
         <div style="position:fixed;inset:0;z-index:998;"
              @onclick="@(() => _showSettings = false)"></div>
 
-        <!-- Popup positioned above FAB -->
-        <div class="settings-popup"
-             style="bottom:88px;right:24px;"
-             @onclick:stopPropagation="true">
+        <div class="settings-popup" @onclick:stopPropagation="true">
 
             <!-- Header -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-                <span style="font-size:15px;font-weight:700;">O'qish moslamasi</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+                <span style="font-size:15px;font-weight:800;">O'qish moslamasi</span>
                 <MudIconButton Icon="@Icons.Material.Filled.Close"
                                Size="Size.Small" OnClick="@(() => _showSettings = false)" />
             </div>
-            <div style="font-size:12px;opacity:0.45;margin-bottom:18px;">
-                Reader eni shu brauzerda saqlanadi.
-            </div>
 
-            <!-- Width control row -->
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
-                <button @onclick="@(() => SetWidth(_width - 40))"
-                        style="width:34px;height:34px;border-radius:8px;border:none;
-                               background:#1b13be;color:#fff;font-size:18px;
-                               cursor:pointer;display:flex;align-items:center;justify-content:center;
-                               flex-shrink:0;">в€’</button>
-
-                <div style="flex:1;position:relative;height:6px;
-                            background:rgba(124,58,237,0.2);border-radius:3px;cursor:pointer;">
-                    <div style="position:absolute;left:0;top:0;height:100%;border-radius:3px;
-                                background:#1b13be;width:@(FillPct())%;transition:width 0.1s;"></div>
-                    <div style="position:absolute;top:50%;
-                                left:calc(@(FillPct())% - 9px);
-                                transform:translateY(-50%);
-                                width:18px;height:18px;border-radius:50%;
-                                background:#1b13be;cursor:pointer;
-                                box-shadow:0 0 0 3px rgba(124,58,237,0.3);">
-                    </div>
-                    <input type="range" min="400" max="1400" step="40" value="@_width"
-                           @oninput="@(e => SetWidth(int.Parse(e.Value?.ToString() ?? "800")))"
-                           style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;margin:0;" />
+            <!-- ── ZOOM CONTROL (barcha qurilmalarda) ── -->
+            <div style="margin-bottom:16px;">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.5px;opacity:0.45;margin-bottom:8px;">
+                    Kattalashtirish
                 </div>
+                <div class="ctrl-row">
+                    <button class="ctrl-btn" @onclick="@(() => SetZoom(_zoom - 10))">−</button>
 
-                <button @onclick="@(() => SetWidth(_width + 40))"
-                        style="width:34px;height:34px;border-radius:8px;border:none;
-                               background:#1b13be;color:#fff;font-size:18px;
-                               cursor:pointer;display:flex;align-items:center;justify-content:center;
-                               flex-shrink:0;">+</button>
+                    <div class="ctrl-track">
+                        <div class="ctrl-fill" style="width:@(ZoomPct())%;"></div>
+                        <div class="ctrl-thumb" style="left:calc(@(ZoomPct())% - 9px);"></div>
+                        <input type="range" class="ctrl-input" min="50" max="150" step="10"
+                               value="@_zoom"
+                               @oninput="@(e => SetZoom(int.Parse(e.Value?.ToString() ?? "100")))" />
+                    </div>
 
-                <button @onclick="@(() => SetWidth(800))"
-                        style="width:34px;height:34px;border-radius:8px;border:none;
-                               background:rgba(27,19,190,0.15);color:#1b13be;font-size:16px;
-                               cursor:pointer;display:flex;align-items:center;justify-content:center;
-                               flex-shrink:0;">в†є</button>
+                    <button class="ctrl-btn" @onclick="@(() => SetZoom(_zoom + 10))">+</button>
+                    <button class="ctrl-btn reset" @onclick="@(() => SetZoom(100))" title="Asl holat">↺</button>
+
+                    <span class="zoom-badge">@_zoom%</span>
+                </div>
             </div>
 
-            <div style="text-align:center;font-size:14px;font-weight:700;
-                        color:#1b13be;margin-bottom:10px;">
-                @_width px
+            <!-- ── WIDTH CONTROL (faqat desktop) ── -->
+            <div class="width-ctrl">
+                <div style="font-size:11px;font-weight:700;text-transform:uppercase;
+                            letter-spacing:0.5px;opacity:0.45;margin-bottom:8px;">
+                    O'quvchi eni (px)
+                </div>
+                <div class="ctrl-row">
+                    <button class="ctrl-btn" @onclick="@(() => SetWidth(_width - 40))">−</button>
+
+                    <div class="ctrl-track">
+                        <div class="ctrl-fill" style="width:@(WidthPct())%;"></div>
+                        <div class="ctrl-thumb" style="left:calc(@(WidthPct())% - 9px);"></div>
+                        <input type="range" class="ctrl-input" min="400" max="1400" step="40"
+                               value="@_width"
+                               @oninput="@(e => SetWidth(int.Parse(e.Value?.ToString() ?? "800")))" />
+                    </div>
+
+                    <button class="ctrl-btn" @onclick="@(() => SetWidth(_width + 40))">+</button>
+                    <button class="ctrl-btn reset" @onclick="@(() => SetWidth(800))">↺</button>
+
+                    <span class="zoom-badge" style="font-size:12px;">@_width</span>
+                </div>
             </div>
 
-            <div style="font-size:11px;opacity:0.4;">
-                Qisqa tugmalar: +/в€’, 0 (reset), Esc (yopish).
+            <div style="font-size:11px;opacity:0.35;margin-top:4px;">
+                Qisqa: +/− kattalashtirish, W kenglik, Esc yopish
             </div>
         </div>
     }
@@ -264,61 +953,109 @@ else
     [Parameter] public Guid ChapterId { get; set; }
 
     ChapterDto?          _chapter;
-    List<ChapterPageDto> _pages       = new();
+    List<ChapterPageDto> _pages         = new();
+    List<ChapterDto>     _allChapters   = new();
     Guid  _prevId, _nextId;
-    bool  _loading      = true;
-    bool  _showSettings = false;
-    int   _width        = 800;
-    bool  _isLocked     = false;
-    bool  _hasAccess    = true;
-    int   _userBalance  = 0;
-    bool  _buying       = false;
+    bool  _loading        = true;
+    bool  _showSettings   = false;
+    bool  _showChapters   = false;
 
-    // Hozircha userId placeholder вЂ” UserSession tayyor bo'lguncha
+    // Desktop width control
+    int _width = 800;
+
+    // Zoom control (works on ALL devices including mobile)
+    int _zoom  = 100;
+
+    bool _isLocked  = false;
+    bool _hasAccess = true;
+    int  _userBalance = 0;
+    bool _buying    = false;
     Guid _currentUserId = Guid.Empty;
+    bool _isAdmin       = false;
 
-    double FillPct() => (_width - 400.0) / (1400.0 - 400.0) * 100.0;
+    // Comments
+    List<ComicBooks.Application.Features.Comments.Queries.ChapterCommentDto> _comments = new();
+    bool   _loadingComments = false;
+    bool   _postingComment  = false;
+    string _newComment      = "";
+
+    // ── Helpers ──────────────────────────────────────
+    double WidthPct() => (_width - 400.0) / (1400.0 - 400.0) * 100.0;
+    double ZoomPct()  => (_zoom  -  50.0) / (150.0  -  50.0) * 100.0;
 
     string GetTitle() => _chapter != null
-        ? $"Ch.{_chapter.ChapterNumber} вЂ” {_chapter.ComicTitle}"
+        ? $"Bob {(int)_chapter.ChapterNumber} – {_chapter.ComicTitle}"
         : "O'qilmoqda...";
 
-    string ComicSlug() => _chapter?.ComicTitle != null
-        ? System.Text.RegularExpressions.Regex.Replace(
-            _chapter.ComicTitle.ToLower(), @"[^a-z0-9]+", "-").Trim('-')
-        : "";
-
     void SetWidth(int w) => _width = Math.Clamp(w, 400, 1400);
+    void SetZoom(int z)  => _zoom  = Math.Clamp(z,  50, 150);
 
     void ToggleSettings() => _showSettings = !_showSettings;
 
-    protected override async Task OnInitializedAsync() => await Load();
+    async Task ScrollToTop()
+    {
+        try { await JS.InvokeVoidAsync("window.scrollTo", new { top = 0, behavior = "smooth" }); }
+        catch { }
+    }
+
+    async Task ScrollToComments()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("eval",
+                "document.getElementById('comments-section')?.scrollIntoView({behavior:'smooth',block:'start'})");
+        }
+        catch { }
+    }
+
+    // ── Lifecycle ─────────────────────────────────────
+    protected override async Task OnInitializedAsync()    => await Load();
     protected override async Task OnParametersSetAsync() { if (!_loading) await Load(); }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        // Sahifalar yuklangandan so'ng Intersection Observer ni ishga tushiramiz
+        if (!_loading && _pages.Count > 0)
+        {
+            await JS.InvokeVoidAsync("lazyReader.init");
+        }
+    }
 
     async Task Load()
     {
         _loading = true;
         StateHasChanged();
+
+        // Hozirgi userni claims dan o'qiymiz
+        var st = await AuthState.GetAuthenticationStateAsync();
+        if (st.User.Identity?.IsAuthenticated == true
+            && Guid.TryParse(st.User.FindFirst("app_user_id")?.Value, out var uid))
+        {
+            _currentUserId = uid;
+            _isAdmin = st.User.FindFirst("app_is_admin")?.Value == "true";
+        }
+        else
+        {
+            _currentUserId = Guid.Empty;
+            _isAdmin = false;
+        }
+
+        // Komentlarni yuklash
+        _ = LoadCommentsAsync();
+
         var r = await Mediator.Send(new GetChapterWithPagesQuery(ChapterId));
         _chapter = r.Chapter;
         _pages   = r.Pages;
 
-        if (_chapter != null && !_pages.Any())
-            _pages = Enumerable.Range(1, 22).Select(i => new ChapterPageDto
-            {
-                Id = Guid.NewGuid(), ChapterId = ChapterId, PageNumber = i,
-                ImageUrl = $"https://picsum.photos/seed/{_chapter.ComicId}-{(int)_chapter.ChapterNumber}-{i}/800/1200"
-            }).ToList();
-
         if (_chapter != null)
         {
-            var all = (await Mediator.Send(new GetChaptersByComicQuery(_chapter.ComicId)))
+            _allChapters = (await Mediator.Send(new GetChaptersByComicQuery(_chapter.ComicId)))
                         .OrderBy(c => c.ChapterNumber).ToList();
-            var idx = all.FindIndex(c => c.Id == ChapterId);
-            _prevId = idx > 0              ? all[idx - 1].Id : Guid.Empty;
-            _nextId = idx < all.Count - 1 ? all[idx + 1].Id : Guid.Empty;
+            var idx = _allChapters.FindIndex(c => c.Id == ChapterId);
+            _prevId = idx > 0                      ? _allChapters[idx - 1].Id : Guid.Empty;
+            _nextId = idx < _allChapters.Count - 1 ? _allChapters[idx + 1].Id : Guid.Empty;
 
-            _isLocked = _chapter.IsLocked && _chapter.CoinPrice > 0;
+            _isLocked = _chapter.IsLocked;
             if (_isLocked && _currentUserId != Guid.Empty)
             {
                 _hasAccess   = await Mediator.Send(new ComicBooks.Application.Features.Coins.Queries.CheckChapterAccessQuery(_currentUserId, ChapterId));
@@ -333,10 +1070,69 @@ else
         _loading = false;
     }
 
+    // ── Komentlar ────────────────────────────────────
+    async Task LoadCommentsAsync()
+    {
+        _loadingComments = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            _comments = await Mediator.Send(
+                new ComicBooks.Application.Features.Comments.Queries.GetChapterCommentsQuery(ChapterId));
+        }
+        catch { _comments = new(); }
+        _loadingComments = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    async Task PostComment()
+    {
+        if (string.IsNullOrWhiteSpace(_newComment) || _currentUserId == Guid.Empty) return;
+        var text = _newComment.Trim();
+        if (text.Length < 2) return;
+
+        _postingComment = true;
+        try
+        {
+            await Mediator.Send(new ComicBooks.Application.Features.Comments.Commands.AddCommentCommand(
+                ChapterId, _currentUserId, text));
+            _newComment = "";
+            await LoadCommentsAsync();
+            Snackbar.Add("✅ Komentariya qo'shildi", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"❌ Xato: {ex.Message}", Severity.Error);
+        }
+        _postingComment = false;
+    }
+
+    async Task DeleteComment(Guid commentId)
+    {
+        var ok = await Mediator.Send(new ComicBooks.Application.Features.Comments.Commands.DeleteCommentCommand(
+            commentId, _currentUserId, _isAdmin));
+        if (ok)
+        {
+            _comments.RemoveAll(c => c.Id == commentId);
+            Snackbar.Add("🗑️ O'chirildi", Severity.Info);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    static string FmtCommentTime(DateTime d)
+    {
+        var diff = DateTime.UtcNow - d;
+        if (diff.TotalMinutes < 1)  return "hozirgina";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} daq oldin";
+        if (diff.TotalHours   < 24) return $"{(int)diff.TotalHours} soat oldin";
+        if (diff.TotalDays    < 7)  return $"{(int)diff.TotalDays} kun oldin";
+        if (diff.TotalDays    < 30) return $"{(int)(diff.TotalDays / 7)} hafta oldin";
+        return d.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
+    }
+
     async Task BuyChapter()
     {
         if (_currentUserId == Guid.Empty) { Nav.NavigateTo("/login"); return; }
-
         _buying = true;
         StateHasChanged();
         var (ok, msg) = await Mediator.Send(new ComicBooks.Application.Features.Coins.Commands.SpendCoinsCommand(_currentUserId, ChapterId));
@@ -344,10 +1140,9 @@ else
         {
             _hasAccess   = true;
             _userBalance = await Mediator.Send(new ComicBooks.Application.Features.Coins.Queries.GetCoinBalanceQuery(_currentUserId));
-            Snackbar.Add("вњ… Bob ochildi!", Severity.Success);
+            Snackbar.Add("✅ Bob ochildi!", Severity.Success);
         }
-        else Snackbar.Add($"вќЊ {msg}", Severity.Error);
+        else Snackbar.Add($"❌ {msg}", Severity.Error);
         _buying = false;
     }
 }
-

@@ -1,0 +1,25 @@
+@inherits LayoutComponentBase
+@inject ThemeService Theme
+
+<MudThemeProvider @ref="_tp" Theme="@_theme" @bind-IsDarkMode="_dark" />
+<MudPopoverProvider />
+<MudSnackbarProvider />
+
+@Body
+
+@code {
+    MudThemeProvider _tp = null!;
+    bool _dark = true;
+
+    readonly MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#419fd9",
+            Background = "#0a0a14",
+            Surface = "#12121e",
+        }
+    };
+
+    protected override void OnInitialized() => _dark = true;
+}

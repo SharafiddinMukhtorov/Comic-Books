@@ -1,7 +1,220 @@
 @inherits LayoutComponentBase
 @inject ThemeService Theme
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthState
+@inject IMediator Mediator
+@inject IJSRuntime JS
 @implements IDisposable
+
+<style>
+    /* ═══ Responsive utility classes (faster than MudHidden — CSS-only) ═══ */
+    /* Desktop-only (hidden on mobile) */
+    .nav-desk        { display: inline-flex !important; align-items: center; }
+    .nav-desk-search { display: flex !important; }
+    /* Mobile-only (hidden on desktop) */
+    .nav-mob         { display: none !important; }
+
+    @@media (max-width: 960px) {
+        .nav-desk        { display: none !important; }
+        .nav-desk-search { display: none !important; }
+        .nav-mob         { display: inline-flex !important; align-items: center; }
+    }
+
+    /* Navbar tugmalari (CSS-only, mud emas — instant render) */
+    .nav-link-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 8px 14px;
+        color: #fff;
+        font-weight: 600;
+        font-size: 14px;
+        text-decoration: none;
+        border-radius: 8px;
+        white-space: nowrap;
+        transition: background 0.15s;
+    }
+    .nav-link-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+    .nav-icon-btn {
+        background: transparent;
+        border: none;
+        color: #fff;
+        cursor: pointer;
+        width: 38px; height: 38px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 8px;
+        margin-left: 6px;
+        transition: background 0.15s;
+    }
+    .nav-icon-btn:hover { background: rgba(255,255,255,0.12); }
+
+    .nav-coin-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        border: 1px solid rgba(245,158,11,0.6);
+        color: #f59e0b;
+        background: rgba(245,158,11,0.1);
+        text-decoration: none;
+        margin-left: 8px;
+        white-space: nowrap;
+    }
+    .nav-coin-btn:hover { background: rgba(245,158,11,0.2); color: #f59e0b; }
+
+    .nav-kirish-btn {
+        display: inline-flex;
+        align-items: center;
+        padding: 7px 16px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 14px;
+        border: 1px solid rgba(255,255,255,0.5);
+        color: #fff;
+        background: rgba(255,255,255,0.1);
+        text-decoration: none;
+        margin-left: 8px;
+        white-space: nowrap;
+    }
+    .nav-kirish-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+
+    .nav-kirish-mob {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: 20px;
+        font-weight: 700;
+        font-size: 13px;
+        border: 1px solid rgba(255,255,255,0.6);
+        color: #fff;
+        background: rgba(255,255,255,0.12);
+        text-decoration: none;
+        margin-left: 4px;
+        white-space: nowrap;
+    }
+    .nav-kirish-mob:hover { background: rgba(255,255,255,0.2); color: #fff; }
+
+    .nav-avatar-btn {
+        background: transparent;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        display: inline-flex;
+        align-items: center;
+        margin-left: 4px;
+    }
+
+    /* ═══ Top-down mobile drawer ═══ */
+    .mdunyo-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1200;
+        animation: md-backdrop-in 0.18s ease;
+    }
+    @@keyframes md-backdrop-in { from { opacity: 0; } to { opacity: 1; } }
+
+    .mdunyo-drawer {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1300;
+        background: var(--mud-palette-surface);
+        border-bottom: 1px solid rgba(128,128,128,0.18);
+        border-radius: 0 0 18px 18px;
+        max-height: 92vh;
+        overflow-y: auto;
+        box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+        animation: md-slide-down 0.22s cubic-bezier(0.32,0.72,0.45,1);
+        --mdunyo-acc: #419fd9;
+        --mdunyo-acc2: #1b13be;
+    }
+    @@keyframes md-slide-down {
+        from { transform: translateY(-100%); }
+        to   { transform: translateY(0); }
+    }
+
+    .mdunyo-drawer-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px 10px;
+        border-bottom: 1px solid rgba(128,128,128,0.12);
+    }
+
+    .mdunyo-head-btn {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        border: 1px solid rgba(128,128,128,0.2);
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: background 0.15s;
+    }
+    .mdunyo-head-btn:hover { background: rgba(27,19,190,0.1); }
+    .mdunyo-head-btn.close {
+        background: #ef4444;
+        color: #fff;
+        border-color: #ef4444;
+    }
+    .mdunyo-head-btn.close:hover { background: #dc2626; }
+
+    .mdunyo-user-card {
+        margin: 0 16px 12px;
+        padding: 12px 14px;
+        background: linear-gradient(135deg, rgba(65,159,217,0.15), rgba(27,19,190,0.08));
+        border: 1px solid rgba(65,159,217,0.25);
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .mdunyo-nav {
+        padding: 4px 12px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .mdunyo-nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 16px;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--mud-palette-text-primary);
+        text-decoration: none;
+        border-radius: 10px;
+        transition: background 0.15s;
+    }
+    .mdunyo-nav-item:hover { background: rgba(65,159,217,0.10); }
+    .mdunyo-nav-item.active {
+        background: linear-gradient(90deg, rgba(65,159,217,0.22), rgba(65,159,217,0.04));
+        color: #419fd9;
+        font-weight: 800;
+    }
+    .mdunyo-nav-item.danger { color: #ef4444; }
+    .mdunyo-nav-item.danger:hover { background: rgba(239,68,68,0.1); }
+    .mdunyo-nav-item.highlight {
+        background: linear-gradient(135deg, #1b13be, #419fd9);
+        color: #fff;
+        font-weight: 800;
+        justify-content: center;
+        margin-top: 4px;
+    }
+    .mdunyo-nav-item.highlight:hover { filter: brightness(1.1); background: linear-gradient(135deg, #1b13be, #419fd9); }
+</style>
 
 <MudThemeProvider @ref="_tp" Theme="@_theme" @bind-IsDarkMode="_dark" />
 <MudPopoverProvider />
@@ -11,8 +224,8 @@
 <MudLayout>
     <MudAppBar Elevation="0" Fixed="true"
                Style="@(_dark
-                   ? "background:linear-gradient(90deg,#030082 0%,#1b13be 100%) !important;"
-                   : "background:linear-gradient(90deg,#419fd9 0%,#92d4fc 100%) !important;")">
+                   ? "background:linear-gradient(90deg,#030082 0%,#1b13be 100%) !important;border-bottom:none !important;box-shadow:none !important;"
+                   : "background:linear-gradient(90deg,#419fd9 0%,#92d4fc 100%) !important;border-bottom:none !important;box-shadow:none !important;")">
 
         <!-- Logo -->
         <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
@@ -24,84 +237,270 @@
             </span>
         </a>
 
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <MudButton Href="/"          Color="Color.Inherit" Variant="Variant.Text" Class="ml-4"
-                       Style="text-transform:none;font-weight:600;font-size:14px;color:#fff;">Bosh sahifa</MudButton>
-            <MudButton Href="/bookmarks" Color="Color.Inherit" Variant="Variant.Text"
-                       Style="text-transform:none;font-weight:600;font-size:14px;color:#fff;">Saqlanganlar</MudButton>
-            <MudButton Href="/comics"    Color="Color.Inherit" Variant="Variant.Text"
-                       Style="text-transform:none;font-weight:600;font-size:14px;color:#fff;">Katalog</MudButton>
-        </MudHidden>
+        <div class="nav-desk" style="gap:4px;margin-left:18px;">
+            <a href="/" class="nav-link-btn">Bosh sahifa</a>
+            <a href="/bookmarks" class="nav-link-btn">Saqlanganlar</a>
+            <a href="/comics" class="nav-link-btn">Katalog</a>
+        </div>
 
         <MudSpacer />
 
-        <!-- Search -->
-        <MudHidden Breakpoint="Breakpoint.SmAndDown">
-            <div style="background:rgba(255,255,255,0.18);border-radius:8px;
-                        display:flex;align-items:center;padding:6px 14px;gap:8px;width:240px;
-                        border:1px solid rgba(255,255,255,0.25);">
-                <MudIcon Icon="@Icons.Material.Filled.Search" Style="color:rgba(255,255,255,0.75);font-size:18px;" />
-                <input @bind="_q" @bind:event="oninput" @onkeydown="@OnSearch"
-                       placeholder="Qidirish..."
-                       style="background:transparent;border:none;outline:none;
-                              color:#fff;font-size:14px;width:100%;" />
-            </div>
-        </MudHidden>
-
-        <!-- Dark/light toggle -->
-        <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit" OnClick="@ToggleTheme"
-                       Class="ml-2" Style="color:#fff;" />
-
-        <!-- Coin balance / shop -->
-        <MudButton Href="/coins" Variant="Variant.Outlined" Class="ml-2"
-                   Style="border-radius:8px;text-transform:none;font-weight:700;
-                          border-color:rgba(245,158,11,0.6);color:#f59e0b;
-                          background:rgba(245,158,11,0.1);">
-            🪙 Coin
-        </MudButton>
-
-        <!-- Log In -->
-        <MudButton Href="/login" Variant="Variant.Outlined" Class="ml-2"
-                   Style="border-radius:8px;text-transform:none;font-weight:700;
-                          border-color:rgba(255,255,255,0.5);color:#fff;
-                          background:rgba(255,255,255,0.1);">
-            <MudIcon Icon="@Icons.Material.Filled.Login" Style="font-size:16px;margin-right:6px;" />
-            Log In
-        </MudButton>
-
-        <MudHidden Breakpoint="Breakpoint.MdAndUp">
-            <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
-                           Style="color:#fff;" OnClick="@(() => _open = !_open)" />
-        </MudHidden>
-    </MudAppBar>
-
-    <MudDrawer @bind-Open="_open" Anchor="Anchor.Right" Variant="DrawerVariant.Temporary" Elevation="4">
-        <MudDrawerHeader>
-            <div style="display:flex;align-items:center;gap:8px;">
-                <img src="@(_dark ? "/img/logo-dark.svg" : "/img/logo-light.svg")" width="28" height="28" />
-                <span style="font-weight:900;font-size:1rem;color:#419fd9;">MANGA DUNYO</span>
-            </div>
-        </MudDrawerHeader>
-        <div style="padding:0 12px 8px;">
+        <!-- Search (desktop) -->
+        <div class="nav-desk-search" style="background:rgba(255,255,255,0.18);border-radius:8px;
+                                            align-items:center;padding:6px 14px;gap:8px;width:240px;
+                                            border:1px solid rgba(255,255,255,0.25);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
             <input @bind="_q" @bind:event="oninput" @onkeydown="@OnSearch"
                    placeholder="Qidirish..."
-                   style="width:100%;padding:8px 12px;border-radius:8px;
-                          border:1px solid rgba(128,128,128,0.25);
-                          background:transparent;outline:none;font-size:14px;
-                          color:var(--mud-palette-text-primary);" />
+                   style="background:transparent;border:none;outline:none;
+                          color:#fff;font-size:14px;width:100%;" />
         </div>
-        <MudNavMenu>
-            <MudNavLink Href="/"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Home"                 OnClick="@Close">Bosh sahifa</MudNavLink>
-            <MudNavLink Href="/bookmarks" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Bookmark"             OnClick="@Close">Saqlanganlar</MudNavLink>
-            <MudNavLink Href="/comics"    Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook"             OnClick="@Close">Katalog</MudNavLink>
-            <MudDivider />
-            <MudNavLink Href="/admin"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AdminPanelSettings"   OnClick="@Close">Admin</MudNavLink>
-            <MudNavLink Href="/login"     Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Login"                OnClick="@Close">Log In</MudNavLink>
-        </MudNavMenu>
-    </MudDrawer>
 
-    <MudMainContent Style="padding-top:64px;min-height:100vh;">
+        <!-- Dark/light toggle (faqat desktop) -->
+        <button @onclick="@ToggleTheme" class="nav-desk nav-icon-btn" title="Tema">
+            @if (_dark)
+            {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"/>
+                    <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+                    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+                </svg>
+            }
+            else
+            {
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                </svg>
+            }
+        </button>
+
+        @if (_isLoggedIn)
+        {
+            <!-- Coin balance (desktop) -->
+            <a href="/coins" class="nav-desk nav-coin-btn">
+                <img src="/img/coin.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;" alt="coin" />
+                @_coinBalance
+            </a>
+
+            <!-- User avatar menu (desktop) -->
+            <div class="nav-desk" style="margin-left:8px;">
+                <MudMenu AnchorOrigin="Origin.BottomRight" TransformOrigin="Origin.TopRight">
+                    <ActivatorContent>
+                        <div style="display:flex;align-items:center;gap:8px;cursor:pointer;
+                                    background:rgba(255,255,255,0.1);border-radius:10px;
+                                    padding:5px 10px 5px 6px;border:1px solid rgba(255,255,255,0.2);">
+                            @if (!string.IsNullOrEmpty(_userPicture))
+                            {
+                                <img src="@_userPicture" width="30" height="30"
+                                     style="border-radius:50%;object-fit:cover;" alt="@_userName" />
+                            }
+                            else
+                            {
+                                <MudAvatar Size="Size.Small" Style="width:30px;height:30px;background:#419fd9;">
+                                    @(_userName.Length > 0 ? _userName[0].ToString().ToUpper() : "U")
+                                </MudAvatar>
+                            }
+                            <span style="color:#fff;font-weight:600;font-size:13px;max-width:100px;
+                                         overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                @_userName
+                            </span>
+                            <MudIcon Icon="@Icons.Material.Filled.KeyboardArrowDown"
+                                     Style="color:rgba(255,255,255,0.7);font-size:18px;" />
+                        </div>
+                    </ActivatorContent>
+                    <ChildContent>
+                        @if (_isAdmin)
+                        {
+                            <MudMenuItem Href="/admin" Icon="@Icons.Material.Filled.AdminPanelSettings">
+                                Admin panel
+                            </MudMenuItem>
+                            <MudDivider />
+                        }
+                        <MudMenuItem Href="/profile" Icon="@Icons.Material.Filled.Person">
+                            Profil
+                        </MudMenuItem>
+                        <MudMenuItem Href="/coins" Icon="@Icons.Material.Filled.Toll">
+                            Coin: @_coinBalance
+                        </MudMenuItem>
+                        @* Daromad endi admin panel ichida *@
+                        <MudMenuItem Href="/bookmarks" Icon="@Icons.Material.Filled.Bookmark">
+                            Saqlanganlar
+                        </MudMenuItem>
+                        <MudDivider />
+                        <MudMenuItem Href="/auth/logout" Icon="@Icons.Material.Filled.Logout"
+                                     Style="color:#ef4444;">
+                            Chiqish
+                        </MudMenuItem>
+                    </ChildContent>
+                </MudMenu>
+            </div>
+
+            <!-- Mobile: avatar only -->
+            <button class="nav-mob nav-avatar-btn" @onclick="@(() => _open = !_open)">
+                @if (!string.IsNullOrEmpty(_userPicture))
+                {
+                    <img src="@_userPicture" width="30" height="30"
+                         style="border-radius:50%;object-fit:cover;" alt="@_userName" />
+                }
+                else
+                {
+                    <span style="background:#419fd9;width:30px;height:30px;border-radius:50%;
+                                 display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;">
+                        @(_userName.Length > 0 ? _userName[0].ToString().ToUpper() : "U")
+                    </span>
+                }
+            </button>
+        }
+        else
+        {
+            <!-- Coin button (desktop, not logged in) -->
+            <a href="/coins" class="nav-desk nav-coin-btn" style="text-decoration:none;">
+                <img src="/img/coin.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;" alt="coin" />Coin
+            </a>
+
+            <!-- Kirish button (desktop) -->
+            <a href="/login" class="nav-desk nav-kirish-btn">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:6px;">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+                Kirish
+            </a>
+
+            <!-- Mobile: Kirish button -->
+            <a href="/login" class="nav-mob nav-kirish-mob">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;">
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+                </svg>
+                Kirish
+            </a>
+        }
+
+        <!-- Hamburger menu (mobile only) -->
+        <button class="nav-mob nav-icon-btn" @onclick="@(() => _open = !_open)" title="Menyu">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+        </button>
+    </MudAppBar>
+
+    <!-- ═══ Top-down Mobile Drawer ═══ -->
+    @if (_open)
+    {
+        <!-- Backdrop -->
+        <div class="mdunyo-backdrop" @onclick="@(() => _open = false)"></div>
+
+        <div class="mdunyo-drawer">
+            <!-- Header inside drawer -->
+            <div class="mdunyo-drawer-head">
+                <a href="/" @onclick="@Close" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
+                    <img src="@(_dark ? "/img/logo-dark.svg" : "/img/logo-light.svg")" width="32" height="32" />
+                    <span style="font-weight:900;font-size:1.05rem;color:#419fd9;">MANGA DUNYO</span>
+                </a>
+                <div style="display:flex;align-items:center;gap:6px;">
+                    <button class="mdunyo-head-btn" @onclick="@ToggleTheme" title="Tema">
+                        <MudIcon Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
+                                 Size="Size.Small" />
+                    </button>
+                    <button class="mdunyo-head-btn close" @onclick="@(() => _open = false)" title="Yopish">
+                        <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
+                    </button>
+                </div>
+            </div>
+
+            <!-- Search bar -->
+            <div style="padding:8px 16px 14px;">
+                <div style="position:relative;">
+                    <MudIcon Icon="@Icons.Material.Filled.Search"
+                             Style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;opacity:0.5;" />
+                    <input @bind="_q" @bind:event="oninput" @onkeydown="@OnSearch"
+                           placeholder="Qidirish..."
+                           style="width:100%;padding:11px 14px 11px 38px;border-radius:10px;
+                                  border:1px solid rgba(128,128,128,0.25);
+                                  background:rgba(128,128,128,0.07);outline:none;font-size:14px;
+                                  color:var(--mud-palette-text-primary);" />
+                </div>
+            </div>
+
+            @if (_isLoggedIn)
+            {
+                <!-- User card -->
+                <div class="mdunyo-user-card">
+                    @if (!string.IsNullOrEmpty(_userPicture))
+                    {
+                        <img src="@_userPicture" width="42" height="42"
+                             style="border-radius:50%;object-fit:cover;" alt="@_userName" />
+                    }
+                    else
+                    {
+                        <MudAvatar Style="background:#419fd9;width:42px;height:42px;">
+                            @(_userName.Length > 0 ? _userName[0].ToString().ToUpper() : "U")
+                        </MudAvatar>
+                    }
+                    <div>
+                        <div style="font-weight:800;font-size:14px;">@_userName</div>
+                        <div style="font-size:12px;color:var(--mud-palette-text-secondary);">
+                            <img src="/img/coin.svg" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;" />
+                            @_coinBalance coin
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Nav items -->
+            <div class="mdunyo-nav">
+                @{ var path = new Uri(Nav.Uri).AbsolutePath; }
+                <a href="/"          @onclick="@Close" class="mdunyo-nav-item @(path == "/" ? "active" : "")">
+                    <MudIcon Icon="@Icons.Material.Filled.Home" Size="Size.Small" /> Bosh sahifa
+                </a>
+                <a href="/comics"    @onclick="@Close" class="mdunyo-nav-item @(path.StartsWith("/comics") ? "active" : "")">
+                    <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" /> Katalog
+                </a>
+                <a href="/bookmarks" @onclick="@Close" class="mdunyo-nav-item @(path.StartsWith("/bookmarks") ? "active" : "")">
+                    <MudIcon Icon="@Icons.Material.Filled.Favorite" Size="Size.Small" /> Sevimlilar
+                </a>
+                @if (_isLoggedIn)
+                {
+                    <a href="/profile" @onclick="@Close" class="mdunyo-nav-item @(path.StartsWith("/profile") ? "active" : "")">
+                        <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /> Profil
+                    </a>
+                    <a href="/coins" @onclick="@Close" class="mdunyo-nav-item @(path.StartsWith("/coins") ? "active" : "")">
+                        <MudIcon Icon="@Icons.Material.Filled.Toll" Size="Size.Small" /> Coin: @_coinBalance
+                    </a>
+                    @* Daromad endi admin panel ichida — bu yerda yo'q *@
+                }
+                @if (_isAdmin)
+                {
+                    <a href="/admin" @onclick="@Close" class="mdunyo-nav-item @(path.StartsWith("/admin") ? "active" : "")">
+                        <MudIcon Icon="@Icons.Material.Filled.AdminPanelSettings" Size="Size.Small" /> Admin panel
+                    </a>
+                }
+
+                <div style="height:1px;background:rgba(128,128,128,0.15);margin:6px 16px;"></div>
+
+                @if (_isLoggedIn)
+                {
+                    <a href="/auth/logout" @onclick="@Close" class="mdunyo-nav-item danger">
+                        <MudIcon Icon="@Icons.Material.Filled.Logout" Size="Size.Small" /> Chiqish
+                    </a>
+                }
+                else
+                {
+                    <a href="/login" @onclick="@Close" class="mdunyo-nav-item">
+                        <MudIcon Icon="@Icons.Material.Filled.Login" Size="Size.Small" /> Kirish
+                    </a>
+                    <a href="/login" @onclick="@Close" class="mdunyo-nav-item highlight">
+                        <MudIcon Icon="@Icons.Material.Filled.PersonAdd" Size="Size.Small" /> Ro'yxatdan o'tish
+                    </a>
+                }
+            </div>
+        </div>
+    }
+
+    <MudMainContent Style="padding-top:64px;min-height:100vh;margin:0;background:var(--mud-palette-background);">
         @Body
     </MudMainContent>
 </MudLayout>
@@ -111,6 +510,13 @@
     bool _dark = true;
     bool _open;
     string _q = "";
+
+    bool    _isLoggedIn;
+    bool    _isAdmin;
+    string  _userName    = "";
+    string  _userPicture = "";
+    int     _coinBalance;
+    Guid    _userId      = Guid.Empty;
 
     readonly MudTheme _theme = new()
     {
@@ -146,10 +552,83 @@
         }
     };
 
-    protected override void OnInitialized() { _dark = Theme.IsDark; Theme.OnChange += Refresh; }
-    async void ToggleTheme() { Theme.Toggle(); _dark = Theme.IsDark; await InvokeAsync(StateHasChanged); }
-    async void Refresh()     { _dark = Theme.IsDark; await InvokeAsync(StateHasChanged); }
+    protected override async Task OnInitializedAsync()
+    {
+        // TEZ render uchun: faqat claim'dan o'qiymiz, DB query yo'q
+        _dark = Theme.IsDark;
+        Theme.OnChange += Refresh;
+
+        var state = await AuthState.GetAuthenticationStateAsync();
+        var user  = state.User;
+        _isLoggedIn = user.Identity?.IsAuthenticated == true;
+
+        if (_isLoggedIn)
+        {
+            _userName    = user.FindFirst("app_name")?.Value
+                        ?? user.FindFirst(System.Security.Claims.ClaimTypes.Name)?.Value
+                        ?? "Foydalanuvchi";
+            _userPicture = user.FindFirst("app_picture")?.Value ?? "";
+            _isAdmin     = user.FindFirst("app_is_admin")?.Value == "true";
+
+            // Coin balance — claim'dan (tezda render)
+            if (int.TryParse(user.FindFirst("app_coin_balance")?.Value, out var cb))
+                _coinBalance = cb;
+
+            if (Guid.TryParse(user.FindFirst("app_user_id")?.Value, out var uid))
+                _userId = uid;
+        }
+    }
+
+    // Circuit ulangandan keyin balansni DB dan yangilaymiz (block qilmaydi)
+    bool _balanceRefreshed = false;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await UpdateThemeColor();
+
+            if (_isLoggedIn && _userId != Guid.Empty && !_balanceRefreshed)
+            {
+                _balanceRefreshed = true;
+                try
+                {
+                    var freshBalance = await Mediator.Send(new GetCoinBalanceQuery(_userId));
+                    if (freshBalance != _coinBalance)
+                    {
+                        _coinBalance = freshBalance;
+                        await InvokeAsync(StateHasChanged);
+                    }
+                }
+                catch { /* ignore */ }
+            }
+        }
+    }
+
+    async void ToggleTheme()
+    {
+        Theme.Toggle();
+        _dark = Theme.IsDark;
+        await UpdateThemeColor();
+        await InvokeAsync(StateHasChanged);
+    }
+    async void Refresh()
+    {
+        _dark = Theme.IsDark;
+        await UpdateThemeColor();
+        await InvokeAsync(StateHasChanged);
+    }
     void Close() => _open = false;
+
+    async Task UpdateThemeColor()
+    {
+        try
+        {
+            // Dark: navbar boshlanish rangi #030082, Light: #419fd9
+            var color = _dark ? "#030082" : "#419fd9";
+            await JS.InvokeVoidAsync("themeColor.set", color);
+        }
+        catch { /* JS interop not ready in prerender */ }
+    }
 
     void OnSearch(KeyboardEventArgs e)
     {

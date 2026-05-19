@@ -23,6 +23,9 @@ public class Comic : BaseEntity
     public bool IsPopular { get; set; } = false;
     public string? Slug { get; set; }
 
+    // Yuklovchi foydalanuvchi (daromad ulushi uchun)
+    public Guid? UploaderId { get; set; }
+
     // Navigation
     public ICollection<Chapter> Chapters { get; set; } = new List<Chapter>();
     public ICollection<ComicGenre> ComicGenres { get; set; } = new List<ComicGenre>();

@@ -13,6 +13,7 @@ public record CreateChapterCommand(
     string? Title,
     string? Description,
     bool IsLocked,
+    int CoinPrice,
     DateTime? PublishedAt,
     List<CreateChapterPageDto> Pages
 ) : IRequest<Guid>;
@@ -37,7 +38,7 @@ public class CreateChapterCommandHandler : IRequestHandler<CreateChapterCommand,
     public async Task<Guid> Handle(CreateChapterCommand request, CancellationToken cancellationToken)
     {
         // Slug: comicId + chapterNumber, unique guaranteed
-        var slug = $"ch-{request.ComicId:N[..8]}-{request.ChapterNumber}".Replace(".", "-");
+        var slug = $"ch-{request.ComicId.ToString("N")[..8]}-{request.ChapterNumber}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}".Replace(".", "-");
 
         var chapter = new Chapter
         {
@@ -46,6 +47,7 @@ public class CreateChapterCommandHandler : IRequestHandler<CreateChapterCommand,
             Title         = request.Title,
             Description   = request.Description,
             IsLocked      = request.IsLocked,
+            CoinPrice     = request.IsLocked ? Math.Max(request.CoinPrice, 1) : 0,
             PublishedAt   = request.PublishedAt ?? DateTime.UtcNow,
             Slug          = slug
         };

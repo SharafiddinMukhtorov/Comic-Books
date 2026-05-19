@@ -1,5 +1,7 @@
 @inherits LayoutComponentBase
 @inject ThemeService Theme
+@inject AuthenticationStateProvider AuthState
+@inject NavigationManager Nav
 @implements IDisposable
 
 <MudThemeProvider @ref="_themeProvider" Theme="@_theme" @bind-IsDarkMode="_dark" />
@@ -7,77 +9,229 @@
 <MudDialogProvider />
 <MudSnackbarProvider />
 
-<MudLayout>
-    <MudAppBar Elevation="1" Fixed="true">
-        <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit"
-                       Edge="Edge.Start" OnClick="@(() => _open = !_open)" />
-        <MudText Typo="Typo.h6" Style="font-weight:800;">⚙️ Admin panel</MudText>
-        <MudSpacer />
-        <MudIconButton Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                       Color="Color.Inherit" OnClick="@ToggleTheme" />
-        <MudButton Href="/" Variant="Variant.Text" Color="Color.Inherit" Style="text-transform:none;">← Sayt</MudButton>
-    </MudAppBar>
+<style>
+    /* Glassmorphism admin theme */
+    .adm-shell {
+        min-height: 100vh;
+        background:
+            radial-gradient(ellipse at top left, rgba(65,159,217,0.18) 0%, transparent 50%),
+            radial-gradient(ellipse at bottom right, rgba(27,19,190,0.22) 0%, transparent 50%),
+            #06060e;
+        position: relative;
+    }
+    .adm-shell::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-image:
+            linear-gradient(rgba(65,159,217,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(65,159,217,0.03) 1px, transparent 1px);
+        background-size: 50px 50px;
+        pointer-events: none;
+        z-index: 0;
+    }
+    .adm-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(18px) saturate(180%);
+        background: rgba(10,10,20,0.7);
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        padding: 12px 22px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+    }
+    .adm-logo-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 9px;
+        background: linear-gradient(135deg, rgba(65,159,217,0.18), rgba(27,19,190,0.18));
+        padding: 6px 14px 6px 9px;
+        border-radius: 999px;
+        font-weight: 900;
+        font-size: 14px;
+        color: #fff;
+        border: 1px solid rgba(65,159,217,0.3);
+    }
+    .adm-role-chip {
+        margin-left: 4px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        font-size: 10px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .adm-role-chip.super   { background: linear-gradient(135deg, #f59e0b, #d97706); color: #1a1a1a; }
+    .adm-role-chip.regular { background: linear-gradient(135deg, #419fd9, #1b13be); color: #fff; }
 
-    <MudDrawer @bind-Open="_open" Variant="DrawerVariant.Responsive" ClipMode="DrawerClipMode.Always" Elevation="2">
-        <MudDrawerHeader>
-            <MudText Style="color:#419fd9;font-weight:800;">⚙️ Admin</MudText>
-        </MudDrawerHeader>
-        <MudNavMenu>
-            <MudNavLink Href="/admin"                Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.Dashboard">Boshqaruv paneli</MudNavLink>
-            <MudNavLink Href="/admin/comics"         Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.MenuBook">Komiklar</MudNavLink>
-            <MudNavLink Href="/admin/chapters"       Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.AutoStories">Boblar</MudNavLink>
-            <MudNavLink Href="/admin/chapter-pricing" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Lock">Bob narxlari</MudNavLink>
-            <MudNavLink Href="/admin/genres" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Label">Janrlar & Teglar</MudNavLink>
-            <MudNavLink Href="/admin/featured" Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.ViewCarousel">Carousel boshqaruvi</MudNavLink>
-            <MudDivider Class="my-2" />
-            <MudNavGroup Title="🪙 Coin boshqaruvi" Icon="@Icons.Material.Filled.MonetizationOn" Expanded="true">
-                <MudNavLink Href="/admin/coins"          Match="NavLinkMatch.All"    Icon="@Icons.Material.Filled.People">Foydalanuvchi coinlar</MudNavLink>
-                <MudNavLink Href="/admin/coin-packages"  Match="NavLinkMatch.Prefix" Icon="@Icons.Material.Filled.Inventory">Coin paketlari</MudNavLink>
-            </MudNavGroup>
-        </MudNavMenu>
-    </MudDrawer>
+    /* Sidebar */
+    .adm-side {
+        position: fixed;
+        top: 60px;
+        bottom: 0;
+        left: 0;
+        width: 250px;
+        z-index: 50;
+        background: rgba(15,15,28,0.75);
+        backdrop-filter: blur(16px);
+        border-right: 1px solid rgba(255,255,255,0.06);
+        padding: 16px 12px;
+        overflow-y: auto;
+    }
+    .adm-side a {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        padding: 10px 14px;
+        border-radius: 10px;
+        font-size: 13px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.7);
+        text-decoration: none;
+        margin-bottom: 3px;
+        transition: all 0.15s;
+    }
+    .adm-side a:hover { background: rgba(65,159,217,0.1); color: #fff; }
+    .adm-side a.active {
+        background: linear-gradient(90deg, rgba(65,159,217,0.22), rgba(65,159,217,0.06));
+        color: #5b9fd9;
+        font-weight: 800;
+    }
+    .adm-side .group-title {
+        font-size: 10px;
+        opacity: 0.45;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.8px;
+        padding: 14px 14px 6px;
+        margin-top: 6px;
+    }
 
-    <MudMainContent Class="pt-16">
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="py-6">
+    .adm-main {
+        margin-left: 250px;
+        padding: 28px 28px 60px;
+        position: relative;
+        z-index: 1;
+    }
+
+    @@media (max-width: 900px) {
+        .adm-side { transform: translateX(-100%); transition: transform 0.25s; }
+        .adm-side.open { transform: translateX(0); }
+        .adm-main { margin-left: 0; padding: 18px 14px 40px; }
+    }
+</style>
+
+@if (_checking)
+{
+    <div style="display:flex;justify-content:center;align-items:center;min-height:100vh;
+                background:#06060e;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" />
+    </div>
+}
+else if (!_isAdmin)
+{
+    <div style="display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;padding:24px;text-align:center;
+                background:#06060e;color:#fff;">
+        <div style="font-size:3rem;margin-bottom:16px;">🔒</div>
+        <h2 style="font-weight:800;margin-bottom:8px;">Faqat administratorlar uchun</h2>
+        <p style="opacity:0.6;margin-bottom:24px;">Iltimos, admin paneliga kirish uchun login qiling</p>
+        <a href="/admin-login" style="background:linear-gradient(135deg,#419fd9,#1b13be);
+                                     padding:12px 32px;border-radius:10px;text-decoration:none;color:#fff;font-weight:700;">
+            🔐 Admin sifatida kirish
+        </a>
+    </div>
+}
+else
+{
+    <div class="adm-shell">
+        <!-- Top bar -->
+        <div class="adm-topbar">
+            <button @onclick="@(() => _open = !_open)" class="ml-1"
+                    style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.1);
+                           padding:8px 12px;border-radius:9px;color:#fff;cursor:pointer;display:none;"
+                    id="adm-burger">☰</button>
+            <a href="/admin" class="adm-logo-pill">
+                <img src="/img/logo-dark.svg" width="22" height="22" />
+                ADMIN
+                <span class="adm-role-chip @(_role == "super" ? "super" : "regular")">
+                    @(_role == "super" ? "SUPER" : "ADMIN")
+                </span>
+            </a>
+            <div style="flex:1;"></div>
+            <a href="/" style="color:rgba(255,255,255,0.7);text-decoration:none;font-size:13px;font-weight:700;">← Sayt</a>
+            <a href="/auth/logout" style="color:#ef4444;text-decoration:none;font-size:13px;font-weight:700;">Chiqish</a>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="adm-side @(_open ? "open" : "")">
+            <a href="/admin" class="@Active("/admin", true)">📊 Dashboard</a>
+
+            <div class="group-title">Kontent</div>
+            <a href="/admin/comics"  class="@Active("/admin/comics")">📚 Komiklar</a>
+            <a href="/admin/chapters" class="@Active("/admin/chapters")">📖 Boblar</a>
+            <a href="/admin/genres"  class="@Active("/admin/genres")">🏷️ Janr & Teglar</a>
+            <a href="/admin/featured" class="@Active("/admin/featured")">🎬 Carousel</a>
+
+            @if (_role == "super")
+            {
+                <div class="group-title">Foydalanuvchilar</div>
+                <a href="/admin/users" class="@Active("/admin/users")">👥 Foydalanuvchilar ro'yxati</a>
+
+                <div class="group-title">Coin & Daromad</div>
+                <a href="/admin/chapter-pricing" class="@Active("/admin/chapter-pricing")">🔒 Bob narxlari</a>
+                <a href="/admin/coins" class="@Active("/admin/coins")">🪙 Foydalanuvchi coinlar</a>
+                <a href="/admin/coin-packages" class="@Active("/admin/coin-packages")">💎 Coin paketlari</a>
+                <a href="/admin/revenue" class="@Active("/admin/revenue")">💰 Daromad statistikasi</a>
+            }
+        </div>
+
+        <div class="adm-main">
             @Body
-        </MudContainer>
-    </MudMainContent>
-</MudLayout>
+        </div>
+    </div>
+}
 
 @code {
     MudThemeProvider _themeProvider = null!;
-    bool _open = true;
+    bool _open = false;
     bool _dark = true;
+    bool _checking = true;
+    bool _isAdmin  = false;
+    string _role   = "regular";
 
     readonly MudTheme _theme = new()
     {
-        PaletteLight = new PaletteLight
-        {
-            Primary = "#419fd9", Secondary = "#1b13be", Background = "#f0f4f8", Surface = "#ffffff",
-            AppbarBackground = "#419fd9", AppbarText = "#ffffff",
-            DrawerBackground = "#ffffff", DrawerText = "#1a1a2e", TextPrimary = "#1a1a2e",
-            TextSecondary = "#5a6a7a", LinesDefault = "rgba(0,0,0,0.08)"
-        },
         PaletteDark = new PaletteDark
         {
-            Primary = "#419fd9", Secondary = "#1b13be", Background = "#0a0a14", Surface = "#12121e",
-            AppbarBackground = "#030082", AppbarText = "#ffffff",
+            Primary = "#419fd9", Secondary = "#1b13be",
+            Background = "#06060e", Surface = "#12121e",
+            AppbarBackground = "#0a0a14", AppbarText = "#ffffff",
             DrawerBackground = "#0e0e1c", DrawerText = "#e2e2f0",
-            TextPrimary = "#f0f0f8", TextSecondary = "#8892a4", LinesDefault = "rgba(255,255,255,0.07)"
+            TextPrimary = "#f0f0f8", TextSecondary = "#8892a4",
+            LinesDefault = "rgba(255,255,255,0.07)"
         }
     };
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        _dark = Theme.IsDark;
+        _dark = true;
         Theme.OnChange += OnThemeChanged;
+
+        var st = await AuthState.GetAuthenticationStateAsync();
+        _isAdmin = st.User.Identity?.IsAuthenticated == true
+                   && st.User.FindFirst("app_is_admin")?.Value == "true";
+        _role = st.User.FindFirst("admin_role")?.Value ?? "regular";
+        _checking = false;
     }
 
-    async void ToggleTheme()
+    string Active(string href, bool exact = false)
     {
-        Theme.Toggle();
-        _dark = Theme.IsDark;
-        await InvokeAsync(StateHasChanged);
+        var uri = new Uri(Nav.Uri);
+        var path = uri.AbsolutePath;
+        if (exact) return path == href ? "active" : "";
+        return path == href || path.StartsWith(href + "/") ? "active" : "";
     }
 
     async void OnThemeChanged()

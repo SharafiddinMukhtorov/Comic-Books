@@ -4,7 +4,11 @@
 @inject BookmarkService BookmarkSvc
 @inject SessionService SessionSvc
 @inject ThemeService Theme
+@inject AuthenticationStateProvider AuthState
+@inject ISnackbar Snackbar
 @using ComicBooks.Application.Features.Comics.Commands
+@using ComicBooks.Application.Features.Comments.Queries
+@using ComicBooks.Application.Features.Comments.Commands
 @implements IDisposable
 
 <PageTitle>@(_comic?.Title ?? "Comic") - Manga Dunyo</PageTitle>
@@ -54,17 +58,31 @@
         filter: blur(28px) brightness(0.38) saturate(1.5);
         transform: scale(1.08);
         z-index: 0;
+        min-height: 360px;
+    }
+    .dr.light .dr-bg {
+        filter: blur(28px) brightness(0.95) saturate(1.2);
+        opacity: 0.5;
     }
 
     .dr-bg-grad {
         position: absolute;
         inset: 0;
         z-index: 1;
+        min-height: 360px;
         background: linear-gradient(
             to bottom,
-            rgba(8,8,18,0.40) 0%,
-            rgba(8,8,18,0.60) 55%,
+            rgba(8,8,18,0.35) 0%,
+            rgba(8,8,18,0.55) 50%,
             var(--mud-palette-background) 100%
+        );
+    }
+    .dr.light .dr-bg-grad {
+        background: linear-gradient(
+            to bottom,
+            rgba(221,232,240,0.55) 0%,
+            rgba(221,232,240,0.85) 50%,
+            #dde8f0 100%
         );
     }
 
@@ -217,6 +235,7 @@
         font-weight: 900;
         margin: 0 0 10px;
         line-height: 1.2;
+        color: var(--val);
     }
 
     .dr-rank-row {
@@ -381,20 +400,47 @@
         text-decoration: none;
         color: inherit;
         transition: background 0.15s;
+        position: relative;
     }
     .ch-row:last-child { border-bottom: none; }
     .ch-row:hover { background: var(--ch-hover); }
+
+    /* Locked chapter: nozik gradient highlight chapdan */
+    .ch-row.locked {
+        background: linear-gradient(90deg,
+            rgba(245,158,11,0.08) 0%,
+            rgba(245,158,11,0.02) 35%,
+            transparent 60%);
+    }
+    .ch-row.locked:hover {
+        background: linear-gradient(90deg,
+            rgba(245,158,11,0.14) 0%,
+            rgba(245,158,11,0.04) 35%,
+            var(--ch-hover) 100%);
+    }
+
     .ch-name { font-weight: 700; font-size: 14px; }
     .ch-sub  { font-size: 12px; opacity: 0.40; margin-left: 8px; }
-    .ch-coin {
-        font-size: 11px;
-        background: rgba(245,158,11,0.14);
+    .ch-lock-icon {
+        font-size: 14px;
+        flex-shrink: 0;
         color: #f59e0b;
-        padding: 2px 8px;
+        filter: drop-shadow(0 0 3px rgba(245,158,11,0.4));
+    }
+    .ch-coin {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        font-size: 11px;
+        background: linear-gradient(135deg, rgba(245,158,11,0.22), rgba(245,158,11,0.12));
+        color: #f59e0b;
+        padding: 3px 9px;
         border-radius: 999px;
         font-weight: 800;
         margin-left: 10px;
+        border: 1px solid rgba(245,158,11,0.3);
     }
+    .ch-coin img { width: 13px; height: 13px; }
     .ch-date { font-size: 12px; color: var(--lbl); flex-shrink: 0; }
 
     /* Rating widget */
@@ -442,13 +488,80 @@
     }
     .dr-scroll-top:hover { opacity: 0.83; }
 
-    @@media (max-width: 800px) {
-        .dr-wrap       { flex-direction: column; padding: 14px 12px 60px; gap: 16px; }
-        .dr-left       { flex: none; width: 100%; position: static; }
-        .dr-cover      { height: 280px; aspect-ratio: auto; }
-        .dr-actions    { flex-wrap: wrap; }
-        .dr-btn-bm     { flex: 1 1 100%; }
-        .dr-btn-ch     { flex: 1 1 calc(50% - 5px); }
+    @@media (max-width: 768px) {
+        /* Unwrap .dr-left so its children join the parent flex directly */
+        .dr-left {
+            display: contents;
+        }
+
+        /* Cover: order 1 — centered at top, below appbar */
+        .dr-cover {
+            order: 1;
+            width: 160px;
+            height: auto;
+            aspect-ratio: 2/3;
+            border-radius: 14px;
+            flex-shrink: 0;
+            display: block;
+            margin: 76px auto 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.65), 0 0 0 3px rgba(255,255,255,0.09);
+        }
+
+        /* Panel body: order 3 — after right column (title/desc/actions/chapters) */
+        .dr-panel-body {
+            order: 3;
+            padding: 16px 16px 20px;
+            width: 100%;
+            border-top: 1px solid var(--div);
+        }
+
+        /* Right column: order 2 — title, desc, stats, actions, chapters */
+        .dr-right {
+            order: 2;
+            padding: 0 16px 20px;
+            width: 100%;
+        }
+
+        /* Stats bar — 3 equal boxes */
+        .dr-stats {
+            display: flex;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--panel-brd);
+            margin-bottom: 16px;
+        }
+        .dr-stat       { flex: 1; padding: 10px 4px; }
+        .dr-stat-val   { font-size: 15px; font-weight: 900; }
+        .dr-stat-lbl   { font-size: 9px; letter-spacing: 0.3px; }
+
+        /* Rate button — hidden on mobile (stars shown below) */
+        .dr-rate-btn   { display: none; }
+
+        /* Title */
+        .dr-title      { font-size: 22px; margin-bottom: 10px; }
+
+        /* Action buttons */
+        .dr-actions    { flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
+        .dr-btn-bm     { flex: 1 1 100%; height: 52px; border-radius: 14px; font-size: 15px; font-weight: 800; }
+        .dr-btn-ch     { flex: 1 1 calc(50% - 4px); height: 48px; font-size: 13px; border-radius: 12px; }
+
+        /* Chapter list */
+        .ch-list       { max-height: none; }
+        .ch-hdr        { margin-top: 4px; }
+
+        /* Chapter row padding */
+        .ch-row        { padding: 12px 16px; }
+
+        /* Hide redundant rate button in panel-body */
+        .dr-st-row     { gap: 16px; }
+
+        /* Wrap becomes a column flex so order works */
+        .dr-wrap {
+            flex-direction: column;
+            padding: 0 0 80px;
+            gap: 0;
+            max-width: 100%;
+        }
     }
 </style>
 
@@ -490,22 +603,6 @@ else
                 <button class="dr-rate-btn" @onclick="@(() => _showRating = !_showRating)">
                     ★&nbsp; Reyting
                 </button>
-
-                <!-- Stats -->
-                <div class="dr-stats">
-                    <div class="dr-stat">
-                        <div class="dr-stat-val" style="color:#f59e0b;">⭐ @_comic.AverageRating.ToString("F1")</div>
-                        <div class="dr-stat-lbl">Reyting</div>
-                    </div>
-                    <div class="dr-stat">
-                        <div class="dr-stat-val" style="color:#34d399;">📗 @_comic.ChapterCount</div>
-                        <div class="dr-stat-lbl">Boblar</div>
-                    </div>
-                    <div class="dr-stat">
-                        <div class="dr-stat-val" style="color:var(--acc2);">🔖 @Fmt(_comic.BookmarkCount)</div>
-                        <div class="dr-stat-lbl">Bookmarks</div>
-                    </div>
-                </div>
 
                 <div class="dr-div"></div>
 
@@ -579,11 +676,36 @@ else
                 </button>
             }
 
+            <!-- Stats: Rating | Chapters | Bookmarks -->
+            <div class="dr-stats">
+                <div class="dr-stat">
+                    <div class="dr-stat-val" style="color:#f59e0b;">⭐ @_comic.AverageRating.ToString("F1")</div>
+                    <div class="dr-stat-lbl">Reyting</div>
+                </div>
+                <div class="dr-stat">
+                    <div class="dr-stat-val" style="color:#34d399;">📗 @_comic.ChapterCount</div>
+                    <div class="dr-stat-lbl">Boblar</div>
+                </div>
+                <div class="dr-stat">
+                    <div class="dr-stat-val" style="color:#419fd9;display:inline-flex;align-items:center;gap:6px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/>
+                        </svg>
+                        @Fmt(_comic.BookmarkCount)
+                    </div>
+                    <div class="dr-stat-lbl">Saqlangan</div>
+                </div>
+            </div>
+
             <!-- Action buttons -->
             <div class="dr-actions">
                 <button class="dr-btn-bm @(IsBookmarked ? "saved" : "")"
                         @onclick="ToggleBookmark">
-                    🔖&nbsp;@(IsBookmarked ? "Saqlangan" : "Bookmark")
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"
+                         style="vertical-align:-3px;margin-right:6px;">
+                        <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/>
+                    </svg>
+                    @(IsBookmarked ? "Saqlangan" : "Bookmark")
                 </button>
                 @if (FirstId != Guid.Empty)
                 {
@@ -618,16 +740,22 @@ else
             <div class="ch-list">
                 @foreach (var ch in Filtered())
                 {
-                    <a class="ch-row" href="/chapter/@ch.Id">
-                        <div style="display:flex;align-items:center;min-width:0;">
-                            <span class="ch-name">Chapter @ch.ChapterNumber</span>
+                    <a class="ch-row @(ch.IsLocked ? "locked" : "")" href="/chapter/@ch.Id">
+                        <div style="display:flex;align-items:center;min-width:0;gap:8px;">
+                            @if (ch.IsLocked)
+                            {
+                                <span class="ch-lock-icon">🔒</span>
+                            }
+                            <span class="ch-name">Bob @ch.ChapterNumber</span>
                             @if (!string.IsNullOrEmpty(ch.Title))
                             {
                                 <span class="ch-sub">@ch.Title</span>
                             }
                             @if (ch.IsLocked && ch.CoinPrice > 0)
                             {
-                                <span class="ch-coin">🪙 @ch.CoinPrice</span>
+                                <span class="ch-coin">
+                                    <img src="/img/coin.svg" alt="coin" />@ch.CoinPrice
+                                </span>
                             }
                         </div>
                         <span class="ch-date">@FmtDate(ch.PublishedAt)</span>
@@ -651,11 +779,12 @@ else
                     }
                     else
                     {
-                        <div class="dr-stars-row">
-                            @for (int i = 1; i <= 5; i++)
+                        <div class="dr-stars-row" style="gap:3px;">
+                            @for (int i = 1; i <= 10; i++)
                             {
                                 int star = i;
                                 <button class="dr-star @(_hoverStar >= star || _selectedStar >= star ? "active" : "")"
+                                        style="font-size:24px;"
                                         @onmouseenter="@(() => _hoverStar = star)"
                                         @onmouseleave="@(() => _hoverStar = 0)"
                                         @onclick="@(() => SubmitRating(star))">
@@ -663,10 +792,98 @@ else
                                 </button>
                             }
                         </div>
+                        @if (_hoverStar > 0)
+                        {
+                            <div style="font-size:13px;color:var(--lbl);margin-top:6px;">@_hoverStar / 10</div>
+                        }
                     }
                 </div>
             }
 
+        </div>
+    </div>
+
+    <!-- ════ COMMENTS SECTION ════ -->
+    <div style="max-width:1100px;margin:32px auto 90px;padding:0 20px;position:relative;z-index:2;">
+        <div style="background:var(--mud-palette-surface);border:1px solid rgba(128,128,128,0.14);
+                    border-radius:14px;padding:22px 20px;">
+            <h3 style="font-size:1rem;font-weight:900;margin:0 0 16px;display:flex;align-items:center;gap:8px;">
+                💬 Komentariyalar
+                <span style="font-size:13px;opacity:0.5;font-weight:600;">(@_comicComments.Count)</span>
+            </h3>
+
+            @if (_currentUserId != Guid.Empty)
+            {
+                <div style="background:rgba(128,128,128,0.05);border:1px solid rgba(128,128,128,0.14);
+                            border-radius:10px;padding:12px;margin-bottom:18px;">
+                    <textarea @bind="_newComicComment" placeholder="Fikringizni yozing..."
+                              maxlength="1000" rows="3"
+                              style="width:100%;background:transparent;border:none;outline:none;
+                                     color:inherit;font-size:14px;resize:vertical;min-height:60px;font-family:inherit;"></textarea>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
+                        <span style="font-size:11px;opacity:0.45;">@_newComicComment.Length / 1000</span>
+                        <button @onclick="@PostComicComment"
+                                disabled="@(_postingComicComment || string.IsNullOrWhiteSpace(_newComicComment) || _newComicComment.Trim().Length < 2)"
+                                style="background:linear-gradient(135deg,#419fd9,#1b13be);color:#fff;border:none;
+                                       padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
+                            @(_postingComicComment ? "⏳ Yuborilmoqda..." : "📩 Yuborish")
+                        </button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div style="background:rgba(65,159,217,0.08);border:1px solid rgba(65,159,217,0.2);
+                            border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;font-size:13px;">
+                    🔒 Komentariya qoldirish uchun
+                    <a href="/login" style="color:#419fd9;font-weight:700;">tizimga kiring</a>
+                </div>
+            }
+
+            @if (_comicComments.Count == 0)
+            {
+                <div style="text-align:center;padding:30px 16px;color:rgba(128,128,128,0.6);font-size:13px;">
+                    💬 Hozircha komentariyalar yo'q.
+                </div>
+            }
+            else
+            {
+                <div style="display:flex;flex-direction:column;gap:14px;">
+                    @foreach (var c in _comicComments)
+                    {
+                        <div style="display:flex;gap:10px;padding:12px;background:rgba(128,128,128,0.04);
+                                    border-radius:10px;border:1px solid rgba(128,128,128,0.08);">
+                            <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
+                                        background:linear-gradient(135deg,#419fd9,#1b13be);color:#fff;
+                                        font-weight:800;display:flex;align-items:center;justify-content:center;
+                                        overflow:hidden;">
+                                @if (!string.IsNullOrEmpty(c.UserPicture))
+                                {
+                                    <img src="@c.UserPicture" alt="@c.UserName" style="width:100%;height:100%;object-fit:cover;" />
+                                }
+                                else
+                                {
+                                    @(c.UserName.Length > 0 ? c.UserName[0].ToString().ToUpper() : "?")
+                                }
+                            </div>
+                            <div style="flex:1;min-width:0;">
+                                <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+                                    <span style="font-weight:700;font-size:13px;">@c.UserName</span>
+                                    <span style="font-size:11px;opacity:0.45;">@FmtCommentTime(c.CreatedAt)</span>
+                                </div>
+                                <div style="font-size:13.5px;line-height:1.55;word-wrap:break-word;white-space:pre-wrap;">@c.Content</div>
+                                @if (c.UserId == _currentUserId || _isAdmin)
+                                {
+                                    <button @onclick="@(() => DeleteComicComment(c.Id))"
+                                            style="background:none;border:none;color:#ef4444;font-size:11px;cursor:pointer;padding:4px 0 0;opacity:0.6;">
+                                        🗑️ O'chirish
+                                    </button>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
         </div>
     </div>
 
@@ -688,6 +905,13 @@ else
     int    _hoverStar       = 0;
     int    _selectedStar    = 0;
     bool   _ratingSubmitted = false;
+
+    // Comments
+    List<ChapterCommentDto> _comicComments = new();
+    string _newComicComment = "";
+    bool   _postingComicComment = false;
+    Guid   _currentUserId = Guid.Empty;
+    bool   _isAdmin       = false;
 
     bool IsBookmarked => _comic != null && BookmarkSvc.IsBookmarked(_comic.Id);
     Guid FirstId => _chapters.OrderBy(c => c.ChapterNumber).FirstOrDefault()?.Id ?? Guid.Empty;
@@ -731,10 +955,71 @@ else
     protected override async Task OnInitializedAsync()
     {
         Theme.OnChange += Refresh;
+
+        var st = await AuthState.GetAuthenticationStateAsync();
+        if (st.User.Identity?.IsAuthenticated == true
+            && Guid.TryParse(st.User.FindFirst("app_user_id")?.Value, out var uid))
+        {
+            _currentUserId = uid;
+            _isAdmin = st.User.FindFirst("app_is_admin")?.Value == "true";
+        }
+
         _comic = await Mediator.Send(new GetComicBySlugQuery(Slug));
         if (_comic != null)
+        {
             _chapters = await Mediator.Send(new GetChaptersByComicQuery(_comic.Id));
+            _ = LoadCommentsAsync();
+        }
         _loading = false;
+    }
+
+    async Task LoadCommentsAsync()
+    {
+        if (_comic is null) return;
+        try
+        {
+            _comicComments = await Mediator.Send(new GetComicCommentsQuery(_comic.Id));
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { _comicComments = new(); }
+    }
+
+    async Task PostComicComment()
+    {
+        if (_comic is null || _currentUserId == Guid.Empty
+            || string.IsNullOrWhiteSpace(_newComicComment)
+            || _newComicComment.Trim().Length < 2) return;
+        _postingComicComment = true;
+        try
+        {
+            await Mediator.Send(new AddComicCommentCommand(_comic.Id, _currentUserId, _newComicComment.Trim()));
+            _newComicComment = "";
+            await LoadCommentsAsync();
+            Snackbar.Add("✅ Komentariya qo'shildi", Severity.Success);
+        }
+        catch (Exception ex) { Snackbar.Add($"❌ {ex.Message}", Severity.Error); }
+        _postingComicComment = false;
+    }
+
+    async Task DeleteComicComment(Guid id)
+    {
+        var ok = await Mediator.Send(new DeleteCommentCommand(id, _currentUserId, _isAdmin));
+        if (ok)
+        {
+            _comicComments.RemoveAll(c => c.Id == id);
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    static string FmtCommentTime(DateTime d)
+    {
+        var diff = DateTime.UtcNow - d;
+        if (diff.TotalMinutes < 1)  return "hozirgina";
+        if (diff.TotalMinutes < 60) return $"{(int)diff.TotalMinutes} daq oldin";
+        if (diff.TotalHours   < 24) return $"{(int)diff.TotalHours} soat oldin";
+        if (diff.TotalDays    < 7)  return $"{(int)diff.TotalDays} kun oldin";
+        if (diff.TotalDays    < 30) return $"{(int)(diff.TotalDays / 7)} hafta oldin";
+        return d.ToString("d MMM yyyy", System.Globalization.CultureInfo.InvariantCulture);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -766,7 +1051,7 @@ else
         if (_ratingSubmitted || _comic is null) return;
         _selectedStar    = stars;
         _ratingSubmitted = true;
-        var newAvg = await Mediator.Send(new RateComicCommand(_comic.Id, stars * 2));
+        var newAvg = await Mediator.Send(new RateComicCommand(_comic.Id, stars));
         _comic.AverageRating = newAvg;
         _comic.RatingCount++;
         await InvokeAsync(StateHasChanged);

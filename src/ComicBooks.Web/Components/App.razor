@@ -3,7 +3,27 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#030082" id="theme-color-meta" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <base href="/" />
+
+    <!-- Critical inline CSS — flash of unstyled content (FOUC) oldini oladi -->
+    <style>
+        html, body { margin: 0 !important; padding: 0 !important; background: #0a0a14; min-height: 100vh; }
+        body { font-family: 'Inter', system-ui, -apple-system, sans-serif; }
+        .mud-appbar.mud-appbar-fixed, header.mud-appbar { top: 0 !important; margin: 0 !important; }
+        .mud-layout { margin: 0 !important; }
+    </style>
+
+    <!-- Favicon (browser tab icon) -->
+    <link rel="icon" type="image/svg+xml" href="/img/logo-dark.svg" />
+    <link rel="apple-touch-icon" href="/img/logo-dark.svg" />
+    <link rel="shortcut icon" href="/img/logo-dark.svg" />
+
+    <!-- Performance: preconnect to Google Fonts (parallel DNS+TLS) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <link href="_content/MudBlazor/MudBlazor.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="app.css" />
@@ -14,5 +34,7 @@
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
     <script src="_framework/blazor.web.js"></script>
     <script src="js/pdf-processor.js"></script>
+    <script src="js/lazyReader.js"></script>
+    <script src="js/themeColor.js"></script>
 </body>
 </html>
