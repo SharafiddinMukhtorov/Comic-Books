@@ -23,14 +23,14 @@
         --panel-brd:  rgba(255,255,255,0.07);
         --ch-hover:   rgba(27,19,190,0.1);
         --lbl:        rgba(255,255,255,0.42);
-        --val:        rgba(255,255,255,0.88);
+        --val:        rgba(255,255,255,0.92);
         --tag-bg:     rgba(255,255,255,0.06);
         --tag-brd:    rgba(255,255,255,0.14);
         --tag-col:    rgba(255,255,255,0.85);
         --div:        rgba(255,255,255,0.07);
         position: relative;
         overflow: hidden;
-        background: #0a0a14;
+        background: #1c1924;
     }
     .dr.light {
         --acc:        #419fd9;
@@ -49,39 +49,40 @@
         background: #dde8f0;
     }
 
-    /* ── Blurred banner background ── */
+    /* ── Subtle blur banner (faqat tepa qism) ── */
     .dr-bg {
         position: absolute;
-        inset: 0;
+        top: 0; left: 0; right: 0;
+        height: 500px;
         background-size: cover;
         background-position: center top;
-        filter: blur(28px) brightness(0.38) saturate(1.5);
-        transform: scale(1.08);
+        filter: blur(12px) brightness(0.5) saturate(1.2);
+        transform: scale(1.05);
         z-index: 0;
-        min-height: 360px;
+        opacity: 0.85;
     }
     .dr.light .dr-bg {
-        filter: blur(28px) brightness(0.95) saturate(1.2);
-        opacity: 0.5;
+        filter: blur(12px) brightness(1.05) saturate(1.1);
+        opacity: 0.35;
     }
 
     .dr-bg-grad {
         position: absolute;
-        inset: 0;
+        top: 0; left: 0; right: 0;
+        height: 500px;
         z-index: 1;
-        min-height: 360px;
         background: linear-gradient(
             to bottom,
-            rgba(8,8,18,0.35) 0%,
-            rgba(8,8,18,0.55) 50%,
-            var(--mud-palette-background) 100%
+            rgba(28,25,36,0.5) 0%,
+            rgba(28,25,36,0.75) 60%,
+            #1c1924 100%
         );
     }
     .dr.light .dr-bg-grad {
         background: linear-gradient(
             to bottom,
-            rgba(221,232,240,0.55) 0%,
-            rgba(221,232,240,0.85) 50%,
+            rgba(221,232,240,0.5) 0%,
+            rgba(221,232,240,0.85) 60%,
             #dde8f0 100%
         );
     }
@@ -270,6 +271,40 @@
         color: var(--val);
         opacity: 0.82;
         margin-bottom: 4px;
+    }
+
+    /* Ko'proq ko'rish ichidagi qo'shimcha info */
+    .dr-info-section {
+        margin-top: 14px;
+        padding-top: 14px;
+        border-top: 1px solid var(--div);
+        animation: dr-info-in 0.25s ease;
+    }
+    @@keyframes dr-info-in {
+        from { opacity: 0; transform: translateY(-4px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    .dr-info-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+        gap: 14px 22px;
+    }
+    .dr-info-item {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .dr-info-lbl {
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        opacity: 0.5;
+    }
+    .dr-info-val {
+        font-size: 14px;
+        font-weight: 700;
+        color: var(--val);
     }
     .dr-desc.clamped {
         display: -webkit-box;
@@ -489,73 +524,150 @@
     .dr-scroll-top:hover { opacity: 0.83; }
 
     @@media (max-width: 768px) {
-        /* Unwrap .dr-left so its children join the parent flex directly */
-        .dr-left {
-            display: contents;
+        /* Unwrap .dr-left */
+        .dr-left { display: contents; }
+
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+        /* TELEFON: reference pixel o'lchamlar asosida           */
+        /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
+
+        /* ── BLUR ORQA FON: butun sahifani qoplashi kerak ── */
+        /* ref: blur kover ustida va undan pastda ham ko'rinadi */
+        .dr-bg {
+            height: 100%;
+            min-height: 100vh;          /* butun sahifa */
+            filter: blur(20px) brightness(0.42) saturate(1.4);
+            transform: scale(1.1);      /* chetlarda oq bo'shlik qolmasin */
+        }
+        .dr-bg-grad {
+            height: 100%;
+            min-height: 100vh;
+            /* Gradient: kover ustida ochroq → blur ko'rinsin, pastda qorayib so'nadi */
+            background: linear-gradient(
+                to bottom,
+                rgba(28,25,36,0.22) 0%,   /* tepa: blur aniq ko'rinadi */
+                rgba(28,25,36,0.55) 45%,
+                rgba(28,25,36,0.88) 72%,
+                #1c1924 100%              /* quyida to'liq fon rangi */
+            );
         }
 
-        /* Cover: order 1 — centered at top, below appbar */
+        /* ── KOVER RASM: ref → img 180×270 px, ko'tarilgan, shadow ── */
         .dr-cover {
             order: 1;
-            width: 160px;
-            height: auto;
+            width: 180px;          /* ref: 180px */
+            height: 270px;         /* ref: 270px (2∶3) */
             aspect-ratio: 2/3;
-            border-radius: 14px;
+            border-radius: 16px;
             flex-shrink: 0;
             display: block;
-            margin: 76px auto 20px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.65), 0 0 0 3px rgba(255,255,255,0.09);
+            margin: 72px auto 0;   /* navbar pastidan, content bilan to'g'ri */
+            /* Referensdagi kabi "suzib turgan" shadow effekti */
+            box-shadow:
+                0 32px 80px rgba(0,0,0,0.75),
+                0 8px 24px rgba(0,0,0,0.55),
+                0 0 0 2px rgba(255,255,255,0.08);
         }
 
-        /* Panel body: order 3 — after right column (title/desc/actions/chapters) */
+        /* Panel body: order 3 — cardning davomi */
         .dr-panel-body {
             order: 3;
-            padding: 16px 16px 20px;
+            padding: 0 12px 20px;
             width: 100%;
-            border-top: 1px solid var(--div);
+            background: #1c1924;
         }
 
-        /* Right column: order 2 — title, desc, stats, actions, chapters */
+        /* Right column: order 2 */
+        /* ref → article.bg-[#1C1924].rounded-lg.px-3.py-4 376×307px */
         .dr-right {
             order: 2;
-            padding: 0 16px 20px;
+            padding: 20px 12px 20px;  /* ref: py-4=16px, px-3=12px */
             width: 100%;
+            background: #1c1924;       /* ref: bg-[#1C1924] — sahifa rangi bilan bir xil */
+            border-radius: 20px 20px 0 0; /* tepa burchaklari yumaloq */
+            margin-top: 16px;           /* kover bilan oraliq */
+            position: relative;
+            z-index: 3;                 /* blur ustida turishi uchun */
         }
 
-        /* Stats bar — 3 equal boxes */
+        /* ── SARLAVHA: ref → h1 352×50, text-xl=20px, font-semibold, leading-tight ── */
+        .dr-title {
+            font-size: 20px;       /* ref: text-xl = 20px */
+            font-weight: 600;      /* ref: font-semibold  */
+            line-height: 1.25;     /* ref: leading-tight  */
+            margin-bottom: 10px;
+        }
+
+        /* ── STATISTIKA: ref → div 352×65, bg-white/5, rounded-lg, p-3=12px, mt-4=16px ── */
         .dr-stats {
             display: flex;
-            border-radius: 12px;
+            background: rgba(255,255,255,0.05);  /* ref: bg-white/5 */
+            border: none;                          /* chegarasiz      */
+            border-radius: 8px;                    /* ref: rounded-lg */
             overflow: hidden;
-            border: 1px solid var(--panel-brd);
+            margin-top: 16px;                      /* ref: mt-4=16px  */
             margin-bottom: 16px;
         }
-        .dr-stat       { flex: 1; padding: 10px 4px; }
-        .dr-stat-val   { font-size: 15px; font-weight: 900; }
-        .dr-stat-lbl   { font-size: 9px; letter-spacing: 0.3px; }
+        .dr-stat {
+            flex: 1;
+            padding: 12px 4px;                    /* ref: p-3=12px   */
+            border-right: 1px solid var(--panel-brd);
+        }
+        .dr-stat:last-child { border-right: none; }
+        .dr-stat-val { font-size: 15px; font-weight: 900; }
+        .dr-stat-lbl { font-size: 9px;  letter-spacing: 0.3px; }
 
-        /* Rate button — hidden on mobile (stars shown below) */
-        .dr-rate-btn   { display: none; }
+        /* Rate button: mobilda yashirin */
+        .dr-rate-btn { display: none; }
 
-        /* Title */
-        .dr-title      { font-size: 22px; margin-bottom: 10px; }
-
-        /* Action buttons */
-        .dr-actions    { flex-wrap: wrap; gap: 8px; margin-bottom: 24px; }
-        .dr-btn-bm     { flex: 1 1 100%; height: 52px; border-radius: 14px; font-size: 15px; font-weight: 800; }
-        .dr-btn-ch     { flex: 1 1 calc(50% - 4px); height: 48px; font-size: 13px; border-radius: 12px; }
+        /* ── AMAL TUGMALARI: ref → container 376×97.6, mt-3=12px ── */
+        .dr-actions {
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;      /* ref: mt-3 = 12px    */
+            margin-bottom: 24px;
+        }
+        /* Bookmark: ref → 376×44, py-3 px-4, rounded-md */
+        .dr-btn-bm {
+            flex: 1 1 100%;
+            height: 44px;          /* ref: 44px            */
+            padding: 12px 16px;    /* ref: py-3=12 px-4=16 */
+            border-radius: 8px;    /* ref: rounded-md      */
+            font-size: 14px;
+            font-weight: 700;
+        }
+        /* Chapter tugmalar: ref → 184×45.6, font 14px, gap mos */
+        .dr-btn-ch {
+            flex: 1 1 calc(50% - 4px);
+            height: 46px;          /* ref: ~45.6px         */
+            font-size: 14px;       /* ref: 14px            */
+            border-radius: 8px;    /* ref: rounded-md      */
+            gap: 6px;
+        }
+        /* Eye icon ichida: ref → svg.w-4.h-4 = 16×16 */
+        .dr-btn-ch svg { width: 16px; height: 16px; flex-shrink: 0; }
 
         /* Chapter list */
-        .ch-list       { max-height: none; }
-        .ch-hdr        { margin-top: 4px; }
+        .ch-list { max-height: none; }
+        .ch-hdr  { margin-top: 4px; }
 
-        /* Chapter row padding */
-        .ch-row        { padding: 12px 16px; }
+        /* Sort tugma: ref → 90.4×32, py-1.5=6px, px-3=12px */
+        .ch-sort {
+            height: 32px;          /* ref: 32px   */
+            padding: 6px 12px;     /* ref: 6px 12px */
+            font-size: 13px;
+            border-radius: 8px;    /* ref: rounded-lg */
+        }
 
-        /* Hide redundant rate button in panel-body */
-        .dr-st-row     { gap: 16px; }
+        /* Chapter qator: ref → a 376×56, padding 16px */
+        .ch-row  { padding: 16px; }
 
-        /* Wrap becomes a column flex so order works */
+        /* Chapter nomi: ref → span 68×24, font 16px */
+        .ch-name { font-size: 16px; }
+
+        .dr-st-row { gap: 16px; }
+
+        /* Wrap */
         .dr-wrap {
             flex-direction: column;
             padding: 0 0 80px;
@@ -604,51 +716,6 @@ else
                     ★&nbsp; Reyting
                 </button>
 
-                <div class="dr-div"></div>
-
-                <!-- Status / Type -->
-                <div class="dr-st-row">
-                    <div class="dr-meta-item">
-                        <div class="dr-meta-lbl">Holat</div>
-                        <div class="dr-meta-val"><span class="dr-dot"></span>@_comic.Status</div>
-                    </div>
-                    <div class="dr-meta-item">
-                        <div class="dr-meta-lbl">Turi</div>
-                        <div class="dr-meta-val"><span class="dr-dot"></span>@_comic.Type</div>
-                    </div>
-                </div>
-
-                <div class="dr-div"></div>
-
-                <!-- Author / Artist -->
-                @if (!string.IsNullOrEmpty(_comic.Author))
-                {
-                    <div class="dr-person-row">
-                        <span class="dr-person-icon">✏️</span>
-                        <span class="dr-person-lbl">Muallif</span>
-                        <span class="dr-person-val">@_comic.Author</span>
-                    </div>
-                }
-                @if (!string.IsNullOrEmpty(_comic.Artist))
-                {
-                    <div class="dr-person-row">
-                        <span class="dr-person-icon">🖼️</span>
-                        <span class="dr-person-lbl">Rassom</span>
-                        <span class="dr-person-val">@_comic.Artist</span>
-                    </div>
-                }
-
-                <!-- Genre tags -->
-                @if (_comic.Genres.Any())
-                {
-                    <div class="dr-tags">
-                        @foreach (var g in _comic.Genres)
-                        {
-                            <a class="dr-tag" href="/comics?genre=@g">@g</a>
-                        }
-                    </div>
-                }
-
             </div>
         </div>
 
@@ -674,16 +741,78 @@ else
                 <button class="dr-show-more" @onclick="@(() => _showMore = !_showMore)">
                     @(_showMore ? "Yig'ish ↑" : "Ko'proq ko'rish ↓")
                 </button>
+
+                @if (_showMore)
+                {
+                    <!-- Qo'shimcha ma'lumotlar — ko'proq ko'rish ichida -->
+                    <div class="dr-info-section">
+                        <div class="dr-info-grid">
+                            <div class="dr-info-item">
+                                <span class="dr-info-lbl">Turi</span>
+                                <span class="dr-info-val">@_comic.Type</span>
+                            </div>
+                            <div class="dr-info-item">
+                                <span class="dr-info-lbl">Holati</span>
+                                <span class="dr-info-val">@_comic.Status</span>
+                            </div>
+                            @if (!string.IsNullOrEmpty(_comic.Author))
+                            {
+                                <div class="dr-info-item">
+                                    <span class="dr-info-lbl">Muallif</span>
+                                    <span class="dr-info-val">@_comic.Author</span>
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(_comic.Artist))
+                            {
+                                <div class="dr-info-item">
+                                    <span class="dr-info-lbl">Rassom</span>
+                                    <span class="dr-info-val">@_comic.Artist</span>
+                                </div>
+                            }
+                            @if (_comic.ReleaseYear.HasValue)
+                            {
+                                <div class="dr-info-item">
+                                    <span class="dr-info-lbl">Yil</span>
+                                    <span class="dr-info-val">@_comic.ReleaseYear</span>
+                                </div>
+                            }
+                        </div>
+
+                        @if (_comic.Genres.Any())
+                        {
+                            <div style="margin-top:14px;">
+                                <div class="dr-info-lbl" style="margin-bottom:8px;">Janrlar</div>
+                                <div class="dr-tags">
+                                    @foreach (var g in _comic.Genres)
+                                    {
+                                        <a class="dr-tag" href="/comics?genre=@g">@Translate(g)</a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
             }
 
             <!-- Stats: Rating | Chapters | Bookmarks -->
             <div class="dr-stats">
                 <div class="dr-stat">
-                    <div class="dr-stat-val" style="color:#f59e0b;">⭐ @_comic.AverageRating.ToString("F1")</div>
+                    <div class="dr-stat-val" style="color:#f59e0b;display:inline-flex;align-items:center;gap:6px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                        </svg>
+                        @_comic.AverageRating.ToString("F1")
+                    </div>
                     <div class="dr-stat-lbl">Reyting</div>
                 </div>
                 <div class="dr-stat">
-                    <div class="dr-stat-val" style="color:#34d399;">📗 @_comic.ChapterCount</div>
+                    <div class="dr-stat-val" style="color:#34d399;display:inline-flex;align-items:center;gap:6px;">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h12V4H6a2 2 0 0 1-2-2z"/>
+                            <path d="M6 18h12v2H6z" opacity="0"/>
+                        </svg>
+                        @_comic.ChapterCount
+                    </div>
                     <div class="dr-stat-lbl">Boblar</div>
                 </div>
                 <div class="dr-stat">
@@ -709,13 +838,45 @@ else
                 </button>
                 @if (FirstId != Guid.Empty)
                 {
-                    <a class="dr-btn-ch" href="/chapter/@FirstId">◉&nbsp;Birinchi bob</a>
-                    <a class="dr-btn-ch" href="/chapter/@LastId">◉&nbsp;Oxirgi bob</a>
+                    <a class="dr-btn-ch" href="/chapter/@FirstId">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span>Birinchi bob</span>
+                    </a>
+                    <a class="dr-btn-ch" href="/chapter/@LastId">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span>Oxirgi bob</span>
+                    </a>
                 }
                 else
                 {
-                    <span class="dr-btn-ch" style="opacity:.4;cursor:default;">◉&nbsp;Birinchi bob</span>
-                    <span class="dr-btn-ch" style="opacity:.4;cursor:default;">◉&nbsp;Oxirgi bob</span>
+                    <span class="dr-btn-ch" style="opacity:.4;cursor:default;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span>Birinchi bob</span>
+                    </span>
+                    <span class="dr-btn-ch" style="opacity:.4;cursor:default;">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                        <span>Oxirgi bob</span>
+                    </span>
                 }
             </div>
 
