@@ -1,4 +1,4 @@
-@page "/admin/coins"
+﻿@page "/admin/coins"
 @using ComicBooks.Application.Common.Interfaces
 @layout AdminLayout
 @inject ICoinService CoinSvc
@@ -32,7 +32,7 @@
             @if (_foundUser != null)
             {
                 <MudPaper Class="pa-3 mb-4" Elevation="0"
-                          Style="border:1px solid rgba(65,159,217,0.3);border-radius:8px;background:rgba(65,159,217,0.06);">
+                          Style="border:1px solid rgba(96,165,250,0.3);border-radius:8px;background:rgba(96,165,250,0.06);">
                     <div style="display:flex;align-items:center;gap:10px;">
                         @if (!string.IsNullOrEmpty(_foundUser.Picture))
                         {
@@ -80,12 +80,20 @@
                     }
                 </div>
 
-                <MudButton Variant="Variant.Filled" Color="Color.Primary"
-                           FullWidth="true" OnClick="@AddCoins"
-                           Disabled="@(_addAmount <= 0 || _saving)"
-                           Style="height:46px;text-transform:none;font-weight:700;border-radius:10px;">
-                    @(_saving ? "Qo'shilmoqda..." : $"🪙 {_addAmount} coin qo'shish")
-                </MudButton>
+                <div style="display:flex;gap:8px;">
+                    <MudButton Variant="Variant.Filled" Color="Color.Primary"
+                               FullWidth="true" OnClick="@AddCoins"
+                               Disabled="@(_addAmount <= 0 || _saving)"
+                               Style="height:46px;text-transform:none;font-weight:700;border-radius:10px;">
+                        @(_saving ? "..." : $"🪙 +{_addAmount} qo'shish")
+                    </MudButton>
+                    <MudButton Variant="Variant.Outlined" Color="Color.Error"
+                               OnClick="@RemoveCoins"
+                               Disabled="@(_addAmount <= 0 || _saving || _foundUser.CoinBalance <= 0)"
+                               Style="height:46px;text-transform:none;font-weight:700;border-radius:10px;white-space:nowrap;">
+                        ➖ Olib tashlash
+                    </MudButton>
+                </div>
             }
             else if (_searched)
             {
@@ -108,9 +116,9 @@
                 {
                     <div style="display:flex;justify-content:space-between;align-items:center;
                                 padding:8px 12px;border-radius:8px;
-                                background:rgba(27,19,190,0.07);border:1px solid rgba(27,19,190,0.18);">
+                                background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.18);">
                         <span style="font-weight:700;">🪙 @pkg.Coins coins</span>
-                        <span style="color:#419fd9;font-weight:700;">@pkg.Price UZS</span>
+                        <span style="color:#60a5fa;font-weight:700;">@pkg.Price UZS</span>
                     </div>
                 }
             </div>
@@ -176,7 +184,7 @@
 @code {
     AppUserDto? _foundUser;
     string   _searchUser  = "";
-    int      _addAmount   = 50;
+    int      _addAmount   = 10;
     string   _addNote     = "";
     bool     _saving      = false;
     bool     _searched    = false;
@@ -230,9 +238,34 @@
                 // Balansni yangilash
                 _foundUser = await CoinSvc.FindUserAsync(_foundUser.Email);
                 Snackbar.Add($"✅ {_addAmount} coin qo'shildi!", Severity.Success);
-                _addAmount = 50;
+                _addAmount = 10;
                 _addNote   = "";
                 await LoadTransactions();
+            }
+        }
+        catch (Exception ex) { Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error); }
+        finally { _saving = false; }
+    }
+
+    async Task RemoveCoins()
+    {
+        if (_foundUser is null || _addAmount <= 0) return;
+        _saving = true;
+        try
+        {
+            var note = string.IsNullOrWhiteSpace(_addNote) ? "Admin tomonidan olib tashlandi" : _addNote;
+            var ok = await CoinSvc.RemoveCoinsAsync(_foundUser.Id, _addAmount, note);
+            if (ok)
+            {
+                _foundUser = await CoinSvc.FindUserAsync(_foundUser.Email);
+                Snackbar.Add($"✅ {_addAmount} coin olib tashlandi!", Severity.Success);
+                _addAmount = 10;
+                _addNote   = "";
+                await LoadTransactions();
+            }
+            else
+            {
+                Snackbar.Add("Olib tashlab bo'lmadi (balans yetarli emasmi?)", Severity.Warning);
             }
         }
         catch (Exception ex) { Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error); }

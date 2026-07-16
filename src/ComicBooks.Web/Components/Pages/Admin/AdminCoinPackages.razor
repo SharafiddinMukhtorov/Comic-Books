@@ -1,4 +1,4 @@
-@page "/admin/coin-packages"
+﻿@page "/admin/coin-packages"
 @layout AdminLayout
 @inject ICoinPackageService PackageSvc
 @inject ISnackbar Snackbar
@@ -34,7 +34,7 @@
             <MudNumericField T="int" @bind-Value="_form.SortOrder" Label="Tartib raqami"
                              Variant="Variant.Outlined" Class="mb-3" Min="0" />
 
-            <MudCheckBox T="bool" @bind-Checked="_form.IsPopular"
+            <MudCheckBox T="bool" @bind-Value="_form.IsPopular"
                          Label="⭐ Mashhur (highlighted)" Color="Color.Warning" Class="mb-4" />
 
             <div style="display:flex;gap:8px;">
@@ -56,12 +56,12 @@
         {
             <MudPaper Class="pa-4 mt-4" Elevation="1" Style="border-radius:12px;">
                 <MudText Typo="Typo.subtitle2" Class="mb-3">👁 Ko'rinishi</MudText>
-                <div style="@(_form.IsPopular ? "border:2px solid #1b13be;" : "border:1px solid rgba(128,128,128,0.2);")
+                <div style="@(_form.IsPopular ? "border:2px solid #3b82f6;" : "border:1px solid rgba(128,128,128,0.2);")
                             border-radius:14px;padding:20px;text-align:center;position:relative;">
                     @if (_form.IsPopular)
                     {
                         <div style="position:absolute;top:-12px;left:50%;transform:translateX(-50%);
-                                    background:#1b13be;color:#fff;font-size:10px;font-weight:800;
+                                    background:#3b82f6;color:#fff;font-size:10px;font-weight:800;
                                     padding:2px 12px;border-radius:20px;">⭐ ENG MASHHUR</div>
                     }
                     <div style="font-size:2.2rem;">🪙</div>
@@ -71,7 +71,7 @@
                         <div style="font-size:12px;color:#22c55e;font-weight:700;">+@_form.BonusCoins bonus</div>
                     }
                     <div style="font-size:13px;opacity:0.5;margin:4px 0 12px;">coins</div>
-                    <div style="background:#1b13be;color:#fff;border-radius:8px;padding:8px;
+                    <div style="background:#3b82f6;color:#fff;border-radius:8px;padding:8px;
                                 font-weight:700;font-size:14px;">
                         @(string.IsNullOrEmpty(_form.Price) ? "—" : _form.Price)
                     </div>

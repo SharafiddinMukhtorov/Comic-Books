@@ -1,233 +1,419 @@
-@page "/coins"
+﻿@page "/coins"
 @inject ICoinPackageService PackageSvc
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthState
 
-<PageTitle>Coin sotib olish - Manga Dunyo</PageTitle>
+<PageTitle>Tanga sotib olish - Manga Dunyo</PageTitle>
 
 <style>
-    .pkg-card {
-        border-radius: 16px;
-        padding: 28px 20px;
-        text-align: center;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-        position: relative;
-        border: 1px solid rgba(128,128,128,0.18);
-        background: var(--mud-palette-surface);
-    }
-    .pkg-card:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 20px 48px rgba(0,0,0,0.35);
-    }
-    .pkg-card.popular {
-        border: 2px solid #1b13be;
-        background: rgba(27,19,190,0.07);
-    }
-    .pkg-popular-badge {
-        position: absolute;
-        top: -13px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #1b13be;
-        color: #fff;
-        font-size: 10px;
-        font-weight: 900;
-        padding: 3px 14px;
-        border-radius: 20px;
-        white-space: nowrap;
-        letter-spacing: 0.5px;
+    .cs-wrap {
+        max-width: 480px;
+        margin: 0 auto;
+        padding: 24px 16px 80px;
     }
 
-    /* Carousel scroll */
-    .pkg-carousel {
-        display: flex;
-        gap: 16px;
-        overflow-x: auto;
-        padding: 20px 4px 8px;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(27,19,190,0.3) transparent;
-        scroll-snap-type: x mandatory;
+    /* ── Ro'yxatdan o'tish talab qilinadi (gate) ── */
+    .cs-gate {
+        max-width: 420px;
+        margin: 60px auto;
+        text-align: center;
+        background: var(--mud-palette-surface);
+        border: 1px solid var(--mud-palette-lines-default);
+        border-radius: 16px;
+        padding: 36px 24px 30px;
     }
-    .pkg-carousel::-webkit-scrollbar { height: 4px; }
-    .pkg-carousel::-webkit-scrollbar-thumb { background: rgba(27,19,190,0.3); border-radius: 2px; }
-    .pkg-carousel-item {
-        flex: 0 0 240px;
-        scroll-snap-align: start;
+    .cs-gate-icon {
+        width: 96px; height: 96px;
+        border-radius: 24px;
+        background: linear-gradient(135deg, rgba(245,158,11,0.20), rgba(245,158,11,0.06));
+        border: 1px solid rgba(245,158,11,0.35);
+        box-shadow: 0 0 22px rgba(245,158,11,0.30), 0 0 44px rgba(245,158,11,0.12);
+        display: inline-flex; align-items: center; justify-content: center;
+        margin-bottom: 18px;
+    }
+    .cs-gate h2 { font-size: 1.25rem; font-weight: 900; margin: 0 0 8px; }
+    .cs-gate p { font-size: 14px; opacity: 0.6; line-height: 1.6; margin: 0 0 22px; }
+    .cs-gate-btn {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        width: 100%;
+        padding: 13px 24px;
+        border-radius: 10px;
+        background: linear-gradient(90deg, #1C72F3 0%, #1392EC 100%);
+        color: #fff; font-size: 15px; font-weight: 800;
+        text-decoration: none;
+        transition: filter 0.15s;
+    }
+    .cs-gate-btn:hover { filter: brightness(1.08); color: #fff; }
+
+    /* Header */
+    .cs-head {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+    .cs-head-icon {
+        width: 88px; height: 88px;
+        border-radius: 50%;
+        background: rgba(245,158,11,0.14);
+        box-shadow: 0 0 32px rgba(245,158,11,0.45), 0 0 64px rgba(245,158,11,0.20);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 14px;
+    }
+    .cs-head h2 {
+        font-size: 20px; font-weight: 900;
+        margin: 0 0 6px;
+    }
+    .cs-head p {
+        font-size: 13px; opacity: 0.6;
+        margin: 0 auto;
+        max-width: 340px;
+        line-height: 1.6;
+        text-wrap: balance;
+    }
+
+    /* Package grid */
+    .cs-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 20px;
+    }
+    .cs-pkg {
+        border-radius: 12px;
+        padding: 16px 12px;
+        text-align: center;
+        cursor: pointer;
+        border: 1.5px solid rgba(128,128,128,0.15);
+        background: var(--mud-palette-surface);
+        transition: border-color 0.18s, background 0.18s, transform 0.15s;
+        position: relative;
+        user-select: none;
+    }
+    .cs-pkg:active { transform: scale(0.97); }
+    .cs-pkg.selected {
+        border-color: #f59e0b;
+        background: rgba(245,158,11,0.08);
+    }
+    .cs-pkg-icon {
+        width: 52px; height: 52px;
+        border-radius: 50%;
+        background: rgba(245,158,11,0.14);
+        box-shadow: 0 0 18px rgba(245,158,11,0.50), 0 0 36px rgba(245,158,11,0.22);
+        display: flex; align-items: center; justify-content: center;
+        margin: 0 auto 10px;
+    }
+    .cs-pkg-icon img { width: 34px; height: 34px; }
+    .cs-pkg-amount {
+        font-size: 22px; font-weight: 900;
+        color: #f59e0b; line-height: 1;
+        margin-bottom: 2px;
+    }
+    .cs-pkg-label {
+        font-size: 10px; opacity: 0.38;
+        text-transform: uppercase; letter-spacing: 0.5px;
+        margin-bottom: 8px;
+    }
+    .cs-pkg-price {
+        font-size: 13px; font-weight: 700;
+        opacity: 0.85;
+    }
+    .cs-pkg-badge {
+        position: absolute;
+        top: -9px; left: 50%;
+        transform: translateX(-50%);
+        background: #3b82f6;
+        color: #fff;
+        font-size: 9px; font-weight: 900;
+        padding: 2px 10px;
+        border-radius: 20px;
+        white-space: nowrap;
+        letter-spacing: 0.3px;
+    }
+
+    /* Selected info panel */
+    .cs-selected-panel {
+        border-radius: 12px;
+        background: var(--mud-palette-surface);
+        border: 1px solid rgba(128,128,128,0.12);
+        padding: 16px;
+        margin-bottom: 12px;
+    }
+    .cs-selected-label {
+        font-size: 11px; font-weight: 700;
+        opacity: 0.4; text-transform: uppercase;
+        letter-spacing: 0.5px; margin-bottom: 6px;
+    }
+    .cs-selected-info {
+        font-size: 15px; font-weight: 800;
+        margin-bottom: 14px;
+        display: flex; align-items: center; gap: 6px;
+    }
+    .cs-pay-btn {
+        width: 100%; height: 48px;
+        border: none; border-radius: 10px;
+        background: #f59e0b; color: #fff;
+        font-size: 15px; font-weight: 800;
+        cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        transition: opacity 0.15s;
+    }
+    .cs-pay-btn:hover { opacity: 0.9; }
+    .cs-pay-btn:disabled { opacity: 0.35; cursor: default; }
+
+    /* Payment method */
+    .cs-method-panel {
+        border-radius: 12px;
+        background: var(--mud-palette-surface);
+        border: 1px solid rgba(128,128,128,0.12);
+        padding: 16px;
+        margin-bottom: 20px;
+    }
+    .cs-method-title {
+        font-size: 13px; font-weight: 800;
+        margin-bottom: 12px;
+    }
+    .cs-method-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        border: 1.5px solid rgba(128,128,128,0.12);
+        cursor: pointer;
+        transition: border-color 0.15s;
+        margin-bottom: 8px;
+    }
+    .cs-method-item:last-child { margin-bottom: 0; }
+    .cs-method-item.active { border-color: #3b82f6; background: rgba(59,130,246,0.05); }
+    .cs-method-icon {
+        width: 32px; height: 32px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px; flex-shrink: 0;
+    }
+    .cs-method-name { font-size: 14px; font-weight: 700; flex: 1; }
+    .cs-method-check {
+        width: 18px; height: 18px; border-radius: 50%;
+        border: 2px solid rgba(128,128,128,0.3);
+        display: flex; align-items: center; justify-content: center;
+    }
+    .cs-method-item.active .cs-method-check {
+        border-color: #3b82f6;
+        background: #3b82f6;
+    }
+
+    /* How to buy */
+    .cs-how {
+        border-radius: 12px;
+        background: var(--mud-palette-surface);
+        border: 1px solid rgba(128,128,128,0.12);
+        padding: 16px;
+    }
+    .cs-how-title {
+        font-size: 14px; font-weight: 800;
+        margin-bottom: 14px;
+    }
+    .cs-how-step {
+        display: flex; gap: 12px; align-items: flex-start;
+        margin-bottom: 12px;
+    }
+    .cs-how-step:last-child { margin-bottom: 0; }
+    .cs-how-num {
+        width: 24px; height: 24px; border-radius: 50%;
+        background: rgba(59,130,246,0.12);
+        color: #60a5fa;
+        font-size: 11px; font-weight: 900;
+        display: flex; align-items: center; justify-content: center;
+        flex-shrink: 0; margin-top: 1px;
+    }
+    .cs-how-text { font-size: 13px; opacity: 0.7; line-height: 1.5; }
+
+    /* Qora PNG ikonka → currentColor / berilgan rang bilan bo'yaladi (mask) */
+    .cs-ic-mask {
+        display: inline-block;
+        flex-shrink: 0;
+        background-color: currentColor;
+        -webkit-mask: var(--ic) center / contain no-repeat;
+        mask: var(--ic) center / contain no-repeat;
     }
 </style>
 
-<MudContainer MaxWidth="MaxWidth.Medium" Class="py-8">
+<div class="cs-wrap">
 
+@if (!_isLoggedIn)
+{
+    <!-- Ro'yxatdan o'tish talab qilinadi -->
+    <div class="cs-gate">
+        <div class="cs-gate-icon">
+            <img src="/img/coin.png" style="width:60px;height:60px;" alt="coin" />
+        </div>
+        <h2>Avval ro'yxatdan o'ting</h2>
+        <p>Tangalar narxini ko'rish, o'zingizga mos paketni tanlash va xavfsiz to'lovni amalga oshirish uchun avval tizimga kiring yoki yangi hisob ochib ro'yxatdan o'ting.</p>
+        <a href="/login" class="cs-gate-btn">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
+            </svg>
+            Kirish / Ro'yxatdan o'tish
+        </a>
+    </div>
+}
+else
+{
     <!-- Header -->
-    <div style="text-align:center;margin-bottom:40px;">
-        <img src="/img/coin.svg" style="width:72px;height:72px;" alt="coin" />
-        <MudText Typo="Typo.h4" Style="font-weight:900;margin-top:8px;">Coin sotib olish</MudText>
-        <MudText Style="opacity:0.5;margin-top:6px;font-size:15px;">
-            Qulflangan boblarni o'qish uchun coin to'plab boring
-        </MudText>
+    <div class="cs-head">
+        <div class="cs-head-icon">
+            <img src="/img/coin.png" style="width:54px;height:54px;" alt="coin" />
+        </div>
+        <h2>Tanga sotib olish</h2>
+        <p>O'zingizga istagan Tanga miqdorini tanlang va Telegram orqali tez hamda xavfsiz to'lovni amalga oshiring!</p>
     </div>
 
-    <!-- Packages carousel -->
     @if (_loading)
     {
         <MudProgressLinear Color="Color.Primary" Indeterminate="true" Class="mb-4" />
     }
-    else if (_packages.Any())
-    {
-        <div class="pkg-carousel">
-            @foreach (var pkg in _packages)
-            {
-                <div class="pkg-carousel-item">
-                    <div class="pkg-card @(pkg.IsPopular ? "popular" : "")"
-                         @onclick="@(() => Buy(pkg))">
-
-                        @if (pkg.IsPopular)
-                        {
-                            <div class="pkg-popular-badge">⭐ ENG MASHHUR</div>
-                        }
-
-                        <div style="margin-bottom:8px;"><img src="/img/coin.svg" style="width:52px;height:52px;" alt="coin" /></div>
-                        <div style="font-size:2.4rem;font-weight:900;color:#f59e0b;line-height:1;">
-                            @pkg.CoinAmount
-                        </div>
-                        @if (pkg.BonusCoins > 0)
-                        {
-                            <div style="font-size:12px;color:#22c55e;font-weight:700;margin-top:2px;">
-                                +@pkg.BonusCoins bonus 🎁
-                            </div>
-                        }
-                        <div style="font-size:12px;opacity:0.4;margin-bottom:16px;margin-top:2px;">
-                            @(string.IsNullOrEmpty(pkg.Name) ? "coins" : pkg.Name)
-                        </div>
-
-                        <button style="width:100%;background:@(pkg.IsPopular?"#1b13be":"rgba(27,19,190,0.15)");
-                                       color:@(pkg.IsPopular?"#fff":"#92d4fc");
-                                       border:none;border-radius:10px;padding:12px;
-                                       font-size:15px;font-weight:800;cursor:pointer;
-                                       box-shadow:@(pkg.IsPopular?"0 4px 20px rgba(27,19,190,0.4)":"none");"
-                                @onclick="@(() => Buy(pkg))" @onclick:stopPropagation="true">
-                            @pkg.Price
-                        </button>
-
-                        <div style="font-size:11px;opacity:0.3;margin-top:10px;">
-                            Telegram orqali to'lash
-                        </div>
-                    </div>
-                </div>
-            }
-        </div>
-    }
     else
     {
-        <!-- Default packages if none in DB -->
-        <div class="pkg-carousel">
-            @foreach (var pkg in DefaultPackages)
+        <!-- Package grid -->
+        <div class="cs-grid">
+            @foreach (var pkg in DisplayPackages())
             {
-                <div class="pkg-carousel-item">
-                    <div class="pkg-card @(pkg.IsPopular ? "popular" : "")"
-                         @onclick="@(() => BuyDefault(pkg))">
-                        @if (pkg.IsPopular)
-                        {
-                            <div class="pkg-popular-badge">⭐ ENG MASHHUR</div>
-                        }
-                        <div style="margin-bottom:8px;"><img src="/img/coin.svg" style="width:52px;height:52px;" alt="coin" /></div>
-                        <div style="font-size:2.4rem;font-weight:900;color:#f59e0b;line-height:1;">@pkg.Coins</div>
-                        @if (pkg.Bonus > 0)
-                        {
-                            <div style="font-size:12px;color:#22c55e;font-weight:700;margin-top:2px;">+@pkg.Bonus bonus 🎁</div>
-                        }
-                        <div style="font-size:12px;opacity:0.4;margin-bottom:16px;margin-top:2px;">coins</div>
-                        <button style="width:100%;background:@(pkg.IsPopular?"#1b13be":"rgba(27,19,190,0.15)");
-                                       color:@(pkg.IsPopular?"#fff":"#92d4fc");
-                                       border:none;border-radius:10px;padding:12px;
-                                       font-size:15px;font-weight:800;cursor:pointer;">
-                            @pkg.Price so'm
-                        </button>
-                        <div style="font-size:11px;opacity:0.3;margin-top:10px;">Telegram orqali to'lash</div>
+                var isSelected = _selectedId == pkg.Id;
+                <div class="cs-pkg @(isSelected ? "selected" : "") @(pkg.IsPopular ? "popular-pkg" : "")"
+                     @onclick="@(() => _selectedId = pkg.Id)">
+                    @if (pkg.IsPopular)
+                    {
+                        <div class="cs-pkg-badge">ENG MASHHUR</div>
+                    }
+                    <div class="cs-pkg-icon">
+                        <img src="/img/coin.png" alt="coin" />
                     </div>
+                    <div class="cs-pkg-amount">@pkg.CoinAmount</div>
+                    @if (pkg.BonusCoins > 0)
+                    {
+                        <div class="cs-pkg-label">+@pkg.BonusCoins bonus</div>
+                    }
+                    else
+                    {
+                        <div class="cs-pkg-label">tanga</div>
+                    }
+                    <div class="cs-pkg-price">@pkg.Price so'm</div>
+                </div>
+            }
+        </div>
+
+        <!-- Selected package info -->
+        <div class="cs-selected-panel">
+            <div class="cs-selected-label">Tanlangan miqdor</div>
+            @{
+                var sel = DisplayPackages().FirstOrDefault(p => p.Id == _selectedId);
+            }
+            @if (sel != null)
+            {
+                <div class="cs-selected-info">
+                    <img src="/img/coin.png" style="width:20px;height:20px;" alt="coin" />
+                    <span>@(sel.CoinAmount + sel.BonusCoins) Tanga — @sel.Price so'm</span>
+                </div>
+            }
+            else
+            {
+                <div class="cs-selected-info" style="opacity:0.4;">Paket tanlanmagan</div>
+            }
+            <button class="cs-pay-btn" disabled="@(sel == null)" @onclick="@Pay">
+                <span class="cs-ic-mask" style="--ic:url('/img/message.png');width:20px;height:20px;"></span>
+                Telegram orqali to'lov qilish
+            </button>
+        </div>
+
+        <!-- Payment method -->
+        <div class="cs-method-panel">
+            <div class="cs-method-title">To'lov usuli</div>
+            <div class="cs-method-item active">
+                <div class="cs-method-icon" style="background:rgba(0,119,255,0.1);">
+                    <span class="cs-ic-mask" style="--ic:url('/img/message.png');width:18px;height:18px;background-color:#1392EC;"></span>
+                </div>
+                <div class="cs-method-name">Telegram Admin</div>
+                <div class="cs-method-check">
+                    <svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+                        <path d="M1 4l3 3 5-6" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- How to buy -->
+        <div class="cs-how">
+            <div class="cs-how-title" style="display:flex;align-items:center;gap:8px;">
+                <span class="cs-ic-mask" style="--ic:url('/img/open-book.png');width:18px;height:18px;"></span>
+                Tangalarni qanday sotib olish mumkin?
+            </div>
+            @foreach (var (step, i) in Steps.Select((s, i) => (s, i + 1)))
+            {
+                <div class="cs-how-step">
+                    <div class="cs-how-num">@i</div>
+                    <div class="cs-how-text">@step</div>
                 </div>
             }
         </div>
     }
-
-    <!-- How to buy -->
-    <MudPaper Class="pa-5 mt-8" Elevation="1" Style="border-radius:14px;">
-        <MudText Typo="Typo.h6" Class="mb-4" Style="font-weight:700;">
-            📖 Qanday sotib olish kerak?
-        </MudText>
-        <div style="display:flex;flex-direction:column;gap:14px;">
-            @foreach (var (step, i) in Steps.Select((s, i) => (s, i + 1)))
-            {
-                <div style="display:flex;gap:14px;align-items:flex-start;">
-                    <div style="width:30px;height:30px;border-radius:50%;background:#1b13be;color:#fff;
-                                display:flex;align-items:center;justify-content:center;
-                                font-size:13px;font-weight:800;flex-shrink:0;margin-top:1px;">@i</div>
-                    <div style="font-size:14px;padding-top:5px;">@step</div>
-                </div>
-            }
-        </div>
-
-        <div style="margin-top:24px;padding:16px;border-radius:10px;
-                    background:rgba(27,19,190,0.08);border:1px solid rgba(27,19,190,0.2);
-                    display:flex;align-items:center;gap:14px;">
-            <span style="font-size:2rem;">💬</span>
-            <div>
-                <div style="font-weight:700;margin-bottom:4px;">Telegram orqali to'lov</div>
-                <div style="font-size:13px;opacity:0.6;">
-                    To'lovni amalga oshirgach admin balansni 5 daqiqa ichida to'ldiradi
-                </div>
-            </div>
-            <a href="https://t.me/MukhtorovSh" target="_blank"
-               style="margin-left:auto;background:#1b13be;color:#fff;border-radius:8px;
-                      padding:8px 18px;font-weight:700;font-size:13px;text-decoration:none;
-                      white-space:nowrap;flex-shrink:0;">
-                Telegram →
-            </a>
-        </div>
-    </MudPaper>
-</MudContainer>
+}
+</div>
 
 @code {
     List<CoinPackageDto> _packages = new();
     bool _loading = true;
+    bool _isLoggedIn;
+    Guid? _selectedId = null;
 
-    record DefPkg(int Coins, int Bonus, string Price, bool IsPopular = false);
+    // Unified view model for both DB and default packages
+    record PkgView(Guid Id, int CoinAmount, int BonusCoins, string Price, bool IsPopular);
 
-    readonly List<DefPkg> DefaultPackages = new()
+    // Fixed Guids for default packages (stable across renders)
+    static readonly List<PkgView> DefaultPackages = new()
     {
-        new(10,  0,  "5,000"),
-        new(25,  0,  "10,000"),
-        new(50,  5,  "20,000", IsPopular: true),
-        new(100, 15, "35,000"),
-        new(200, 40, "60,000"),
+        new(new Guid("00000000-0000-0000-0000-000000000001"),  10,  0, "5,000",  false),
+        new(new Guid("00000000-0000-0000-0000-000000000002"),  25,  0, "10,000", false),
+        new(new Guid("00000000-0000-0000-0000-000000000003"),  50,  5, "20,000", true),
+        new(new Guid("00000000-0000-0000-0000-000000000004"), 100, 15, "35,000", false),
+        new(new Guid("00000000-0000-0000-0000-000000000005"), 200, 40, "60,000", false),
     };
 
     readonly List<string> Steps = new()
     {
-        "Yuqoridagi paketlardan birini tanlang",
-        "Telegram botimizga o'tasiz — paket va miqdori ko'rsatiladi",
-        "To'lovni amalga oshiring (Payme / Click / Uzum)",
-        "Admin 5 daqiqa ichida coin balansini to'ldiradi",
-        "Coin bilan istalgan qulflangan bobni o'qing! 🎉"
+        "Yuqoridagi tanga miqdorlaridan birini tanlang",
+        "Telegram orqali to'lov qilish tugmasini bosing — tangalar miqdori avtomatik ko'rsatiladi",
+        "To'lovni amalga oshiring (Payme / Click / Uzum yoki istalgan usulda)",
+        "Administrator to'lov tasdiqlangach, hisobingizni tangalar bilan to'ldiradi.",
+        "Tangalar yordamida istalgan qulflangan bobni oching va o'qishni davom ettiring! 🎉"
     };
+
+    List<PkgView> DisplayPackages()
+    {
+        if (_packages.Any())
+            return _packages.Select(p => new PkgView(p.Id, p.CoinAmount, p.BonusCoins, p.Price ?? "0", p.IsPopular)).ToList();
+        return DefaultPackages;
+    }
 
     protected override async Task OnInitializedAsync()
     {
+        var state = await AuthState.GetAuthenticationStateAsync();
+        _isLoggedIn = state.User.Identity?.IsAuthenticated == true;
+
+        // Mehmonlar uchun narx/Telegram yuklanmaydi — faqat ro'yxatdan o'tish so'raladi
+        if (!_isLoggedIn)
+        {
+            _loading = false;
+            return;
+        }
+
         _packages = await PackageSvc.GetAllAsync();
         _loading  = false;
+        var pkgs = DisplayPackages();
+        _selectedId = pkgs.FirstOrDefault(p => p.IsPopular)?.Id ?? pkgs.FirstOrDefault()?.Id;
     }
 
-    void Buy(CoinPackageDto pkg)
+    void Pay()
     {
-        var total   = pkg.CoinAmount + pkg.BonusCoins;
-        var msg     = Uri.EscapeDataString($"Coin sotib olmoqchiman:\nPaket: {pkg.Name}\nMiqdor: {total} coins\nNarx: {pkg.Price}\n\nTelegram: @MukhtorovSh");
-        Nav.NavigateTo($"https://t.me/MukhtorovSh?text={msg}", forceLoad: true);
-    }
-
-    void BuyDefault(DefPkg pkg)
-    {
-        var total = pkg.Coins + pkg.Bonus;
-        var msg   = Uri.EscapeDataString($"Coin sotib olmoqchiman:\n{total} coins — {pkg.Price} so'm");
-        Nav.NavigateTo($"https://t.me/MukhtorovSh?text={msg}", forceLoad: true);
+        var sel = DisplayPackages().FirstOrDefault(p => p.Id == _selectedId);
+        if (sel == null) return;
+        var total = sel.CoinAmount + sel.BonusCoins;
+        var msg = Uri.EscapeDataString($"Tanga sotib olmoqchiman:\nMiqdor: {total} Tanga\nNarx: {sel.Price} so'm\n\nAdmin: @MangaDunyoadmin");
+        Nav.NavigateTo($"https://t.me/MangaDunyoadmin?text={msg}", forceLoad: true);
     }
 }

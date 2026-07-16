@@ -1,4 +1,4 @@
-@page "/comic/{Slug}"
+﻿@page "/comic/{Slug}"
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject BookmarkService BookmarkSvc
@@ -6,6 +6,7 @@
 @inject ThemeService Theme
 @inject AuthenticationStateProvider AuthState
 @inject ISnackbar Snackbar
+@inject IJSRuntime JS
 @using ComicBooks.Application.Features.Comics.Commands
 @using ComicBooks.Application.Features.Comments.Queries
 @using ComicBooks.Application.Features.Comments.Commands
@@ -15,13 +16,13 @@
 
 <style>
     .dr {
-        --acc:        #1b13be;
-        --acc2:       #419fd9;
-        --acc-light:  rgba(27,19,190,0.12);
-        --acc-border: rgba(27,19,190,0.35);
+        --acc:        #3b82f6;
+        --acc2:       #60a5fa;
+        --acc-light:  rgba(59,130,246,0.12);
+        --acc-border: rgba(59,130,246,0.35);
         --panel-bg:   rgba(255,255,255,0.04);
         --panel-brd:  rgba(255,255,255,0.07);
-        --ch-hover:   rgba(27,19,190,0.1);
+        --ch-hover:   rgba(59,130,246,0.1);
         --lbl:        rgba(255,255,255,0.42);
         --val:        rgba(255,255,255,0.92);
         --tag-bg:     rgba(255,255,255,0.06);
@@ -30,23 +31,23 @@
         --div:        rgba(255,255,255,0.07);
         position: relative;
         overflow: hidden;
-        background: #1c1924;
+        background: #101014;
     }
     .dr.light {
-        --acc:        #419fd9;
-        --acc2:       #0e6fa8;
-        --acc-light:  rgba(65,159,217,0.10);
-        --acc-border: rgba(65,159,217,0.40);
+        --acc:        #2D6BFF;
+        --acc2:       #1A58F0;
+        --acc-light:  rgba(96,165,250,0.10);
+        --acc-border: rgba(96,165,250,0.40);
         --panel-bg:   rgba(255,255,255,0.82);
         --panel-brd:  rgba(0,0,0,0.08);
-        --ch-hover:   rgba(65,159,217,0.08);
+        --ch-hover:   rgba(96,165,250,0.08);
         --lbl:        rgba(30,30,60,0.45);
-        --val:        #1a1a2e;
+        --val:        #252D55;
         --tag-bg:     rgba(0,0,0,0.05);
         --tag-brd:    rgba(0,0,0,0.14);
-        --tag-col:    #1a1a2e;
+        --tag-col:    #252D55;
         --div:        rgba(0,0,0,0.07);
-        background: #dde8f0;
+        background: #edf2fd;
     }
 
     /* ── Subtle blur banner (faqat tepa qism) ── */
@@ -66,24 +67,27 @@
         opacity: 0.35;
     }
 
+    /* Gradient: dr-bg (500px) dan balandroq → cheti ko'rinmaydi */
     .dr-bg-grad {
         position: absolute;
         top: 0; left: 0; right: 0;
-        height: 500px;
+        height: 560px;
         z-index: 1;
         background: linear-gradient(
             to bottom,
-            rgba(28,25,36,0.5) 0%,
-            rgba(28,25,36,0.75) 60%,
-            #1c1924 100%
+            rgba(16,16,20,0.30) 0%,
+            rgba(16,16,20,0.65) 42%,
+            rgba(16,16,20,0.95) 58%,
+            #101014             66%
         );
     }
     .dr.light .dr-bg-grad {
         background: linear-gradient(
             to bottom,
-            rgba(221,232,240,0.5) 0%,
-            rgba(221,232,240,0.85) 60%,
-            #dde8f0 100%
+            rgba(237,242,253,0.25) 0%,
+            rgba(237,242,253,0.70) 42%,
+            rgba(237,242,253,0.97) 58%,
+            #edf2fd               66%
         );
     }
 
@@ -104,10 +108,16 @@
         flex: 0 0 264px;
         background: var(--panel-bg);
         border: 1px solid var(--panel-brd);
-        border-radius: 12px;
+        border-radius: 8px;
         overflow: hidden;
         position: sticky;
         top: 80px;
+    }
+
+    /* Cover wrapper — desktop: panel-filling, mobile: centered float */
+    .dr-cover-wrap {
+        position: relative;
+        display: block;
     }
 
     .dr-cover {
@@ -115,6 +125,25 @@
         aspect-ratio: 2/3;
         object-fit: cover;
         display: block;
+    }
+
+    /* Views badge overlaid on cover (mobile only by default) */
+    .dr-cover-views {
+        display: none;
+        position: absolute;
+        bottom: 10px;
+        right: 10px;
+        background: rgba(0,0,0,0.62);
+        backdrop-filter: blur(8px);
+        border-radius: 8px;
+        padding: 4px 10px;
+        font-size: 11px;
+        font-weight: 700;
+        color: rgba(255,255,255,0.9);
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        pointer-events: none;
     }
 
     .dr-panel-body { padding: 14px 14px 16px; }
@@ -170,6 +199,15 @@
         letter-spacing: 0.4px;
         font-weight: 700;
         color: var(--lbl);
+    }
+    /* Stat icon: qora PNG → currentColor bilan bo'yaladi (mask) */
+    .dr-stat-ic {
+        width: 18px;
+        height: 18px;
+        flex-shrink: 0;
+        background-color: currentColor;
+        -webkit-mask: var(--ic) center / contain no-repeat;
+        mask: var(--ic) center / contain no-repeat;
     }
 
     .dr-div { height: 1px; background: var(--div); margin: 12px 0; }
@@ -271,6 +309,8 @@
         color: var(--val);
         opacity: 0.82;
         margin-bottom: 4px;
+        overflow-wrap: break-word;
+        word-break: break-word;
     }
 
     /* Ko'proq ko'rish ichidagi qo'shimcha info */
@@ -326,8 +366,35 @@
         padding: 0;
     }
 
-    /* Action buttons */
-    .dr-actions { display: flex; gap: 10px; margin-bottom: 28px; }
+    /* Info card & chapter section shapes */
+    .dr-info-card {
+        background: #17181e;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 20px 18px 16px;
+        margin-bottom: 12px;
+    }
+    .dr.light .dr-info-card {
+        background: #ffffff;
+        border-color: #e4e9f7;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .ch-section {
+        background: #17181e;
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 12px;
+        padding: 16px;
+    }
+    .dr.light .ch-section {
+        background: #ffffff;
+        border-color: #e4e9f7;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    }
+    .ch-section .ch-hdr { margin-bottom: 12px; }
+    .ch-section .ch-srch-wrap { margin-bottom: 12px; }
+
+    /* Action buttons — orqa karta yo'q, tugmalarning o'zi shaklli */
+    .dr-actions { display: flex; gap: 10px; margin: 0 0 28px; }
 
     .dr-btn-bm {
         flex: 1.3;
@@ -336,7 +403,7 @@
         align-items: center;
         justify-content: center;
         gap: 10px;
-        border-radius: 10px;
+        border-radius: 8px;
         font-size: 14.5px;
         font-weight: 800;
         cursor: pointer;
@@ -360,7 +427,7 @@
         align-items: center;
         justify-content: center;
         gap: 8px;
-        border-radius: 10px;
+        border-radius: 8px;
         font-size: 13px;
         font-weight: 700;
         text-decoration: none;
@@ -380,7 +447,7 @@
         align-items: center;
         margin-bottom: 12px;
     }
-    .ch-count { font-size: 1rem; font-weight: 900; }
+    .ch-count { font-size: 1rem; font-weight: 700; }
     .ch-sort {
         display: flex;
         align-items: center;
@@ -416,29 +483,34 @@
         transform: translateY(-50%);
         opacity: 0.32;
         pointer-events: none;
+        display: flex;
+        align-items: center;
+        pointer-events: none;
     }
 
     /* Chapter list */
     .ch-list {
-        border: 1px solid var(--panel-brd);
-        border-radius: 12px;
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
         max-height: 560px;
         overflow-y: auto;
+        padding: 2px;
     }
     .ch-row {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 14px 20px;
-        border-bottom: 1px solid var(--div);
+        padding: 13px 16px;
+        border: 1px solid var(--panel-brd);
+        border-radius: 10px;
+        background: var(--panel-bg);
         text-decoration: none;
         color: inherit;
-        transition: background 0.15s;
+        transition: background 0.15s, border-color 0.15s;
         position: relative;
     }
-    .ch-row:last-child { border-bottom: none; }
-    .ch-row:hover { background: var(--ch-hover); }
+    .ch-row:hover { background: var(--ch-hover); border-color: var(--acc-border); }
 
     /* Locked chapter: nozik gradient highlight chapdan */
     .ch-row.locked {
@@ -454,29 +526,42 @@
             var(--ch-hover) 100%);
     }
 
-    .ch-name { font-weight: 700; font-size: 14px; }
+    .ch-name { font-weight: 500; font-size: 14px; }
     .ch-sub  { font-size: 12px; opacity: 0.40; margin-left: 8px; }
     .ch-lock-icon {
-        font-size: 14px;
+        width: 14px; height: 16px;
         flex-shrink: 0;
-        color: #f59e0b;
-        filter: drop-shadow(0 0 3px rgba(245,158,11,0.4));
+        display: inline-block;
+        background-color: #f59e0b;
+        -webkit-mask: url('/img/padlock.png') center / contain no-repeat;
+        mask: url('/img/padlock.png') center / contain no-repeat;
+    }
+    /* Qulf ikonkasi (matn ichida) — padlock.png, oltin rang */
+    .lock-ic-amber {
+        width: 14px; height: 15px;
+        flex-shrink: 0;
+        display: inline-block;
+        vertical-align: -2px;
+        margin-right: 3px;
+        background-color: #f59e0b;
+        -webkit-mask: url('/img/padlock.png') center / contain no-repeat;
+        mask: url('/img/padlock.png') center / contain no-repeat;
     }
     .ch-coin {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        font-size: 11px;
-        background: linear-gradient(135deg, rgba(245,158,11,0.22), rgba(245,158,11,0.12));
+        gap: 5px;
+        font-size: 13px;
+        background: linear-gradient(135deg, rgba(245,158,11,0.28), rgba(245,158,11,0.14));
         color: #f59e0b;
-        padding: 3px 9px;
+        padding: 5px 12px;
         border-radius: 999px;
         font-weight: 800;
         margin-left: 10px;
-        border: 1px solid rgba(245,158,11,0.3);
+        border: 1px solid rgba(245,158,11,0.35);
     }
-    .ch-coin img { width: 13px; height: 13px; }
-    .ch-date { font-size: 12px; color: var(--lbl); flex-shrink: 0; }
+    .ch-coin img { width: 17px; height: 17px; }
+    .ch-date { font-size: 11px; color: var(--lbl); flex-shrink: 0; }
 
     /* Rating widget */
     .dr-rating-section {
@@ -485,21 +570,37 @@
         border-top: 1px solid var(--div);
         text-align: center;
     }
-    .dr-rating-title   { font-size: 16px; font-weight: 700; margin-bottom: 4px; }
-    .dr-rating-sub     { font-size: 13px; color: var(--lbl); margin-bottom: 18px; }
-    .dr-stars-row      { display: inline-flex; gap: 5px; }
+    .dr-rating-title   { font-size: 16px; font-weight: 800; margin-bottom: 14px; color: var(--val); }
+    /* Image-4 uslubidagi quti */
+    .dr-rate-box {
+        display: inline-flex;
+        align-items: center;
+        gap: 14px;
+        background: rgba(245,158,11,0.07);
+        border: 1px solid rgba(245,158,11,0.28);
+        border-radius: 14px;
+        padding: 12px 22px;
+    }
+    .dr-rate-label { font-size: 14px; font-weight: 700; color: #FACC15; white-space: nowrap; }
+    .dr-stars-row  { display: inline-flex; gap: 7px; }
     .dr-star {
-        font-size: 30px;
+        width: 25px; height: 25px;
         cursor: pointer;
-        background: none;
         border: none;
         padding: 0;
-        line-height: 1;
-        color: #f59e0b;
-        transition: transform 0.13s;
+        background-color: rgba(255,255,255,0.26);
+        -webkit-mask: url('/img/stat-star.png') center / contain no-repeat;
+        mask: url('/img/stat-star.png') center / contain no-repeat;
+        transition: transform 0.13s, background-color 0.13s;
     }
-    .dr-star:hover, .dr-star.active { transform: scale(1.22); }
-    .dr-rating-thanks  { font-size: 14px; font-weight: 700; color: var(--acc); }
+    .dr.light .dr-star { background-color: rgba(0,0,0,0.22); }
+    .dr-star.active { background-color: #FACC15; }
+    .dr-star:hover { transform: scale(1.18); }
+    /* ── Light mode: reyting qutisi to'q ranglar bilan o'qiladigan bo'ladi ── */
+    .dr.light .dr-rate-box   { background: rgba(245,158,11,0.12); border-color: rgba(217,119,6,0.50); }
+    .dr.light .dr-rate-label { color: #B45309; }
+    .dr.light .dr-star.active { background-color: #D97706; }
+    .dr-rating-thanks  { font-size: 13px; font-weight: 700; color: var(--acc); margin-top: 12px; }
 
     /* Scroll-to-top */
     .dr-scroll-top {
@@ -524,6 +625,10 @@
     .dr-scroll-top:hover { opacity: 0.83; }
 
     @@media (max-width: 768px) {
+        /* MudAppBar mobileda 56px, padding-top 64px → 8px bo'shliq.
+           Shu bo'shliqni berkitish uchun .dr tepaga ko'tariladi. */
+        .dr { margin-top: 0; }
+
         /* Unwrap .dr-left */
         .dr-left { display: contents; }
 
@@ -531,63 +636,73 @@
         /* TELEFON: reference pixel o'lchamlar asosida           */
         /* ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ */
 
-        /* ── BLUR ORQA FON: butun sahifani qoplashi kerak ── */
-        /* ref: blur kover ustida va undan pastda ham ko'rinadi */
+        /* ── BLUR ORQA FON ── */
         .dr-bg {
-            height: 100%;
-            min-height: 100vh;          /* butun sahifa */
-            filter: blur(20px) brightness(0.42) saturate(1.4);
-            transform: scale(1.1);      /* chetlarda oq bo'shlik qolmasin */
+            height: 640px;
+            min-height: unset;
+            filter: blur(8px) brightness(0.72) saturate(1.4);
+            transform: scale(1.06);
+            opacity: 1;
         }
+        /* Gradient: dr-bg (640px) dan 60px balandroq, solid 78% */
         .dr-bg-grad {
-            height: 100%;
-            min-height: 100vh;
-            /* Gradient: kover ustida ochroq → blur ko'rinsin, pastda qorayib so'nadi */
+            height: 700px;
+            min-height: unset;
             background: linear-gradient(
                 to bottom,
-                rgba(28,25,36,0.22) 0%,   /* tepa: blur aniq ko'rinadi */
-                rgba(28,25,36,0.55) 45%,
-                rgba(28,25,36,0.88) 72%,
-                #1c1924 100%              /* quyida to'liq fon rangi */
+                rgba(16,16,20,0.0)  0%,
+                rgba(16,16,20,0.10) 22%,
+                rgba(16,16,20,0.55) 50%,
+                rgba(16,16,20,0.95) 68%,
+                #101014             78%
             );
         }
 
-        /* ── KOVER RASM: ref → img 180×270 px, ko'tarilgan, shadow ── */
-        .dr-cover {
+        /* ── KOVER RASM: markazda, blur ustida suzib turadi ── */
+        .dr-cover-wrap {
             order: 1;
-            width: 180px;          /* ref: 180px */
-            height: 270px;         /* ref: 270px (2∶3) */
+            align-self: center;
+            position: relative;
+            z-index: 4;
+            margin: 28px auto 14px;
+        }
+        .dr-cover {
+            width: 190px;
+            height: 285px;
             aspect-ratio: 2/3;
-            border-radius: 16px;
+            border-radius: 10px;
             flex-shrink: 0;
             display: block;
-            margin: 72px auto 0;   /* navbar pastidan, content bilan to'g'ri */
-            /* Referensdagi kabi "suzib turgan" shadow effekti */
+            margin: 0;
             box-shadow:
-                0 32px 80px rgba(0,0,0,0.75),
-                0 8px 24px rgba(0,0,0,0.55),
-                0 0 0 2px rgba(255,255,255,0.08);
+                0 20px 50px rgba(0,0,0,0.75),
+                0 6px 18px rgba(0,0,0,0.55),
+                0 0 0 2px rgba(255,255,255,0.12);
+        }
+        /* Views badge visible on mobile */
+        .dr-cover-views {
+            display: flex;
         }
 
-        /* Panel body: order 3 — cardning davomi */
+        /* Panel body: order 3 — cartning davomi (mobilda yashirin) */
         .dr-panel-body {
-            order: 3;
-            padding: 0 12px 20px;
-            width: 100%;
-            background: #1c1924;
+            display: none;
         }
 
-        /* Right column: order 2 */
-        /* ref → article.bg-[#1C1924].rounded-lg.px-3.py-4 376×307px */
+        /* Right column: order 2 — ichki cardlar o'z stilida.
+           Gorizontal padding YO'Q — yon bo'shliqni faqat .dr-wrap (12px) beradi,
+           aks holda kartalar 24px ichkarida qolib, eni tor bo'lib ketadi. */
         .dr-right {
             order: 2;
-            padding: 20px 12px 20px;  /* ref: py-4=16px, px-3=12px */
+            padding: 8px 0;
+            flex: none;
             width: 100%;
-            background: #1c1924;       /* ref: bg-[#1C1924] — sahifa rangi bilan bir xil */
-            border-radius: 20px 20px 0 0; /* tepa burchaklari yumaloq */
-            margin-top: 16px;           /* kover bilan oraliq */
+            margin: 0;
+            box-sizing: border-box;
+            background: transparent;
+            border-radius: 0;
             position: relative;
-            z-index: 3;                 /* blur ustida turishi uchun */
+            z-index: 3;
         }
 
         /* ── SARLAVHA: ref → h1 352×50, text-xl=20px, font-semibold, leading-tight ── */
@@ -595,7 +710,12 @@
             font-size: 20px;       /* ref: text-xl = 20px */
             font-weight: 600;      /* ref: font-semibold  */
             line-height: 1.25;     /* ref: leading-tight  */
-            margin-bottom: 10px;
+            margin-bottom: 6px;
+        }
+        /* Sarlavha-tavsif orasidagi bo'sh joy: min-height=0, margin kamaytirish */
+        .dr-rank-row {
+            min-height: 0;
+            margin-bottom: 8px;
         }
 
         /* ── STATISTIKA: ref → div 352×65, bg-white/5, rounded-lg, p-3=12px, mt-4=16px ── */
@@ -617,15 +737,15 @@
         .dr-stat-val { font-size: 15px; font-weight: 900; }
         .dr-stat-lbl { font-size: 9px;  letter-spacing: 0.3px; }
 
-        /* Rate button: mobilda yashirin */
-        .dr-rate-btn { display: none; }
+        /* Rate button va uning konteyneri: mobilda yashirin */
+        .dr-rate-btn  { display: none; }
+        .dr-panel-body { display: none; }
 
         /* ── AMAL TUGMALARI: ref → container 376×97.6, mt-3=12px ── */
         .dr-actions {
             flex-wrap: wrap;
             gap: 8px;
-            margin-top: 12px;      /* ref: mt-3 = 12px    */
-            margin-bottom: 24px;
+            margin: 0 0 16px;      /* ch-section bilan oraliq */
         }
         /* Bookmark: ref → 376×44, py-3 px-4, rounded-md */
         .dr-btn-bm {
@@ -647,8 +767,8 @@
         /* Eye icon ichida: ref → svg.w-4.h-4 = 16×16 */
         .dr-btn-ch svg { width: 16px; height: 16px; flex-shrink: 0; }
 
-        /* Chapter list */
-        .ch-list { max-height: none; }
+        /* Chapter list — Asura uslubi: ~10 bob ko'rinadi, qolgani ichida scroll bo'ladi */
+        .ch-list { max-height: 600px; }
         .ch-hdr  { margin-top: 4px; }
 
         /* Sort tugma: ref → 90.4×32, py-1.5=6px, px-3=12px */
@@ -667,13 +787,43 @@
 
         .dr-st-row { gap: 16px; }
 
+        /* "Ko'proq ko'rish" → mobileda o'ngga */
+        .dr-show-more {
+            width: 100%;
+            justify-content: flex-end;
+        }
+
         /* Wrap */
         .dr-wrap {
             flex-direction: column;
-            padding: 0 0 80px;
+            align-items: stretch;   /* flex items telefon kengligi bo'yicha cho'ziladi */
+            padding: 0 12px 32px;   /* 12px yonlarda — dr-right uchun bo'shliq */
             gap: 0;
             max-width: 100%;
+            box-sizing: border-box;
         }
+
+        /* ── LIGHT MODE: mobile overrides ── */
+        .dr.light .dr-bg {
+            filter: blur(26px) brightness(1.1) saturate(1.3);
+            transform: scale(1.12);
+            opacity: 1;
+        }
+        .dr.light .dr-bg-grad {
+            background: linear-gradient(
+                to bottom,
+                rgba(237,242,253,0.0)  0%,
+                rgba(237,242,253,0.18) 28%,
+                rgba(237,242,253,0.60) 52%,
+                rgba(237,242,253,0.95) 68%,
+                #edf2fd                80%
+            );
+        }
+        /* ichki cardlar o'z fonini boshqaradi */
+        .dr.light .dr-right  { background: transparent; }
+        .dr.light .dr-panel-body { background: #edf2fd; }
+        /* statistika qutisi: light modeda qoramtir shaffof */
+        .dr.light .dr-stats { background: rgba(0,0,0,0.05); }
     }
 </style>
 
@@ -704,16 +854,24 @@ else
 
         <!-- ════ LEFT PANEL ════ -->
         <div class="dr-left">
-            <img class="dr-cover"
-                 src="@CoverUrl()"
-                 alt="@_comic.Title"
-                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_comic.Slug)/300/420'" />
+            <div class="dr-cover-wrap">
+                <img class="dr-cover"
+                     src="@CoverUrl()"
+                     alt="@_comic.Title"
+                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_comic.Slug)/300/420'" />
+                <div class="dr-cover-views">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                    </svg>
+                    @Fmt(_comic.ViewCount)
+                </div>
+            </div><!-- /dr-cover-wrap -->
 
             <div class="dr-panel-body">
 
                 <!-- Rating button -->
                 <button class="dr-rate-btn" @onclick="@(() => _showRating = !_showRating)">
-                    ★&nbsp; Reyting
+                    <span style="width:16px;height:16px;background-color:currentColor;-webkit-mask:url('/img/stat-star.png') center/contain no-repeat;mask:url('/img/stat-star.png') center/contain no-repeat;display:inline-block;vertical-align:-3px;margin-right:6px;"></span>Reyting
                 </button>
 
             </div>
@@ -721,13 +879,14 @@ else
 
         <!-- ════ RIGHT COLUMN ════ -->
         <div class="dr-right">
+            <div class="dr-info-card">
 
             <h1 class="dr-title">@_comic.Title</h1>
 
             <div class="dr-rank-row">
                 @if (_comic.AverageRating >= 9.0)
                 {
-                    <span class="dr-rank-badge">⭐ TOP RATED</span>
+                    <span class="dr-rank-badge">⭐ ENG SARA</span>
                 }
                 @if (!string.IsNullOrEmpty(_comic.AlternativeTitles))
                 {
@@ -797,36 +956,30 @@ else
             <!-- Stats: Rating | Chapters | Bookmarks -->
             <div class="dr-stats">
                 <div class="dr-stat">
-                    <div class="dr-stat-val" style="color:#f59e0b;display:inline-flex;align-items:center;gap:6px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-                        </svg>
+                    <div class="dr-stat-val" style="color:#FACC15;display:inline-flex;align-items:center;gap:6px;">
+                        <span class="dr-stat-ic" style="--ic:url('/img/stat-star.png');"></span>
                         @_comic.AverageRating.ToString("F1")
                     </div>
                     <div class="dr-stat-lbl">Reyting</div>
                 </div>
                 <div class="dr-stat">
                     <div class="dr-stat-val" style="color:#34d399;display:inline-flex;align-items:center;gap:6px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M4 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h12V4H6a2 2 0 0 1-2-2z"/>
-                            <path d="M6 18h12v2H6z" opacity="0"/>
-                        </svg>
+                        <span class="dr-stat-ic" style="--ic:url('/img/stat-book.png');"></span>
                         @_comic.ChapterCount
                     </div>
                     <div class="dr-stat-lbl">Boblar</div>
                 </div>
                 <div class="dr-stat">
-                    <div class="dr-stat-val" style="color:#419fd9;display:inline-flex;align-items:center;gap:6px;">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/>
-                        </svg>
+                    <div class="dr-stat-val" style="color:#60a5fa;display:inline-flex;align-items:center;gap:6px;">
+                        <span class="dr-stat-ic" style="--ic:url('/img/stat-ribbon.png');"></span>
                         @Fmt(_comic.BookmarkCount)
                     </div>
                     <div class="dr-stat-lbl">Saqlangan</div>
                 </div>
             </div>
+            </div><!-- /dr-info-card -->
 
-            <!-- Action buttons -->
+            <!-- Action buttons (orqa karta yo'q — tugmalar o'zi shaklli) -->
             <div class="dr-actions">
                 <button class="dr-btn-bm @(IsBookmarked ? "saved" : "")"
                         @onclick="ToggleBookmark">
@@ -834,7 +987,7 @@ else
                          style="vertical-align:-3px;margin-right:6px;">
                         <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/>
                     </svg>
-                    @(IsBookmarked ? "Saqlangan" : "Bookmark")
+                    @(IsBookmarked ? "Saqlangan" : "Saqlash")
                 </button>
                 @if (FirstId != Guid.Empty)
                 {
@@ -878,7 +1031,10 @@ else
                         <span>Oxirgi bob</span>
                     </span>
                 }
-            </div>
+            </div><!-- /dr-actions -->
+
+            <!-- Chapter section -->
+            <div class="ch-section">
 
             <!-- Chapter header -->
             <div class="ch-hdr">
@@ -894,7 +1050,14 @@ else
                        @bind="_chapSearch"
                        @bind:event="oninput"
                        placeholder="Bob qidirish..." />
-                <MudIcon Icon="@Icons.Material.Filled.Search" Class="ch-srch-ico" Style="font-size:18px;" />
+                <span class="ch-srch-ico">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                </span>
             </div>
 
             <!-- Chapter list -->
@@ -905,9 +1068,9 @@ else
                         <div style="display:flex;align-items:center;min-width:0;gap:8px;">
                             @if (ch.IsLocked)
                             {
-                                <span class="ch-lock-icon">🔒</span>
+                                <span class="ch-lock-icon"></span>
                             }
-                            <span class="ch-name">Bob @ch.ChapterNumber</span>
+                            <span class="ch-name">Bob @((int)ch.ChapterNumber)</span>
                             @if (!string.IsNullOrEmpty(ch.Title))
                             {
                                 <span class="ch-sub">@ch.Title</span>
@@ -915,7 +1078,7 @@ else
                             @if (ch.IsLocked && ch.CoinPrice > 0)
                             {
                                 <span class="ch-coin">
-                                    <img src="/img/coin.svg" alt="coin" />@ch.CoinPrice
+                                    <img src="/img/coin.png" alt="coin" />@ch.CoinPrice
                                 </span>
                             }
                         </div>
@@ -927,37 +1090,28 @@ else
                     <div style="padding:40px;text-align:center;opacity:.4;">Bob topilmadi.</div>
                 }
             </div>
+            </div><!-- /ch-section -->
 
             <!-- Rating section -->
             @if (_showRating)
             {
                 <div class="dr-rating-section">
-                    <div class="dr-rating-title">Bu manga haqida nima deb o'ylaysiz?</div>
-                    <div class="dr-rating-sub">@_comic.RatingCount reaksiyalar</div>
-                    @if (_ratingSubmitted)
-                    {
-                        <div class="dr-rating-thanks">✓ Rahmat! Baholashingiz qabul qilindi.</div>
-                    }
-                    else
-                    {
-                        <div class="dr-stars-row" style="gap:3px;">
-                            @for (int i = 1; i <= 10; i++)
+                    <div class="dr-rating-title">Baholash</div>
+                    <div class="dr-rate-box">
+                        <span class="dr-rate-label">@(_userStars > 0 ? "Reytingingiz:" : "Baholang:")</span>
+                        <div class="dr-stars-row">
+                            @for (int i = 1; i <= 5; i++)
                             {
                                 int star = i;
-                                <button class="dr-star @(_hoverStar >= star || _selectedStar >= star ? "active" : "")"
-                                        style="font-size:24px;"
-                                        @onmouseenter="@(() => _hoverStar = star)"
-                                        @onmouseleave="@(() => _hoverStar = 0)"
-                                        @onclick="@(() => SubmitRating(star))">
-                                    @(_hoverStar >= star || _selectedStar >= star ? "★" : "☆")
-                                </button>
+                                bool filled = _hoverStar > 0 ? _hoverStar >= star : _userStars >= star;
+                                <button class="dr-star @(filled ? "active" : "")"
+                                        title="@(_userStars == star ? "Bekor qilish" : $"{star} yulduz")"
+                                        @onmouseenter="@(() => { _hoverStar = star; })"
+                                        @onmouseleave="@(() => { _hoverStar = 0; })"
+                                        @onclick="@(() => SetRating(star))"></button>
                             }
                         </div>
-                        @if (_hoverStar > 0)
-                        {
-                            <div style="font-size:13px;color:var(--lbl);margin-top:6px;">@_hoverStar / 10</div>
-                        }
-                    }
+                    </div>
                 </div>
             }
 
@@ -966,56 +1120,65 @@ else
 
     <!-- ════ COMMENTS SECTION ════ -->
     <div style="max-width:1100px;margin:32px auto 90px;padding:0 20px;position:relative;z-index:2;">
-        <div style="background:var(--mud-palette-surface);border:1px solid rgba(128,128,128,0.14);
-                    border-radius:14px;padding:22px 20px;">
+        <div style="background:@(Theme.IsDark ? "#17181e" : "#ffffff");border:1px solid @(Theme.IsDark ? "rgba(255,255,255,0.08)" : "#e4e9f7");
+                    border-radius:14px;padding:26px 24px;">
             <h3 style="font-size:1rem;font-weight:900;margin:0 0 16px;display:flex;align-items:center;gap:8px;">
-                💬 Komentariyalar
+                <span style="width:20px;height:20px;background-color:currentColor;-webkit-mask:url('/img/message.png') center/contain no-repeat;mask:url('/img/message.png') center/contain no-repeat;display:inline-block;flex-shrink:0;"></span>
+                Izohlar
                 <span style="font-size:13px;opacity:0.5;font-weight:600;">(@_comicComments.Count)</span>
             </h3>
 
             @if (_currentUserId != Guid.Empty)
             {
                 <div style="background:rgba(128,128,128,0.05);border:1px solid rgba(128,128,128,0.14);
-                            border-radius:10px;padding:12px;margin-bottom:18px;">
+                            border-radius:8px;padding:12px;margin-bottom:18px;">
                     <textarea @bind="_newComicComment" placeholder="Fikringizni yozing..."
                               maxlength="1000" rows="3"
                               style="width:100%;background:transparent;border:none;outline:none;
-                                     color:inherit;font-size:14px;resize:vertical;min-height:60px;font-family:inherit;"></textarea>
+                                     color:inherit;font-size:14px;resize:none;min-height:60px;font-family:inherit;"></textarea>
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;">
                         <span style="font-size:11px;opacity:0.45;">@_newComicComment.Length / 1000</span>
                         <button @onclick="@PostComicComment"
                                 disabled="@(_postingComicComment || string.IsNullOrWhiteSpace(_newComicComment) || _newComicComment.Trim().Length < 2)"
-                                style="background:linear-gradient(135deg,#419fd9,#1b13be);color:#fff;border:none;
+                                style="background:linear-gradient(135deg,#60a5fa,#3b82f6);color:#fff;border:none;
                                        padding:8px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;">
-                            @(_postingComicComment ? "⏳ Yuborilmoqda..." : "📩 Yuborish")
+                            @if (_postingComicComment)
+                            {
+                                <span>⏳ Yuborilmoqda...</span>
+                            }
+                            else
+                            {
+                                <img src="/img/send.png" alt="" style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;filter:brightness(0) invert(1);" />
+                                <span>Yuborish</span>
+                            }
                         </button>
                     </div>
                 </div>
             }
             else
             {
-                <div style="background:rgba(65,159,217,0.08);border:1px solid rgba(65,159,217,0.2);
-                            border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;font-size:13px;">
-                    🔒 Komentariya qoldirish uchun
-                    <a href="/login" style="color:#419fd9;font-weight:700;">tizimga kiring</a>
+                <div style="background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);
+                            border-radius:8px;padding:14px;margin-bottom:14px;text-align:center;font-size:13px;">
+                    <span class="lock-ic-amber"></span> Izoh qoldirish uchun
+                    <a href="/login" style="color:#60a5fa;font-weight:700;">tizimga kiring</a>
                 </div>
             }
 
             @if (_comicComments.Count == 0)
             {
                 <div style="text-align:center;padding:30px 16px;color:rgba(128,128,128,0.6);font-size:13px;">
-                    💬 Hozircha komentariyalar yo'q.
+                    <span style="width:15px;height:15px;background-color:currentColor;-webkit-mask:url('/img/message.png') center/contain no-repeat;mask:url('/img/message.png') center/contain no-repeat;display:inline-block;vertical-align:-2px;margin-right:5px;"></span>Hozircha izohlar yo'q.
                 </div>
             }
             else
             {
                 <div style="display:flex;flex-direction:column;gap:14px;">
-                    @foreach (var c in _comicComments)
+                    @foreach (var c in _comicComments.Take(_commentsShown))
                     {
                         <div style="display:flex;gap:10px;padding:12px;background:rgba(128,128,128,0.04);
-                                    border-radius:10px;border:1px solid rgba(128,128,128,0.08);">
+                                    border-radius:8px;border:1px solid rgba(128,128,128,0.08);">
                             <div style="width:36px;height:36px;border-radius:50%;flex-shrink:0;
-                                        background:linear-gradient(135deg,#419fd9,#1b13be);color:#fff;
+                                        background:linear-gradient(135deg,#60a5fa,#3b82f6);color:#fff;
                                         font-weight:800;display:flex;align-items:center;justify-content:center;
                                         overflow:hidden;">
                                 @if (!string.IsNullOrEmpty(c.UserPicture))
@@ -1044,6 +1207,15 @@ else
                         </div>
                     }
                 </div>
+                @if (_comicComments.Count > _commentsShown)
+                {
+                    <button @onclick="@(() => _commentsShown += 10)"
+                            style="margin-top:14px;width:100%;padding:11px;background:rgba(96,165,250,0.10);
+                                   border:1px solid rgba(96,165,250,0.25);border-radius:8px;color:#60a5fa;
+                                   font-size:13px;font-weight:700;cursor:pointer;">
+                        Ko'proq ko'rish (yana @(_comicComments.Count - _commentsShown) ta)
+                    </button>
+                }
             }
         </div>
     </div>
@@ -1061,14 +1233,14 @@ else
     bool   _loading         = true;
     bool   _desc            = true;
     bool   _showMore        = false;
-    bool   _showRating      = false;
+    bool   _showRating      = true;   // doim ko'rsatamiz (mobilda rate tugmasi yashirin edi)
     string _chapSearch      = "";
     int    _hoverStar       = 0;
-    int    _selectedStar    = 0;
-    bool   _ratingSubmitted = false;
+    int    _userStars       = 0;      // foydalanuvchining bahosi (1-5; 0 = baholanmagan)
 
     // Comments
     List<ChapterCommentDto> _comicComments = new();
+    int _commentsShown = 10;   // boshida 10 ta izoh, "Ko'proq ko'rish" bilan ko'payadi
     string _newComicComment = "";
     bool   _postingComicComment = false;
     Guid   _currentUserId = Guid.Empty;
@@ -1156,7 +1328,7 @@ else
             await Mediator.Send(new AddComicCommentCommand(_comic.Id, _currentUserId, _newComicComment.Trim()));
             _newComicComment = "";
             await LoadCommentsAsync();
-            Snackbar.Add("✅ Komentariya qo'shildi", Severity.Success);
+            Snackbar.Add("Izoh qo'shildi", Severity.Success);
         }
         catch (Exception ex) { Snackbar.Add($"❌ {ex.Message}", Severity.Error); }
         _postingComicComment = false;
@@ -1193,6 +1365,20 @@ else
         var counted   = await Mediator.Send(new TrackComicViewCommand(sessionId, _comic.Id));
         if (counted) _comic.ViewCount++;
 
+        // Oldin baholaganmi? — eslab qolish (localStorage)
+        if (_currentUserId != Guid.Empty)
+        {
+            try
+            {
+                var saved = await JS.InvokeAsync<string>("localStorage.getItem", $"md_rating_{_currentUserId}_{_comic.Id}");
+                if (int.TryParse(saved, out var s) && s >= 1 && s <= 5)
+                {
+                    _userStars = s;
+                }
+            }
+            catch { }
+        }
+
         await InvokeAsync(StateHasChanged);
     }
 
@@ -1207,14 +1393,25 @@ else
         await InvokeAsync(StateHasChanged);
     }
 
-    async Task SubmitRating(int stars)
+    async Task SetRating(int star)
     {
-        if (_ratingSubmitted || _comic is null) return;
-        _selectedStar    = stars;
-        _ratingSubmitted = true;
-        var newAvg = await Mediator.Send(new RateComicCommand(_comic.Id, stars));
+        if (_comic is null) return;
+        if (_currentUserId == Guid.Empty) { Nav.NavigateTo("/login"); return; }  // baholash uchun ro'yxatdan o'tish
+
+        // Bir xil yulduzni qayta bossa — bahoni bekor qiladi (qaytarib oladi)
+        if (_userStars == star)
+        {
+            _userStars = 0;
+            try { await JS.InvokeVoidAsync("localStorage.removeItem", $"md_rating_{_currentUserId}_{_comic.Id}"); } catch { }
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        // Boshqa yulduz — bahoni o'zgartiradi
+        _userStars = star;
+        var newAvg = await Mediator.Send(new RateComicCommand(_comic.Id, star * 2));  // 1 yulduz = 2 ball
         _comic.AverageRating = newAvg;
-        _comic.RatingCount++;
+        try { await JS.InvokeVoidAsync("localStorage.setItem", $"md_rating_{_currentUserId}_{_comic.Id}", star.ToString()); } catch { }
         await InvokeAsync(StateHasChanged);
     }
 

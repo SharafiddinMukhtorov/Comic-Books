@@ -1,4 +1,4 @@
-@page "/admin/users"
+﻿@page "/admin/users"
 @layout AdminLayout
 @inject IMediator Mediator
 @inject AuthenticationStateProvider AuthState
@@ -66,7 +66,7 @@
     }
     .filter-chip:hover { background: rgba(255,255,255,0.08); }
     .filter-chip.active {
-        background: linear-gradient(135deg, #419fd9, #1b13be);
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
         color: #fff;
         border-color: transparent;
     }
@@ -101,7 +101,7 @@
     .u-ava {
         width: 36px; height: 36px;
         border-radius: 50%;
-        background: linear-gradient(135deg, #419fd9, #1b13be);
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
         color: #fff;
         font-weight: 800;
         font-size: 14px;
@@ -141,7 +141,7 @@
     }
     .pg-btn:hover:not(:disabled) { background: rgba(91,159,217,0.15); border-color: rgba(91,159,217,0.4); }
     .pg-btn:disabled { opacity: 0.35; cursor: not-allowed; }
-    .pg-btn.active { background: linear-gradient(135deg, #419fd9, #1b13be); color: #fff; border-color: transparent; }
+    .pg-btn.active { background: linear-gradient(135deg, #60a5fa, #3b82f6); color: #fff; border-color: transparent; }
 </style>
 
 @if (_checking)

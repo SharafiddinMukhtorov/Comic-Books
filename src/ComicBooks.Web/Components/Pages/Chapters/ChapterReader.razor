@@ -1,4 +1,4 @@
-@page "/chapter/{ChapterId:guid}"
+﻿@page "/chapter/{ChapterId:guid}"
 @layout MinimalLayout
 @inject IMediator Mediator
 @inject NavigationManager Nav
@@ -17,7 +17,7 @@
         z-index: 9999;
         background: var(--mud-palette-surface);
         border: 1px solid rgba(128,128,128,0.18);
-        border-radius: 14px;
+        border-radius: 10px;
         padding: 20px 22px 18px;
         width: 340px;
         box-shadow: 0 16px 48px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.2);
@@ -28,6 +28,13 @@
     @@keyframes popup-in {
         from { opacity:0; transform: translateY(10px) scale(0.96); }
         to   { opacity:1; transform: translateY(0)   scale(1);    }
+    }
+    @@keyframes sheet-up {
+        from { transform: translateY(100%); }
+        to   { transform: translateY(0);    }
+    }
+    @@media (max-width: 600px) {
+        .settings-popup { animation: sheet-up 0.28s cubic-bezier(0.25, 0.46, 0.45, 0.94) !important; }
     }
     .settings-popup::after {
         content: '';
@@ -48,14 +55,57 @@
             bottom: 0 !important;
             right:  0 !important;
             left:   0 !important;
+            top: auto !important;
             width: auto !important;
             border-radius: 20px 20px 0 0 !important;
-            padding: 18px 20px 32px;
+            padding: 0 20px 36px !important;
+            box-shadow: 0 -8px 40px rgba(0,0,0,0.55) !important;
+        }
+        /* Drag handle */
+        .settings-popup::before {
+            content: '';
+            display: block;
+            width: 40px;
+            height: 4px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 2px;
+            margin: 12px auto 18px;
         }
         .settings-popup::after { display: none; }
-        /* width control hidden on mobile (screen already narrower than min-width) */
+        /* width control hidden on mobile */
         .width-ctrl { display: none !important; }
-        /* zoom control shown on all sizes */
+
+        /* Kattaroq tugmalar (touch-friendly) */
+        .ctrl-btn {
+            width: 44px !important;
+            height: 44px !important;
+            border-radius: 12px !important;
+            font-size: 22px !important;
+        }
+        /* Qalin slider track */
+        .ctrl-track {
+            height: 8px !important;
+            border-radius: 4px !important;
+        }
+        .ctrl-fill {
+            border-radius: 4px !important;
+        }
+        /* Kattaroq thumb */
+        .ctrl-thumb {
+            width: 24px !important;
+            height: 24px !important;
+            box-shadow: 0 0 0 4px rgba(59,130,246,0.3) !important;
+        }
+        /* Kattaroq % badge */
+        .zoom-badge {
+            font-size: 18px !important;
+            min-width: 62px !important;
+        }
+        /* Ctrl row orasidagi bo'shliq */
+        .ctrl-row {
+            gap: 12px !important;
+            margin-bottom: 4px !important;
+        }
     }
     @@media (min-width: 601px) {
         /* zoom control shown on desktop too */
@@ -68,7 +118,7 @@
         text-align: center;
         font-size: 15px;
         font-weight: 800;
-        color: #1b13be;
+        color: #3b82f6;
     }
 
     /* ── Ctrl row ── */
@@ -83,7 +133,7 @@
         height: 36px;
         border-radius: 9px;
         border: none;
-        background: #1b13be;
+        background: #3b82f6;
         color: #fff;
         font-size: 20px;
         cursor: pointer;
@@ -94,13 +144,13 @@
         transition: opacity 0.15s;
     }
     .ctrl-btn:hover  { opacity: 0.82; }
-    .ctrl-btn.reset  { background: rgba(27,19,190,0.14); color: #1b13be; font-size: 17px; }
+    .ctrl-btn.reset  { background: rgba(59,130,246,0.14); color: #3b82f6; font-size: 17px; }
 
     .ctrl-track {
         flex: 1;
         position: relative;
         height: 6px;
-        background: rgba(27,19,190,0.18);
+        background: rgba(59,130,246,0.18);
         border-radius: 3px;
         cursor: pointer;
     }
@@ -109,7 +159,7 @@
         left: 0; top: 0;
         height: 100%;
         border-radius: 3px;
-        background: #1b13be;
+        background: #3b82f6;
         transition: width 0.1s;
     }
     .ctrl-thumb {
@@ -119,8 +169,8 @@
         width: 18px;
         height: 18px;
         border-radius: 50%;
-        background: #1b13be;
-        box-shadow: 0 0 0 3px rgba(27,19,190,0.28);
+        background: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.28);
     }
     .ctrl-input {
         position: absolute;
@@ -161,9 +211,12 @@
         position: relative;
         background: #111;
         min-height: 260px;
-        margin-bottom: 2px;
+        margin-bottom: 0;       /* sahifalar orasida qora chiziq bo'lmasin — uzluksiz */
+        font-size: 0;           /* inline-rasm pastidagi bo'shliqni yo'qotadi */
         overflow: hidden;
     }
+    /* Rasm yuklangach placeholder balandligini yig'ishtiramiz — bo'sh joy qolmaydi */
+    .lr-wrap.lr-done { min-height: 0; }
     .lr-wrap::before {
         content: '';
         position: absolute;
@@ -200,11 +253,14 @@
         display: flex;
         align-items: center;
         gap: 12px;
+        max-height: 200px;
+        overflow: hidden;
+        transition: max-height 0.32s ease, opacity 0.28s ease, padding 0.28s ease;
     }
     .rdr-icon-btn {
         width: 42px;
         height: 42px;
-        border-radius: 10px;
+        border-radius: 8px;
         border: 1px solid rgba(255,255,255,0.08);
         background: rgba(255,255,255,0.04);
         color: #fff;
@@ -286,7 +342,7 @@
         bottom: 0;
         left: 0;
         right: 0;
-        z-index: 250;
+        z-index: 1000;  /* settings backdrop (998) dan yuqori — nav doim bosiladi */
         display: flex;
         align-items: center;
         gap: 8px;
@@ -294,6 +350,7 @@
         backdrop-filter: blur(14px);
         border-top: 1px solid rgba(255,255,255,0.07);
         padding: 16px 12px 24px; /* ref: pt-4=16, px-3=12, pb-6=24 → 76px */
+        transition: transform 0.32s ease, opacity 0.28s ease;
     }
     /* Prev/Next: ref → a 73.6×36, py-2=8px, px-3=12px */
     .rdr-bottom .nav-btn {
@@ -311,7 +368,7 @@
         border: none;
         white-space: nowrap;
         color: #fff;
-        background: linear-gradient(135deg, #419fd9, #1b13be);
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
         transition: filter 0.15s;
         min-width: 74px;         /* ref: ~73.6px           */
     }
@@ -357,7 +414,7 @@
         background: rgba(20,20,30,0.97);
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255,255,255,0.08);
-        border-radius: 12px;
+        border-radius: 8px;
         padding: 6px;
         box-shadow: 0 12px 36px rgba(0,0,0,0.55);
     }
@@ -376,10 +433,29 @@
     }
     .ch-dropdown-item:hover { background: rgba(255,255,255,0.07); }
     .ch-dropdown-item.current {
-        background: rgba(27,19,190,0.22);
+        background: rgba(59,130,246,0.22);
         color: #fff;
     }
-    .ch-dropdown-item .lock { color: #f59e0b; font-size: 12px; }
+    .ch-dropdown-item .lock {
+        width: 13px; height: 14px;
+        flex-shrink: 0;
+        display: inline-block;
+        vertical-align: -2px;
+        background-color: #f59e0b;
+        -webkit-mask: url('/img/padlock.png') center / contain no-repeat;
+        mask: url('/img/padlock.png') center / contain no-repeat;
+    }
+    /* Qulf ikonkasi (matn ichida) — padlock.png, oltin rang */
+    .lock-ic-amber {
+        width: 14px; height: 15px;
+        flex-shrink: 0;
+        display: inline-block;
+        vertical-align: -2px;
+        margin-right: 3px;
+        background-color: #f59e0b;
+        -webkit-mask: url('/img/padlock.png') center / contain no-repeat;
+        mask: url('/img/padlock.png') center / contain no-repeat;
+    }
 
     /* Back-to-top floating button */
     .rdr-top-btn {
@@ -389,19 +465,38 @@
         z-index: 240;
         width: 48px;
         height: 48px;
-        border-radius: 14px;
-        background: linear-gradient(135deg, #419fd9, #1b13be);
+        border-radius: 10px;
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
         color: #fff;
         border: none;
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 6px 20px rgba(27,19,190,0.5);
-        transition: transform 0.2s;
+        box-shadow: 0 6px 20px rgba(59,130,246,0.5);
+        transition: transform 0.2s, opacity 0.28s ease;
     }
     .rdr-top-btn:hover { transform: translateY(-3px); }
     .rdr-top-btn svg { width: 22px; height: 22px; }
+
+    /* ── Immersive reading mode ── */
+    .rdr-immersive-top {
+        max-height: 0 !important;
+        opacity: 0 !important;
+        padding-top: 0 !important;
+        padding-bottom: 0 !important;
+        pointer-events: none !important;
+    }
+    .rdr-immersive-bot {
+        transform: translateY(100%) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+    .rdr-immersive-btn {
+        transform: translateY(120px) !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
 
     /* Comments panel */
     .comments-section {
@@ -442,13 +537,13 @@
         outline: none;
         color: inherit;
         font-size: 14px;
-        resize: vertical;
+        resize: none;
         min-height: 60px;
         font-family: inherit;
     }
     .cmt-write textarea::placeholder { color: rgba(128,128,128,0.5); }
     .cmt-submit {
-        background: linear-gradient(135deg, #419fd9, #1b13be);
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
         color: #fff;
         border: none;
         padding: 8px 18px;
@@ -480,7 +575,7 @@
         height: 36px;
         border-radius: 50%;
         flex-shrink: 0;
-        background: linear-gradient(135deg, #419fd9, #1b13be);
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
         color: #fff;
         font-weight: 800;
         display: flex;
@@ -552,6 +647,8 @@
         /* ref: ch-picker 210.4×36, py-2 px-4 */
         .rdr-bottom .ch-picker { padding: 8px 16px; font-size: 13px; height: 36px; }
         .rdr-top-btn { width: 44px; height: 44px; bottom: 70px; right: 14px; }
+
+        /* Mobileda immersive mode ishlaydi — bitta bosish top+bottom barni yashiradi */
     }
 
     /* ── Locked gate (sariq tema) ── */
@@ -563,7 +660,7 @@
     .locked-gate {
         max-width: 380px;
         width: 100%;
-        background: linear-gradient(180deg, #0d0d18, #14141e);
+        background: linear-gradient(180deg, #0d0f18, #14141e);
         border: 1px solid rgba(245,158,11,0.18);
         border-radius: 18px;
         padding: 32px 28px 24px;
@@ -656,7 +753,7 @@ else if (_chapter is null)
 else
 {
     <!-- ════ TOP COMPACT BAR ════ -->
-    <div class="rdr-top">
+    <div class="rdr-top @(_immersive ? "rdr-immersive-top" : "")">
         <!-- Uy (Home) -->
         <a class="rdr-icon-btn" href="/" title="Bosh sahifa">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -679,7 +776,7 @@ else
         </a>
 
         <!-- Koment: ref → button 70×40, icon + son -->
-        <button class="rdr-cmt-btn" @onclick="@ScrollToComments" title="Komentariyalar">
+        <button class="rdr-cmt-btn" @onclick="@ScrollToComments" title="Izohlar">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                  stroke-linecap="round" stroke-linejoin="round">
                 <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
@@ -720,7 +817,7 @@ else
                     Ushbu bobni o'qish uchun
                     <strong>
                         @_chapter?.CoinPrice
-                        <img src="/img/coin.svg" alt="coin" />
+                        <img src="/img/coin.png" alt="coin" />
                         coin
                     </strong>
                     kerak.
@@ -728,7 +825,7 @@ else
                 <div class="locked-gate-balance">
                     Sizda: <strong>
                         @_userBalance
-                        <img src="/img/coin.svg" alt="coin" />
+                        <img src="/img/coin.png" alt="coin" />
                         coins
                     </strong>
                 </div>
@@ -742,7 +839,7 @@ else
                         }
                         else
                         {
-                            <img src="/img/coin.svg" alt="coin" />
+                            <img src="/img/coin.png" alt="coin" />
                             <span>@_chapter?.CoinPrice coin sarflab o'qish</span>
                         }
                     </button>
@@ -750,7 +847,7 @@ else
                 else
                 {
                     <a class="locked-gate-btn" href="/coins">
-                        <img src="/img/coin.svg" alt="coin" />
+                        <img src="/img/coin.png" alt="coin" />
                         <span>Coin sotib olish</span>
                     </a>
                 }
@@ -776,12 +873,15 @@ else
         }
         else
         {
-            <div style="max-width:@(_width)px;margin:0 auto;background:#000;
-                        zoom:@(_zoom)%;
-                        transition:max-width 0.2s, zoom 0.15s;">
+            <div @key="ChapterId"
+                 style="max-width:@(_width)px;margin:0 auto;background:#000;
+                        transform:scale(@((_zoom/100.0).ToString("F2",System.Globalization.CultureInfo.InvariantCulture)));
+                        transform-origin:top center;
+                        transition:max-width 0.2s, transform 0.15s;"
+                 @onclick="@ToggleImmersive">
                 @foreach (var p in _pages.OrderBy(x => x.PageNumber))
                 {
-                    <div class="lr-wrap">
+                    <div class="lr-wrap" @key="p.ImageUrl">
                         <img data-lazy="@p.ImageUrl"
                              alt="Sahifa @p.PageNumber"
                              src="" />
@@ -793,11 +893,8 @@ else
         <!-- ════ COMMENTS SECTION ════ -->
         <div id="comments-section" class="comments-section">
             <h3>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-                </svg>
-                Komentariyalar
+                <span style="width:18px;height:18px;background-color:currentColor;-webkit-mask:url('/img/message.png') center/contain no-repeat;mask:url('/img/message.png') center/contain no-repeat;display:inline-block;vertical-align:-3px;flex-shrink:0;"></span>
+                Izohlar
                 <span style="font-size:13px;opacity:0.5;font-weight:600;margin-left:6px;">(@_comments.Count)</span>
             </h3>
 
@@ -812,17 +909,25 @@ else
                         <button class="cmt-submit"
                                 @onclick="@PostComment"
                                 disabled="@(_postingComment || string.IsNullOrWhiteSpace(_newComment) || _newComment.Trim().Length < 2)">
-                            @(_postingComment ? "⏳ Yuborilmoqda..." : "📩 Yuborish")
+                            @if (_postingComment)
+                            {
+                                <span>⏳ Yuborilmoqda...</span>
+                            }
+                            else
+                            {
+                                <img src="/img/send.png" alt="" style="width:14px;height:14px;vertical-align:-2px;margin-right:6px;filter:brightness(0) invert(1);" />
+                                <span>Yuborish</span>
+                            }
                         </button>
                     </div>
                 </div>
             }
             else
             {
-                <div style="background:rgba(65,159,217,0.08);border:1px solid rgba(65,159,217,0.2);
+                <div style="background:rgba(96,165,250,0.08);border:1px solid rgba(96,165,250,0.2);
                             border-radius:10px;padding:14px;margin-bottom:14px;text-align:center;font-size:13px;">
-                    🔒 Komentariya qoldirish uchun
-                    <a href="/login" style="color:#419fd9;font-weight:700;">tizimga kiring</a>
+                    <span class="lock-ic-amber"></span> Izoh qoldirish uchun
+                    <a href="/login" style="color:#60a5fa;font-weight:700;">tizimga kiring</a>
                 </div>
             }
 
@@ -834,13 +939,13 @@ else
             else if (_comments.Count == 0)
             {
                 <div class="comments-empty">
-                    💬 Hozircha komentariyalar yo'q. Birinchi bo'lib o'z fikringizni yozing!
+                    <span style="width:15px;height:15px;background-color:currentColor;-webkit-mask:url('/img/message.png') center/contain no-repeat;mask:url('/img/message.png') center/contain no-repeat;display:inline-block;vertical-align:-2px;margin-right:5px;"></span>Hozircha izohlar yo'q. Birinchi bo'lib o'z fikringizni yozing!
                 </div>
             }
             else
             {
                 <div class="cmt-list">
-                    @foreach (var c in _comments)
+                    @foreach (var c in _comments.Take(_commentsShown))
                     {
                         <div class="cmt-item">
                             <div class="cmt-ava">
@@ -869,19 +974,28 @@ else
                         </div>
                     }
                 </div>
+                @if (_comments.Count > _commentsShown)
+                {
+                    <button @onclick="@(() => _commentsShown += 10)"
+                            style="margin-top:14px;width:100%;padding:11px;background:rgba(96,165,250,0.10);
+                                   border:1px solid rgba(96,165,250,0.25);border-radius:8px;color:#60a5fa;
+                                   font-size:13px;font-weight:700;cursor:pointer;">
+                        Ko'proq ko'rish (yana @(_comments.Count - _commentsShown) ta)
+                    </button>
+                }
             }
         </div>
     }
 
     <!-- ════ STICKY BOTTOM NAV ════ -->
-    <div class="rdr-bottom">
+    <div class="rdr-bottom @(_immersive ? "rdr-immersive-bot" : "")">
         @if (_prevId != Guid.Empty)
         {
-            <a class="nav-btn" href="/chapter/@_prevId">‹ Prev</a>
+            <a class="nav-btn" href="/chapter/@_prevId">‹ Oldingi</a>
         }
         else
         {
-            <span class="nav-btn disabled">‹ Prev</span>
+            <button class="nav-btn disabled" disabled>‹ Oldingi</button>
         }
 
         <button class="ch-picker" @onclick="@(() => _showChapters = !_showChapters)"
@@ -898,38 +1012,39 @@ else
 
         @if (_nextId != Guid.Empty)
         {
-            <a class="nav-btn" href="/chapter/@_nextId">Next ›</a>
+            <a class="nav-btn" href="/chapter/@_nextId">Keyingi ›</a>
         }
         else
         {
-            <span class="nav-btn disabled">Next ›</span>
+            <button class="nav-btn disabled" disabled>Keyingi ›</button>
         }
     </div>
 
     <!-- Chapter dropdown -->
     @if (_showChapters)
     {
-        <div style="position:fixed;inset:0;z-index:250;" @onclick="@(() => _showChapters = false)"></div>
+        <div style="position:fixed;inset:0;z-index:249;" @onclick="@(() => _showChapters = false)"></div>
         <div class="ch-dropdown" @onclick:stopPropagation="true">
             @foreach (var ch in _allChapters.OrderByDescending(c => c.ChapterNumber))
             {
                 bool current = ch.Id == ChapterId;
-                <a class="ch-dropdown-item @(current ? "current" : "")" href="/chapter/@ch.Id">
+                <div class="ch-dropdown-item @(current ? "current" : "")"
+                     @onclick="@(() => { _showChapters = false; Nav.NavigateTo($"/chapter/{ch.Id}"); })">
                     <span>
-                        @if (ch.IsLocked) { <span class="lock">🔒</span> }
+                        @if (ch.IsLocked) { <span class="lock"></span> }
                         Bob @((int)ch.ChapterNumber)
                     </span>
                     @if (current)
                     {
                         <span style="font-size:11px;opacity:0.7;">hozir</span>
                     }
-                </a>
+                </div>
             }
         </div>
     }
 
     <!-- Back-to-top -->
-    <button class="rdr-top-btn" @onclick="@ScrollToTop" title="Yuqoriga">
+    <button class="rdr-top-btn @(_immersive ? "rdr-immersive-btn" : "")" @onclick="@ScrollToTop" title="Yuqoriga">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
              stroke-linecap="round" stroke-linejoin="round">
             <polyline points="18 15 12 9 6 15"/>
@@ -939,8 +1054,8 @@ else
     <!-- ════ SETTINGS POPUP ════ -->
     @if (_showSettings)
     {
-        <!-- Backdrop -->
-        <div style="position:fixed;inset:0;z-index:998;"
+        <!-- Backdrop — pastki nav (z-index:1000) ni bloklamasin -->
+        <div style="position:fixed;top:0;left:0;right:0;bottom:80px;z-index:998;"
              @onclick="@(() => _showSettings = false)"></div>
 
         <div class="settings-popup" @onclick:stopPropagation="true">
@@ -1017,6 +1132,7 @@ else
     bool  _loading        = true;
     bool  _showSettings   = false;
     bool  _showChapters   = false;
+    bool  _immersive      = false;
 
     // Desktop width control
     int _width = 800;
@@ -1033,6 +1149,7 @@ else
 
     // Comments
     List<ComicBooks.Application.Features.Comments.Queries.ChapterCommentDto> _comments = new();
+    int _commentsShown = 10;   // boshida 10 ta izoh, "Ko'proq ko'rish" bilan ko'payadi
     bool   _loadingComments = false;
     bool   _postingComment  = false;
     string _newComment      = "";
@@ -1049,6 +1166,13 @@ else
     void SetZoom(int z)  => _zoom  = Math.Clamp(z,  50, 150);
 
     void ToggleSettings() => _showSettings = !_showSettings;
+
+    void ToggleImmersive()
+    {
+        _immersive = !_immersive;
+        if (_immersive) { _showChapters = false; _showSettings = false; }
+        StateHasChanged();
+    }
 
     async Task ScrollToTop()
     {
@@ -1070,12 +1194,20 @@ else
     protected override async Task OnInitializedAsync()    => await Load();
     protected override async Task OnParametersSetAsync() { if (!_loading) await Load(); }
 
+    Guid _renderedChapter;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         // Sahifalar yuklangandan so'ng Intersection Observer ni ishga tushiramiz
         if (!_loading && _pages.Count > 0)
         {
             await JS.InvokeVoidAsync("lazyReader.init");
+
+            // Yangi bobga o'tilganda yuqoriga ko'tariladi
+            if (_renderedChapter != ChapterId)
+            {
+                _renderedChapter = ChapterId;
+                try { await JS.InvokeVoidAsync("scrollTo", 0, 0); } catch { }
+            }
         }
     }
 
@@ -1156,7 +1288,7 @@ else
                 ChapterId, _currentUserId, text));
             _newComment = "";
             await LoadCommentsAsync();
-            Snackbar.Add("✅ Komentariya qo'shildi", Severity.Success);
+            Snackbar.Add("Izoh qo'shildi", Severity.Success);
         }
         catch (Exception ex)
         {

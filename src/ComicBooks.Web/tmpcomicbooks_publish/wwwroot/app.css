@@ -1,0 +1,100 @@
+/* ═══ GLOBAL RESETS ═══ */
+*, *::before, *::after { box-sizing: border-box; }
+
+/* Tepada paydo bo'ladigan chiziq muammosi — body/html margin reset */
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #0a0a14;  /* dark default — flicker oldini oladi */
+}
+
+/* MudAppBar tepasida chiziq paydo bo'lmasin */
+.mud-appbar.mud-appbar-fixed {
+    top: 0 !important;
+    margin-top: 0 !important;
+}
+
+/* MudLayout flicker olib tashlash */
+.mud-layout {
+    margin: 0 !important;
+}
+
+/* Headerlar atrofida focus outline yo'q (FocusOnNavigate bug) */
+h1, h2, h3, h4, h5, h6 { outline: none !important; }
+[tabindex="-1"]:focus { outline: none !important; }
+
+/* Remove Blazor error overlay in dev */
+#blazor-error-ui { display: none !important; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(27,19,190,0.4); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #1b13be; }
+
+/* Hide scrollbar but keep scrolling */
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ═══ DARK / LIGHT MODE ADAPTIVE COLORS ═══ */
+
+/* Text that should adapt to theme */
+body {
+    --text-muted: rgba(128,128,128,0.6);
+    --border-subtle: rgba(128,128,128,0.12);
+    --hover-bg: rgba(27,19,190,0.07);
+    --card-bg: var(--mud-palette-surface);
+}
+
+/* Input elements adapt to theme */
+input {
+    color: var(--mud-palette-text-primary);
+    background: transparent;
+}
+
+input::placeholder {
+    color: var(--mud-palette-text-secondary);
+    opacity: 0.6;
+}
+
+/* Comic card hover */
+.comic-card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.3);
+}
+
+/* Chapter row hover */
+.chapter-row:hover {
+    background: var(--hover-bg) !important;
+}
+
+/* Hero section - always dark */
+.hero-section {
+    background: #0d0d18;
+}
+
+/* MudBlazor overrides */
+.mud-nav-link.active {
+    color: #419fd9 !important;
+}
+
+/* Smooth transitions */
+.mud-main-content {
+    transition: background-color 0.3s;
+}
+
+/* Fix MudChip in light mode */
+.mud-chip {
+    font-weight: 600 !important;
+}
+
+/* Genre chips */
+.genre-chip {
+    background: rgba(65,159,217,0.12) !important;
+    color: #419fd9 !important;
+}
+
+/* Font */
+body, .mud-typography {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}

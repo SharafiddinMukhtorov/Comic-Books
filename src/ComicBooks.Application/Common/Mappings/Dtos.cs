@@ -24,8 +24,10 @@ public class ComicDto
     public bool IsPopular { get; set; }
     public string? Slug { get; set; }
     public DateTime CreatedAt { get; set; }
+    public DateTime LastUpdatedAt { get; set; }   // oxirgi bob qo'shilgan sana (yoki yaratilgan sana)
     public int ChapterCount { get; set; }
     public double? LatestChapterNumber { get; set; }
+    public bool LatestChapterLocked { get; set; }   // oxirgi bob qulflanganmi (premium)
     public List<string> Genres { get; set; } = new();
     public List<string> Tags { get; set; } = new();
 }

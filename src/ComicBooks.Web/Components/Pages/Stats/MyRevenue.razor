@@ -1,4 +1,4 @@
-@page "/admin/revenue"
+﻿@page "/admin/revenue"
 @page "/my-revenue"
 @layout AdminLayout
 @using ComicBooks.Application.Features.Revenue.Queries
@@ -70,7 +70,7 @@
     .rev-stat.gold .val      { color: #f59e0b; }
     .rev-stat.platform .val  { color: #22c55e; }
     .rev-stat.uploader .val  { color: #f59e0b; }
-    .rev-stat.purchases .val { color: #1b13be; }
+    .rev-stat.purchases .val { color: #3b82f6; }
 
     /* Per-comic table */
     .rev-section-title {
@@ -176,7 +176,7 @@ else if (!_isLoggedIn)
             <div style="font-weight:800;font-size:16px;margin-bottom:8px;">Tizimga kiring</div>
             <div style="opacity:0.6;font-size:13px;margin-bottom:20px;">Daromad statistikasini ko'rish uchun</div>
             <a href="/login" class="mud-button mud-button-filled mud-button-filled-primary mud-ripple"
-               style="background:#1b13be;color:#fff;padding:10px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
+               style="background:#3b82f6;color:#fff;padding:10px 28px;border-radius:10px;text-decoration:none;font-weight:700;">
                 Kirish
             </a>
         </div>
@@ -209,7 +209,7 @@ else
             <div class="rev-totals">
                 <div class="rev-stat gold">
                     <div class="lbl">Jami daromad</div>
-                    <div class="val">@_data.TotalCoins <img src="/img/coin.svg" style="width:18px;height:18px;vertical-align:-2px;" /></div>
+                    <div class="val">@_data.TotalCoins <img src="/img/coin.png" style="width:18px;height:18px;vertical-align:-2px;" /></div>
                     <div class="sub">@FmtSom(_data.TotalSom) so'm</div>
                 </div>
                 <div class="rev-stat platform">
@@ -241,7 +241,7 @@ else
                         </div>
                         <div class="rev-row-money">
                             <div class="coins">
-                                @c.TotalCoins <img src="/img/coin.svg" style="width:14px;height:14px;" />
+                                @c.TotalCoins <img src="/img/coin.png" style="width:14px;height:14px;" />
                             </div>
                             <div class="som">≈ @FmtSom(c.UploaderSom) so'm</div>
                         </div>

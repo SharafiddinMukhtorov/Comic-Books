@@ -1,4 +1,4 @@
-@page "/profile"
+﻿@page "/profile"
 @using ComicBooks.Application.Features.Profile.Queries
 @using ComicBooks.Application.Features.Comics.Queries
 @inject IMediator Mediator
@@ -17,7 +17,7 @@
 
     .pf-card {
         background: var(--mud-palette-surface);
-        border: 1px solid rgba(245,158,11,0.18);
+        border: 1px solid rgba(59,130,246,0.2);
         border-radius: 18px;
         padding: 28px 24px 24px;
         text-align: center;
@@ -35,21 +35,21 @@
         width: 96px; height: 96px;
         border-radius: 50%;
         background: rgba(255,255,255,0.04);
-        border: 2.5px solid #f59e0b;
+        border: 2.5px solid #3b82f6;
         display: flex; align-items: center; justify-content: center;
         overflow: hidden;
         object-fit: cover;
         font-size: 38px;
         font-weight: 900;
-        color: #f59e0b;
-        box-shadow: 0 0 24px rgba(245,158,11,0.25);
+        color: #3b82f6;
+        box-shadow: 0 0 24px rgba(59,130,246,0.30);
     }
     .pf-avatar img { width:100%; height:100%; object-fit:cover; }
     .pf-cam-btn {
         position: absolute;
         right: 4px; bottom: 4px;
         width: 28px; height: 28px;
-        background: #f59e0b;
+        background: #3b82f6;
         border-radius: 50%;
         display: flex; align-items: center; justify-content: center;
         border: 2px solid var(--mud-palette-surface);
@@ -82,13 +82,13 @@
         display: inline-flex;
         align-items: center;
         gap: 5px;
-        background: rgba(245,158,11,0.1);
-        color: #f59e0b;
+        background: rgba(59,130,246,0.1);
+        color: #60a5fa;
         padding: 5px 13px;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 700;
-        border: 1px solid rgba(245,158,11,0.25);
+        border: 1px solid rgba(59,130,246,0.25);
     }
 
     .pf-actions {
@@ -103,16 +103,16 @@
         align-items: center;
         gap: 6px;
         padding: 8px 16px;
-        background: rgba(245,158,11,0.13);
-        border: 1px solid rgba(245,158,11,0.3);
-        color: #f59e0b;
+        background: rgba(59,130,246,0.12);
+        border: 1px solid rgba(59,130,246,0.3);
+        color: #60a5fa;
         border-radius: 999px;
         font-size: 12px;
         font-weight: 700;
         cursor: pointer;
         text-decoration: none;
     }
-    .pf-btn:hover { background: rgba(245,158,11,0.22); color: #f59e0b; }
+    .pf-btn:hover { background: rgba(59,130,246,0.22); color: #60a5fa; }
 
     /* Balance card */
     .pf-balance {
@@ -198,7 +198,7 @@
         gap: 6px;
     }
     .pf-tab.active {
-        background: linear-gradient(135deg, #f59e0b, #d97706);
+        background: linear-gradient(135deg, #3b82f6, #1C72F3);
         color: #fff;
     }
 
@@ -223,7 +223,7 @@
         color: inherit;
         border: 1px solid rgba(128,128,128,0.12);
     }
-    .pf-fav:hover { border-color: rgba(245,158,11,0.4); }
+    .pf-fav:hover { border-color: rgba(59,130,246,0.4); }
     .pf-fav img {
         width: 100%;
         aspect-ratio: 3/4;
@@ -252,7 +252,7 @@
         padding: 24px;
         max-width: 380px;
         width: 100%;
-        border: 1px solid rgba(245,158,11,0.25);
+        border: 1px solid rgba(59,130,246,0.25);
     }
     .pf-modal h3 { margin: 0 0 14px; font-weight: 800; }
     .pf-modal label { display:block; font-size:11px; font-weight:700; margin: 10px 0 4px; opacity:0.7; text-transform:uppercase; }
@@ -266,7 +266,7 @@
         outline: none;
         font-size: 14px;
     }
-    .pf-modal input:focus { border-color: #f59e0b; }
+    .pf-modal input:focus { border-color: #3b82f6; }
 
     .pf-alert {
         padding: 10px 14px;
@@ -344,7 +344,7 @@ else
                 </span>
                 @if (_profile.HasGoogle)
                 {
-                    <span class="pf-stat-chip" style="background:rgba(27,19,190,0.12);color:#5b9fd9;border-color:rgba(27,19,190,0.3);">
+                    <span class="pf-stat-chip" style="background:rgba(59,130,246,0.12);color:#5b9fd9;border-color:rgba(59,130,246,0.3);">
                         G Google
                     </span>
                 }
@@ -358,7 +358,8 @@ else
                     Sevimlilar
                 </a>
                 <button class="pf-btn" @onclick="@(() => _showPwd = true)">
-                    🔒 Parolni o'zgartirish
+                    <span style="width:13px;height:14px;background-color:currentColor;-webkit-mask:url('/img/padlock.png') center/contain no-repeat;mask:url('/img/padlock.png') center/contain no-repeat;display:inline-block;flex-shrink:0;"></span>
+                    Parolni o'zgartirish
                 </button>
             </div>
         </div>
@@ -371,19 +372,19 @@ else
                     <rect x="2" y="6" width="20" height="13" rx="2"/>
                     <line x1="2" y1="10" x2="22" y2="10"/>
                 </svg>
-                Balans va obunalar
+                Tangalar va Obunalar
             </h3>
             <div class="pf-balance-row">
                 <div>
-                    <div class="pf-balance-cur">Joriy balans</div>
+                    <div class="pf-balance-cur">Tangalar miqdori</div>
                     <div class="pf-balance-amount">
-                        <img src="/img/coin.svg" alt="coin" />
+                        <img src="/img/coin.png" alt="coin" />
                         @_profile.CoinBalance
                     </div>
                 </div>
             </div>
             <a href="/coins" class="pf-topup">
-                💳 Balans to'ldirish
+                💳 Hisobni to'ldirish
             </a>
         </div>
 
@@ -406,8 +407,8 @@ else
                         <path d="M17 3H7a2 2 0 0 0-2 2v16l7-3 7 3V5a2 2 0 0 0-2-2z"/>
                     </svg>
                 </div>
-                <div style="font-weight:800;margin-bottom:6px;color:var(--mud-palette-text-primary);">Sevimlilar topilmadi</div>
-                <div style="font-size:12px;">Sevimli mangalaringizni qo'shish uchun katalogni ko'rib chiqing</div>
+                <div style="font-weight:800;margin-bottom:6px;color:var(--mud-palette-text-primary);">Sevimli asarlar mavjud emas</div>
+                <div style="font-size:12px;">O'qishni rejalashtirgan asarlaringizni sevimlilarga qo'shing va ularni bir joyda saqlang.</div>
             </div>
         }
         else

@@ -1,4 +1,4 @@
-@inherits LayoutComponentBase
+﻿@inherits LayoutComponentBase
 @inject ThemeService Theme
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthState
@@ -24,7 +24,7 @@
     .nav-link-btn {
         display: inline-flex;
         align-items: center;
-        padding: 8px 14px;
+        padding: 8px 16px;
         color: #fff;
         font-weight: 600;
         font-size: 14px;
@@ -36,7 +36,7 @@
     .nav-link-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
     .nav-icon-btn {
-        background: transparent;
+        background: #1E1E2E;
         border: none;
         color: #fff;
         cursor: pointer;
@@ -48,7 +48,7 @@
         margin-left: 6px;
         transition: background 0.15s;
     }
-    .nav-icon-btn:hover { background: rgba(255,255,255,0.12); }
+    .nav-icon-btn:hover { background: rgba(255,255,255,0.18); }
 
     .nav-coin-btn {
         display: inline-flex;
@@ -61,51 +61,196 @@
         color: #f59e0b;
         background: rgba(245,158,11,0.1);
         text-decoration: none;
-        margin-left: 8px;
+        margin-left: 6px;
         white-space: nowrap;
     }
     .nav-coin-btn:hover { background: rgba(245,158,11,0.2); color: #f59e0b; }
 
+    /* Centered nav links — absolute center in AppBar */
+    .nav-center-links {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
     .nav-kirish-btn {
         display: inline-flex;
         align-items: center;
-        padding: 7px 16px;
+        padding: 8px 16px;
         border-radius: 8px;
         font-weight: 700;
         font-size: 14px;
-        border: 1px solid rgba(255,255,255,0.5);
+        border: none;
         color: #fff;
-        background: rgba(255,255,255,0.1);
+        background: linear-gradient(90deg, #1C72F3 0%, #1392EC 100%);
         text-decoration: none;
-        margin-left: 8px;
+        margin-left: 6px;
         white-space: nowrap;
+        transition: filter 0.15s;
     }
-    .nav-kirish-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+    .nav-kirish-btn:hover { filter: brightness(1.1); color: #fff; }
+
+    /* Search bar — Asura Scans uslubida */
+    .srch-bar-inline {
+        background: var(--mud-palette-surface);
+        border-bottom: 1px solid rgba(255,255,255,0.07);
+        padding: 12px 20px;
+        position: relative;
+        z-index: 10;
+    }
+    @@keyframes srch-drop {
+        from { opacity:0; }
+        to   { opacity:1; }
+    }
+    /* Input wrapper — ko'k border bilan */
+    .srch-input-wrap {
+        position: relative;
+        background: rgba(28,114,243,0.06);
+        border: 1.5px solid rgba(28,114,243,0.55);
+        border-radius: 10px;
+        box-shadow: 0 0 0 3px rgba(28,114,243,0.08);
+    }
+    .srch-input-wrap:focus-within {
+        border-color: #1C72F3;
+        background: rgba(28,114,243,0.09);
+        box-shadow: 0 0 0 4px rgba(28,114,243,0.15);
+    }
+    .srch-sheet-input {
+        width: 100%;
+        padding: 12px 44px 12px 44px;
+        border: none;
+        border-radius: 8px;
+        background: transparent;
+        outline: none;
+        font-size: 15px;
+        font-family: inherit;
+        color: var(--mud-palette-text-primary);
+    }
+    .srch-sheet-input::placeholder { color: var(--mud-palette-text-secondary); opacity: 0.6; }
+    .srch-sheet-icon {
+        position: absolute;
+        left: 14px; top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255,255,255,0.4);
+        pointer-events: none;
+    }
+    .srch-bar-close {
+        position: absolute;
+        right: 10px; top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: rgba(255,255,255,0.3);
+        display: flex; align-items: center;
+        padding: 4px;
+        border-radius: 6px;
+        transition: color 0.15s;
+    }
+    .srch-bar-close:hover { color: rgba(255,255,255,0.7); }
+    /* Backdrop */
+    .srch-bar-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.2);
+        z-index: 9;
+    }
+
+    /* ── Jonli qidiruv natijalari (dropdown) ── */
+    .srch-results {
+        margin-top: 10px;
+        background: var(--mud-palette-surface);
+        border: 1px solid var(--mud-palette-lines-default);
+        border-radius: 12px;
+        overflow: hidden;
+        max-height: 60vh;
+        overflow-y: auto;
+        box-shadow: 0 14px 36px rgba(0,0,0,0.30);
+    }
+    .srch-res {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 14px;
+        text-decoration: none;
+        color: var(--mud-palette-text-primary);
+        border-bottom: 1px solid var(--mud-palette-lines-default);
+        transition: background 0.15s;
+    }
+    .srch-res:last-child { border-bottom: none; }
+    .srch-res:hover { background: rgba(59,130,246,0.10); }
+    .srch-res-img {
+        width: 44px; height: 60px;
+        object-fit: cover;
+        border-radius: 6px;
+        flex-shrink: 0;
+        background: #1a1c28;
+    }
+    .srch-res-info { min-width: 0; flex: 1; }
+    .srch-res-title {
+        font-size: 14px; font-weight: 700;
+        color: var(--mud-palette-text-primary);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .srch-res-meta {
+        font-size: 12px;
+        color: var(--mud-palette-text-secondary);
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        margin-top: 2px;
+    }
+    .srch-msg {
+        padding: 18px 14px;
+        text-align: center;
+        color: var(--mud-palette-text-secondary);
+        font-size: 13px;
+    }
 
     .nav-kirish-mob {
         display: inline-flex;
         align-items: center;
-        padding: 6px 14px;
-        border-radius: 20px;
+        justify-content: center;
+        padding: 0 16px;
+        height: 40px;
+        border-radius: 8px;
         font-weight: 700;
-        font-size: 13px;
-        border: 1px solid rgba(255,255,255,0.6);
+        font-size: 14px;
+        border: none;
         color: #fff;
-        background: rgba(255,255,255,0.12);
+        background: linear-gradient(90deg, #1C72F3 0%, #1392EC 100%);
         text-decoration: none;
-        margin-left: 4px;
+        margin-left: 6px;
         white-space: nowrap;
+        flex-shrink: 0;
+        transition: filter 0.15s;
     }
-    .nav-kirish-mob:hover { background: rgba(255,255,255,0.2); color: #fff; }
+    .nav-kirish-mob:hover { filter: brightness(1.1); color: #fff; }
 
     .nav-avatar-btn {
-        background: transparent;
+        width: 40px; height: 40px;
+        background: #3b82f6;
         border: none;
+        border-radius: 10px;
         cursor: pointer;
-        padding: 4px;
+        padding: 0;
         display: inline-flex;
         align-items: center;
-        margin-left: 4px;
+        justify-content: center;
+        margin-left: 6px;
+        overflow: hidden;
+    }
+
+    /* Mobile icon buttons: always show rounded-square bg */
+    @@media (max-width: 960px) {
+        .nav-icon-btn {
+            background: rgba(255,255,255,0.10) !important;
+            border-radius: 10px !important;
+            width: 40px !important;
+            height: 40px !important;
+            margin-left: 6px !important;
+        }
     }
 
     /* ═══ Top-down mobile drawer ═══ */
@@ -126,13 +271,13 @@
         z-index: 1300;
         background: var(--mud-palette-surface);
         border-bottom: 1px solid rgba(128,128,128,0.18);
-        border-radius: 0 0 18px 18px;
+        border-radius: 0 0 12px 12px;
         max-height: 92vh;
         overflow-y: auto;
         box-shadow: 0 12px 32px rgba(0,0,0,0.35);
         animation: md-slide-down 0.22s cubic-bezier(0.32,0.72,0.45,1);
-        --mdunyo-acc: #419fd9;
-        --mdunyo-acc2: #1b13be;
+        --mdunyo-acc: #3b82f6;
+        --mdunyo-acc2: #60a5fa;
     }
     @@keyframes md-slide-down {
         from { transform: translateY(-100%); }
@@ -160,20 +305,20 @@
         justify-content: center;
         transition: background 0.15s;
     }
-    .mdunyo-head-btn:hover { background: rgba(27,19,190,0.1); }
+    .mdunyo-head-btn:hover { background: rgba(59,130,246,0.1); }
     .mdunyo-head-btn.close {
-        background: #ef4444;
-        color: #fff;
-        border-color: #ef4444;
+        background: rgba(128,128,128,0.15);
+        color: inherit;
+        border-color: rgba(128,128,128,0.2);
     }
-    .mdunyo-head-btn.close:hover { background: #dc2626; }
+    .mdunyo-head-btn.close:hover { background: rgba(128,128,128,0.25); }
 
     .mdunyo-user-card {
         margin: 0 16px 12px;
         padding: 12px 14px;
-        background: linear-gradient(135deg, rgba(65,159,217,0.15), rgba(27,19,190,0.08));
-        border: 1px solid rgba(65,159,217,0.25);
-        border-radius: 12px;
+        background: linear-gradient(135deg, rgba(96,165,250,0.15), rgba(59,130,246,0.08));
+        border: 1px solid rgba(96,165,250,0.25);
+        border-radius: 8px;
         display: flex;
         align-items: center;
         gap: 12px;
@@ -195,25 +340,167 @@
         font-weight: 600;
         color: var(--mud-palette-text-primary);
         text-decoration: none;
-        border-radius: 10px;
+        border-radius: 8px;
         transition: background 0.15s;
     }
-    .mdunyo-nav-item:hover { background: rgba(65,159,217,0.10); }
+    .mdunyo-nav-item:hover { background: rgba(96,165,250,0.10); }
     .mdunyo-nav-item.active {
-        background: linear-gradient(90deg, rgba(65,159,217,0.22), rgba(65,159,217,0.04));
-        color: #419fd9;
+        background: linear-gradient(90deg, rgba(96,165,250,0.22), rgba(96,165,250,0.04));
+        color: #60a5fa;
         font-weight: 800;
     }
     .mdunyo-nav-item.danger { color: #ef4444; }
     .mdunyo-nav-item.danger:hover { background: rgba(239,68,68,0.1); }
     .mdunyo-nav-item.highlight {
-        background: linear-gradient(135deg, #1b13be, #419fd9);
+        background: linear-gradient(135deg, #3b82f6, #60a5fa);
         color: #fff;
         font-weight: 800;
         justify-content: center;
         margin-top: 4px;
     }
-    .mdunyo-nav-item.highlight:hover { filter: brightness(1.1); background: linear-gradient(135deg, #1b13be, #419fd9); }
+    .mdunyo-nav-item.highlight:hover { filter: brightness(1.1); background: linear-gradient(135deg, #3b82f6, #60a5fa); }
+
+    /* ═══ FOOTER ═══ */
+    .sf {
+        background: #050811;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        margin-top: 30px;
+    }
+    .sf-inner {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 52px 32px 36px;
+        display: grid;
+        grid-template-columns: 1.8fr 1fr 1fr 1fr;
+        gap: 48px;
+    }
+
+    /* Brand column */
+    .sf-logo-link {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        text-decoration: none;
+        margin-bottom: 14px;
+    }
+    .sf-logo-text {
+        font-weight: 900;
+        font-size: 1.1rem;
+        color: #fff;
+        letter-spacing: -0.3px;
+    }
+    .sf-tagline {
+        font-size: 13px;
+        color: rgba(255,255,255,0.45);
+        line-height: 1.65;
+        margin: 0 0 20px;
+        max-width: 280px;
+    }
+    .sf-socials {
+        display: flex;
+        gap: 10px;
+    }
+    .sf-soc {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        background: rgba(255,255,255,0.07);
+        border: 1px solid rgba(255,255,255,0.1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: rgba(255,255,255,0.6);
+        text-decoration: none;
+        transition: background 0.15s, color 0.15s;
+    }
+    .sf-soc:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+    /* Nav columns */
+    .sf-col { display: flex; flex-direction: column; gap: 12px; }
+    .sf-col-title {
+        font-size: 11px;
+        font-weight: 800;
+        color: #3b82f6;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+    }
+    .sf-link {
+        font-size: 13px;
+        color: rgba(255,255,255,0.45);
+        text-decoration: none;
+        transition: color 0.15s;
+    }
+    .sf-link:hover { color: #60a5fa; }
+    .sf-contact {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+    }
+
+    /* Bottom bar */
+    .sf-bottom {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 18px 32px;
+        border-top: 1px solid rgba(255,255,255,0.06);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-size: 12px;
+        color: rgba(255,255,255,0.28);
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    .sf-bottom-links { display: flex; gap: 16px; }
+    .sf-bottom-link {
+        color: rgba(255,255,255,0.28);
+        text-decoration: none;
+        transition: color 0.15s;
+    }
+    .sf-bottom-link:hover { color: rgba(255,255,255,0.6); }
+
+    /* Light mode footer: dark navbar rangiga mos */
+    .sf-light {
+        background: #141937;
+        border-top-color: rgba(255,255,255,0.06);
+    }
+    .sf-light .sf-logo-text { color: #fff; }
+    .sf-light .sf-tagline    { color: rgba(255,255,255,0.45); }
+    .sf-light .sf-col-title  { color: #60a5fa; }
+    .sf-light .sf-link       { color: rgba(255,255,255,0.45); }
+    .sf-light .sf-link:hover { color: #60a5fa; }
+    .sf-light .sf-soc {
+        background: rgba(255,255,255,0.07);
+        border-color: rgba(255,255,255,0.1);
+        color: rgba(255,255,255,0.6);
+    }
+    .sf-light .sf-soc:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+    .sf-light .sf-bottom { border-top-color: rgba(255,255,255,0.06); color: rgba(255,255,255,0.28); }
+    .sf-light .sf-bottom-link { color: rgba(255,255,255,0.28); }
+    .sf-light .sf-bottom-link:hover { color: rgba(255,255,255,0.6); }
+
+    /* Light mode footer col title */
+    .sf-light .sf-col-title { color: #60a5fa; }
+
+    /* Responsive */
+    @@media (max-width: 900px) {
+        .sf { margin-top: 24px; }   /* mobil: kontent bilan oraliq kamaytirildi */
+        .sf-inner {
+            grid-template-columns: 1fr 1fr;
+            gap: 28px 20px;
+            padding: 36px 20px 24px;
+        }
+        /* Brand: full width top */
+        .sf-brand { grid-column: 1 / -1; }
+        .sf-tagline { max-width: 100%; }
+        /* Aloqa: full width bottom */
+        .sf-col:last-child { grid-column: 1 / -1; }
+        .sf-bottom { padding: 14px 20px; }
+    }
+    @@media (max-width: 480px) {
+        .sf-inner { padding: 28px 16px 20px; gap: 24px 16px; }
+        .sf-bottom { padding: 12px 16px; flex-direction: column; align-items: flex-start; }
+    }
 </style>
 
 <MudThemeProvider @ref="_tp" Theme="@_theme" @bind-IsDarkMode="_dark" />
@@ -224,20 +511,20 @@
 <MudLayout>
     <MudAppBar Elevation="0" Fixed="true"
                Style="@(_dark
-                   ? "background:linear-gradient(90deg,#030082 0%,#1b13be 100%) !important;border-bottom:none !important;box-shadow:none !important;"
-                   : "background:linear-gradient(90deg,#419fd9 0%,#92d4fc 100%) !important;border-bottom:none !important;box-shadow:none !important;")">
+                   ? "background:#0f1117 !important;border-bottom:none !important;box-shadow:none !important;"
+                   : "background:#141937 !important;border-bottom:none !important;box-shadow:none !important;")">
+        <div style="display:flex;align-items:center;width:100%;max-width:1150px;margin:0 auto;position:relative;">
 
         <!-- Logo -->
-        <a href="/" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
-            <img src="@(_dark ? "/img/logo-dark.svg" : "/img/logo-light.svg")"
-                 width="36" height="36" alt="Manga Dunyo" />
-            <span style="font-weight:900;font-size:1.15rem;color:#fff;letter-spacing:-0.3px;
-                         text-shadow:0 1px 4px rgba(0,0,0,0.3);">
-                MANGA DUNYO
-            </span>
+        <a href="/" style="display:flex;align-items:center;gap:6px;text-decoration:none;flex-shrink:0;">
+            <img src="/img/logo.png"
+                 width="46" height="46" alt="Manga Dunyo" style="border-radius:12px;" />
+            <img src="/img/logo-wordmark.png" alt="MANGA DUNYO"
+                 style="height:44px;width:auto;display:block;" />
         </a>
 
-        <div class="nav-desk" style="gap:4px;margin-left:18px;">
+        <!-- Nav links — absolutely centered in AppBar -->
+        <div class="nav-desk nav-center-links">
             <a href="/" class="nav-link-btn">Bosh sahifa</a>
             <a href="/bookmarks" class="nav-link-btn">Saqlanganlar</a>
             <a href="/comics" class="nav-link-btn">Katalog</a>
@@ -245,18 +532,12 @@
 
         <MudSpacer />
 
-        <!-- Search (desktop) -->
-        <div class="nav-desk-search" style="background:rgba(255,255,255,0.18);border-radius:8px;
-                                            align-items:center;padding:6px 14px;gap:8px;width:240px;
-                                            border:1px solid rgba(255,255,255,0.25);">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.75)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <!-- Search icon button — desktop va mobile (birinchi o'rinda o'ngda) -->
+        <button @onclick="@OpenSearch" class="nav-icon-btn" title="Qidirish">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-            <input @bind="_q" @bind:event="oninput" @onkeydown="@OnSearch"
-                   placeholder="Qidirish..."
-                   style="background:transparent;border:none;outline:none;
-                          color:#fff;font-size:14px;width:100%;" />
-        </div>
+        </button>
 
         <!-- Dark/light toggle (faqat desktop) -->
         <button @onclick="@ToggleTheme" class="nav-desk nav-icon-btn" title="Tema">
@@ -282,7 +563,7 @@
         {
             <!-- Coin balance (desktop) -->
             <a href="/coins" class="nav-desk nav-coin-btn">
-                <img src="/img/coin.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;" alt="coin" />
+                <img src="/img/coin.png" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;" alt="coin" />
                 @_coinBalance
             </a>
 
@@ -300,7 +581,7 @@
                             }
                             else
                             {
-                                <MudAvatar Size="Size.Small" Style="width:30px;height:30px;background:#419fd9;">
+                                <MudAvatar Size="Size.Small" Style="width:30px;height:30px;background:#60a5fa;">
                                     @(_userName.Length > 0 ? _userName[0].ToString().ToUpper() : "U")
                                 </MudAvatar>
                             }
@@ -324,7 +605,7 @@
                             Profil
                         </MudMenuItem>
                         <MudMenuItem Href="/coins" Icon="@Icons.Material.Filled.Toll">
-                            Coin: @_coinBalance
+                            Tangalar: @_coinBalance
                         </MudMenuItem>
                         @* Daromad endi admin panel ichida *@
                         <MudMenuItem Href="/bookmarks" Icon="@Icons.Material.Filled.Bookmark">
@@ -343,13 +624,12 @@
             <button class="nav-mob nav-avatar-btn" @onclick="@(() => _open = !_open)">
                 @if (!string.IsNullOrEmpty(_userPicture))
                 {
-                    <img src="@_userPicture" width="30" height="30"
-                         style="border-radius:50%;object-fit:cover;" alt="@_userName" />
+                    <img src="@_userPicture" width="40" height="40"
+                         style="border-radius:10px;object-fit:cover;width:100%;height:100%;" alt="@_userName" />
                 }
                 else
                 {
-                    <span style="background:#419fd9;width:30px;height:30px;border-radius:50%;
-                                 display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:800;">
+                    <span style="color:#fff;font-weight:800;font-size:15px;">
                         @(_userName.Length > 0 ? _userName[0].ToString().ToUpper() : "U")
                     </span>
                 }
@@ -359,7 +639,7 @@
         {
             <!-- Coin button (desktop, not logged in) -->
             <a href="/coins" class="nav-desk nav-coin-btn" style="text-decoration:none;">
-                <img src="/img/coin.svg" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;" alt="coin" />Coin
+                <img src="/img/coin.png" style="width:18px;height:18px;vertical-align:middle;margin-right:5px;" alt="coin" />Tanga
             </a>
 
             <!-- Kirish button (desktop) -->
@@ -371,12 +651,7 @@
             </a>
 
             <!-- Mobile: Kirish button -->
-            <a href="/login" class="nav-mob nav-kirish-mob">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right:5px;">
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/>
-                </svg>
-                Kirish
-            </a>
+            <a href="/login" class="nav-mob nav-kirish-mob">Kirish</a>
         }
 
         <!-- Hamburger menu (mobile only) -->
@@ -385,46 +660,80 @@
                 <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
             </svg>
         </button>
+        </div>
     </MudAppBar>
 
     <!-- ═══ Top-down Mobile Drawer ═══ -->
     @if (_open)
     {
         <!-- Backdrop -->
-        <div class="mdunyo-backdrop" @onclick="@(() => _open = false)"></div>
+        <div class="mdunyo-backdrop" @onclick="@Close"></div>
 
-        <div class="mdunyo-drawer">
+        <div class="mdunyo-drawer" style="@(_dark ? "background:#17181e;" : "")">
             <!-- Header inside drawer -->
             <div class="mdunyo-drawer-head">
-                <a href="/" @onclick="@Close" style="display:flex;align-items:center;gap:8px;text-decoration:none;">
-                    <img src="@(_dark ? "/img/logo-dark.svg" : "/img/logo-light.svg")" width="32" height="32" />
-                    <span style="font-weight:900;font-size:1.05rem;color:#419fd9;">MANGA DUNYO</span>
+                <a href="/" @onclick="@Close" style="display:flex;align-items:center;gap:6px;text-decoration:none;">
+                    <img src="/img/logo.png" width="34" height="34" style="border-radius:8px;" />
+                    <img src="/img/logo-wordmark.png" alt="MANGA DUNYO" style="height:30px;width:auto;display:block;" />
                 </a>
                 <div style="display:flex;align-items:center;gap:6px;">
                     <button class="mdunyo-head-btn" @onclick="@ToggleTheme" title="Tema">
                         <MudIcon Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
                                  Size="Size.Small" />
                     </button>
-                    <button class="mdunyo-head-btn close" @onclick="@(() => _open = false)" title="Yopish">
+                    <button class="mdunyo-head-btn close" @onclick="@Close" title="Yopish">
                         <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
                     </button>
                 </div>
             </div>
 
-            <!-- Search bar -->
+            <!-- Search bar (jonli — desktopdek) -->
             <div style="padding:8px 16px 14px;">
                 <div style="position:relative;">
                     <MudIcon Icon="@Icons.Material.Filled.Search"
                              Style="position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;opacity:0.5;" />
-                    <input @bind="_q" @bind:event="oninput" @onkeydown="@OnSearch"
-                           placeholder="Qidirish..."
+                    <input @oninput="@OnSearchInput" @onkeydown="@OnDrawerSearchKey"
+                           placeholder="O'z dunyongizni qidiring..." autocomplete="off"
                            style="width:100%;padding:11px 14px 11px 38px;border-radius:10px;
                                   border:1px solid rgba(128,128,128,0.25);
                                   background:rgba(128,128,128,0.07);outline:none;font-size:14px;
                                   color:var(--mud-palette-text-primary);" />
                 </div>
+
+                @* Jonli natijalar — har bir harfda yangilanadi *@
+                @if (_q.Trim().Length >= 2)
+                {
+                    <div class="srch-results" style="margin-top:10px;box-shadow:none;">
+                        @if (_allComics == null)
+                        {
+                            <div class="srch-msg">Yuklanmoqda…</div>
+                        }
+                        else if (_searchResults.Count == 0)
+                        {
+                            <div class="srch-msg">Hech narsa topilmadi</div>
+                        }
+                        else
+                        {
+                            @foreach (var c in _searchResults)
+                            {
+                                <a class="srch-res" href="/comic/@c.Slug" @onclick="@Close">
+                                    <img class="srch-res-img"
+                                         src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/60/80")"
+                                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)s/60/80'" />
+                                    <div class="srch-res-info">
+                                        <div class="srch-res-title">@c.Title</div>
+                                        <div class="srch-res-meta">@string.Join(", ", TranslateMany(c.Genres.Take(5)))@(c.ReleaseYear.HasValue ? $" • {c.ReleaseYear}" : "")</div>
+                                    </div>
+                                </a>
+                            }
+                        }
+                    </div>
+                }
             </div>
 
+            @* Qidiruv paytida (2+ harf) menyu yashiriladi — faqat natijalar ko'rinadi *@
+            @if (_q.Trim().Length < 2)
+            {
             @if (_isLoggedIn)
             {
                 <!-- User card -->
@@ -436,15 +745,15 @@
                     }
                     else
                     {
-                        <MudAvatar Style="background:#419fd9;width:42px;height:42px;">
+                        <MudAvatar Style="background:#60a5fa;width:42px;height:42px;">
                             @(_userName.Length > 0 ? _userName[0].ToString().ToUpper() : "U")
                         </MudAvatar>
                     }
                     <div>
                         <div style="font-weight:800;font-size:14px;">@_userName</div>
                         <div style="font-size:12px;color:var(--mud-palette-text-secondary);">
-                            <img src="/img/coin.svg" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;" />
-                            @_coinBalance coin
+                            <img src="/img/coin.png" style="width:14px;height:14px;vertical-align:middle;margin-right:3px;" />
+                            @_coinBalance tanga
                         </div>
                     </div>
                 </div>
@@ -468,7 +777,7 @@
                         <MudIcon Icon="@Icons.Material.Filled.Person" Size="Size.Small" /> Profil
                     </a>
                     <a href="/coins" @onclick="@Close" class="mdunyo-nav-item @(path.StartsWith("/coins") ? "active" : "")">
-                        <MudIcon Icon="@Icons.Material.Filled.Toll" Size="Size.Small" /> Coin: @_coinBalance
+                        <MudIcon Icon="@Icons.Material.Filled.Toll" Size="Size.Small" /> Tangalar: @_coinBalance
                     </a>
                     @* Daromad endi admin panel ichida — bu yerda yo'q *@
                 }
@@ -497,11 +806,151 @@
                     </a>
                 }
             </div>
+            }
         </div>
     }
 
-    <MudMainContent Style="padding-top:64px;min-height:100vh;margin:0;background:var(--mud-palette-background);">
+    <MudMainContent Style="min-height:100vh;margin:0;background:var(--mud-palette-background);">
+
+        @* ── Search bar: navbar va carousel orasida, normal flow ── *@
+        @if (_searchOpen)
+        {
+            <div class="srch-bar-inline">
+                <div class="srch-input-wrap">
+                    <span class="srch-sheet-icon">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                        </svg>
+                    </span>
+                    <input class="srch-sheet-input"
+                           @oninput="@OnSearchInput"
+                           @onkeydown="@OnSearchSheet"
+                           placeholder="O'z dunyongizni qidiring..."
+                           autocomplete="off" />
+                    <button class="srch-bar-close" @onclick="@CloseSearch" title="Yopish">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                        </svg>
+                    </button>
+                </div>
+
+                @* ── Jonli qidiruv natijalari (har bir harfda yangilanadi) ── *@
+                @if (_q.Trim().Length >= 2)
+                {
+                    <div class="srch-results">
+                        @if (_allComics == null)
+                        {
+                            <div class="srch-msg">Yuklanmoqda…</div>
+                        }
+                        else if (_searchResults.Count == 0)
+                        {
+                            <div class="srch-msg">Hech narsa topilmadi</div>
+                        }
+                        else
+                        {
+                            @foreach (var c in _searchResults)
+                            {
+                                <a class="srch-res" href="/comic/@c.Slug" @onclick="@CloseSearch">
+                                    <img class="srch-res-img"
+                                         src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/60/80")"
+                                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)s/60/80'" />
+                                    <div class="srch-res-info">
+                                        <div class="srch-res-title">@c.Title</div>
+                                        <div class="srch-res-meta">@string.Join(", ", TranslateMany(c.Genres.Take(5)))@(c.ReleaseYear.HasValue ? $" • {c.ReleaseYear}" : "")</div>
+                                    </div>
+                                </a>
+                            }
+                        }
+                    </div>
+                }
+            </div>
+            <div class="srch-bar-backdrop" @onclick="@CloseSearch"></div>
+        }
+
         @Body
+
+        <!-- ════ SITE FOOTER ════ -->
+        <footer class="sf @(_dark ? "" : "sf-light")">
+            <div class="sf-inner">
+
+                <!-- Brand -->
+                <div class="sf-brand">
+                    <a href="/" class="sf-logo-link">
+                        <img src="/img/logo.png" width="42" height="42" alt="Manga Dunyo" style="border-radius:10px;" />
+                        <img src="/img/logo-wordmark.png" alt="MANGA DUNYO" style="height:38px;width:auto;display:block;" />
+                    </a>
+                    <p class="sf-tagline">
+                        Dunyodagi eng mashhur, sara va qiziqarli manga, manhwa hamda manhualarni o'zbek tilida sifatli tarjima bilan MangaDunyoda o'qing!
+                    </p>
+                    <div class="sf-socials">
+                        <!-- 1. Telegram -->
+                        <a href="https://t.me/+DuNVSz_UzW43MGQy" class="sf-soc" title="Telegram" target="_blank">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/>
+                            </svg>
+                        </a>
+                        <!-- 2. Instagram -->
+                        <a href="https://www.instagram.com/mangadunyo?igsh=MXJ1cm1ic2NkdmJ6Yg==" class="sf-soc" title="Instagram" target="_blank">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z"/>
+                            </svg>
+                        </a>
+                        <!-- 3. YouTube -->
+                        <a href="https://www.youtube.com/@@mangadunyosi" class="sf-soc" title="YouTube" target="_blank">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Navigatsiya -->
+                <div class="sf-col">
+                    <div class="sf-col-title">Navigatsiya</div>
+                    <a href="/" class="sf-link">Bosh sahifa</a>
+                    <a href="/comics" class="sf-link">Katalog</a>
+                    <a href="/bookmarks" class="sf-link">Saqlanganlar</a>
+                    <a href="/coins" class="sf-link">Tanga sotib olish</a>
+                </div>
+
+                <!-- Janrlar -->
+                <div class="sf-col">
+                    <div class="sf-col-title">Janrlar</div>
+                    <a href="/comics?genre=Jang" class="sf-link">Jang</a>
+                    <a href="/comics?genre=Romantika" class="sf-link">Romantika</a>
+                    <a href="/comics?genre=Fantaziya" class="sf-link">Fantaziya</a>
+                    <a href="/comics?genre=Sarguzasht" class="sf-link">Sarguzasht</a>
+                </div>
+
+                <!-- Aloqa -->
+                <div class="sf-col">
+                    <div class="sf-col-title">Aloqa</div>
+                    <!-- 1. Gmail -->
+                    <a href="mailto:mangadunyo@@gmail.com" class="sf-link sf-contact">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                        </svg>
+                        mangadunyo@@gmail.com
+                    </a>
+                    <!-- 2. Telegram -->
+                    <a href="https://t.me/MangaDunyoadmin" class="sf-link sf-contact" target="_blank">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12l-6.871 4.326-2.962-.924c-.643-.204-.657-.643.136-.953l11.57-4.461c.537-.194 1.006.131.833.941z"/>
+                        </svg>
+                        Telegram
+                    </a>
+                </div>
+
+            </div>
+
+            <!-- Bottom bar -->
+            <div class="sf-bottom">
+                <span>© 2025 Manga Dunyo. Barcha huquqlar himoyalangan.</span>
+                <span class="sf-bottom-links">
+                    <a href="/privacy" class="sf-bottom-link">Maxfiylik siyosati</a>
+                </span>
+            </div>
+        </footer>
     </MudMainContent>
 </MudLayout>
 
@@ -509,7 +958,10 @@
     MudThemeProvider _tp = null!;
     bool _dark = true;
     bool _open;
+    bool _searchOpen;
     string _q = "";
+    List<ComicDto> _searchResults = new();
+    List<ComicDto>? _allComics;   // bir marta yuklanadi, keyin xotirada filtrlanadi
 
     bool    _isLoggedIn;
     bool    _isAdmin;
@@ -522,28 +974,28 @@
     {
         PaletteLight = new PaletteLight
         {
-            Primary          = "#419fd9",
-            Secondary        = "#1b13be",
-            Background       = "#f0f4f8",
+            Primary          = "#2D6BFF",
+            Secondary        = "#1A58F0",
+            Background       = "#F8FAFF",
             Surface          = "#ffffff",
-            AppbarBackground = "#419fd9",
+            AppbarBackground = "#2D6BFF",
             AppbarText       = "#ffffff",
             DrawerBackground = "#ffffff",
-            DrawerText       = "#1a1a2e",
-            TextPrimary      = "#1a1a2e",
-            TextSecondary    = "#5a6a7a",
-            ActionDefault    = "#2d3748",
-            LinesDefault     = "rgba(0,0,0,0.08)",
+            DrawerText       = "#252D55",
+            TextPrimary      = "#252D55",
+            TextSecondary    = "#6D78A8",
+            ActionDefault    = "#3B4470",
+            LinesDefault     = "#E4E9F7",
         },
         PaletteDark = new PaletteDark
         {
-            Primary          = "#1b13be",
-            Secondary        = "#419fd9",
-            Background       = "#0a0a14",
-            Surface          = "#12121e",
-            AppbarBackground = "#030082",
+            Primary          = "#3b82f6",
+            Secondary        = "#60a5fa",
+            Background       = "#0f1117",
+            Surface          = "#1a1c28",
+            AppbarBackground = "#0f1117",
             AppbarText       = "#ffffff",
-            DrawerBackground = "#0e0e1c",
+            DrawerBackground = "#131525",
             DrawerText       = "#e2e2f0",
             TextPrimary      = "#f0f0f8",
             TextSecondary    = "#8892a4",
@@ -585,6 +1037,20 @@
     {
         if (firstRender)
         {
+            // localStorage dan theme o'qiymiz — refresh qilganda dark modega qaytib ketmasin
+            try
+            {
+                var saved = await JS.InvokeAsync<string>("themeStorage.get");
+                var savedDark = saved != "light";
+                if (savedDark != _dark)
+                {
+                    Theme.SetDark(savedDark);
+                    _dark = savedDark;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+            catch { /* prerender yoki JS yo'q bo'lsa e'tibor bermaymiz */ }
+
             await UpdateThemeColor();
 
             if (_isLoggedIn && _userId != Guid.Empty && !_balanceRefreshed)
@@ -608,6 +1074,9 @@
     {
         Theme.Toggle();
         _dark = Theme.IsDark;
+        // localStorage ga saqlaymiz — refresh qilganda yo'qolmasin
+        try { await JS.InvokeVoidAsync("themeStorage.set", _dark ? "dark" : "light"); }
+        catch { }
         await UpdateThemeColor();
         await InvokeAsync(StateHasChanged);
     }
@@ -617,26 +1086,100 @@
         await UpdateThemeColor();
         await InvokeAsync(StateHasChanged);
     }
-    void Close() => _open = false;
+    void Close() { _open = false; _q = ""; _searchResults = new(); }
+
+    Task? _loadComicsTask;
+
+    // Barcha komikslarni bir marta yuklaydi (≈100 ta — yengil). Bir nechta tez bosish
+    // bir vaqtda chaqirsa ham faqat BITTA so'rov ketadi (DbContext to'qnashuvi bo'lmaydi).
+    Task EnsureComicsLoaded() => _loadComicsTask ??= LoadComicsAsync();
+
+    async Task LoadComicsAsync()
+    {
+        try
+        {
+            var res = await Mediator.Send(new GetComicsQuery(PageSize: 1000, SortBy: "views"));
+            _allComics = res.Items;
+        }
+        catch { _allComics = new(); }
+    }
+
+    async Task OpenSearch()
+    {
+        _searchOpen = true;
+        await EnsureComicsLoaded();
+        FilterSearch();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    void CloseSearch()
+    {
+        _searchOpen = false;
+        _q = "";
+        _searchResults = new();
+        // _allComics keshini saqlaymiz — keyingi ochilishda darrov ishlaydi
+    }
+
+    // Har bir harfda — DB'ga emas, xotiradagi ro'yxatga (desktop inline + mobil drawer uchun umumiy)
+    async Task OnSearchInput(ChangeEventArgs e)
+    {
+        _q = e.Value?.ToString() ?? "";
+        if (_allComics == null) await EnsureComicsLoaded();
+        FilterSearch();
+    }
+
+    void OnDrawerSearchKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            var first = _searchResults.FirstOrDefault();
+            if (first != null)
+            {
+                Nav.NavigateTo($"/comic/{first.Slug}");
+                Close();
+            }
+        }
+        else if (e.Key == "Escape") { _q = ""; _searchResults = new(); }
+    }
+
+    void FilterSearch()
+    {
+        var q = _q.Trim();
+        if (q.Length < 2 || _allComics == null)
+        {
+            _searchResults = new();
+            return;
+        }
+        _searchResults = _allComics
+            .Where(c => (c.Title ?? "").Contains(q, StringComparison.OrdinalIgnoreCase)
+                     || (c.AlternativeTitles ?? "").Contains(q, StringComparison.OrdinalIgnoreCase))
+            .Take(8)
+            .ToList();
+    }
+
+    void OnSearchSheet(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            var first = _searchResults.FirstOrDefault();
+            if (first != null)
+            {
+                Nav.NavigateTo($"/comic/{first.Slug}");
+                CloseSearch();
+            }
+        }
+        else if (e.Key == "Escape") CloseSearch();
+    }
 
     async Task UpdateThemeColor()
     {
         try
         {
-            // Dark: navbar boshlanish rangi #030082, Light: #419fd9
-            var color = _dark ? "#030082" : "#419fd9";
+            // Dark: #0f1117, Light: #2D6BFF
+            var color = _dark ? "#131419" : "#2D6BFF";
             await JS.InvokeVoidAsync("themeColor.set", color);
         }
         catch { /* JS interop not ready in prerender */ }
-    }
-
-    void OnSearch(KeyboardEventArgs e)
-    {
-        if (e.Key == "Enter" && !string.IsNullOrWhiteSpace(_q))
-        {
-            Nav.NavigateTo($"/comics?search={Uri.EscapeDataString(_q)}");
-            _open = false; _q = "";
-        }
     }
 
     public void Dispose() => Theme.OnChange -= Refresh;

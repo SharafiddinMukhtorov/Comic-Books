@@ -1,4 +1,4 @@
-@page "/admin/chapter-pricing"
+﻿@page "/admin/chapter-pricing"
 @using ComicBooks.Application.Common.Interfaces
 @layout AdminLayout
 @inject IMediator Mediator
@@ -50,7 +50,7 @@ else if (_comicId.HasValue && _chapters.Any())
                            Style="text-transform:none;flex-shrink:0;gap:4px;"
                            OnClick="@(() => SetAllPrice(price))">
                     @price
-                    <img src="/img/coin.svg" style="width:16px;height:16px;vertical-align:middle;" alt="coin" />
+                    <img src="/img/coin.png" style="width:16px;height:16px;vertical-align:middle;" alt="coin" />
                 </MudButton>
             }
 
@@ -126,7 +126,7 @@ else if (_comicId.HasValue && _chapters.Any())
                                                  Variant="Variant.Outlined"
                                                  Margin="Margin.Dense"
                                                  Style="max-width:100px;" />
-                                <img src="/img/coin.svg" style="width:20px;height:20px;flex-shrink:0;" alt="coin" />
+                                <img src="/img/coin.png" style="width:20px;height:20px;flex-shrink:0;" alt="coin" />
                             </div>
                         }
                         else

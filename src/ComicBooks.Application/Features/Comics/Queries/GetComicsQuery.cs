@@ -91,8 +91,10 @@ public class GetComicsQueryHandler : IRequestHandler<GetComicsQuery, PaginatedLi
                 IsPopular = c.IsPopular,
                 Slug = c.Slug,
                 CreatedAt = c.CreatedAt,
+                LastUpdatedAt = c.Chapters.Where(ch => !ch.IsDeleted).Max(ch => (DateTime?)ch.PublishedAt) ?? c.CreatedAt,
                 ChapterCount = c.Chapters.Count(ch => !ch.IsDeleted),
                 LatestChapterNumber = c.Chapters.Where(ch => !ch.IsDeleted).OrderByDescending(ch => ch.ChapterNumber).Select(ch => (double?)ch.ChapterNumber).FirstOrDefault(),
+                LatestChapterLocked = c.Chapters.Where(ch => !ch.IsDeleted).OrderByDescending(ch => ch.ChapterNumber).Select(ch => ch.IsLocked).FirstOrDefault(),
                 Genres = c.ComicGenres.Select(cg => cg.Genre.Name).ToList(),
                 Tags = c.ComicTags.Select(ct => ct.Tag.Name).ToList()
             })

@@ -37,6 +37,50 @@ public class CreateChapterCommandHandler : IRequestHandler<CreateChapterCommand,
 
     public async Task<Guid> Handle(CreateChapterCommand request, CancellationToken cancellationToken)
     {
+        // Avval shu raqamli bob mavjudmi? (o'chirilganlar ham — query filterni chetlab o'tamiz)
+        var existing = await _context.Chapters
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(c => c.ComicId == request.ComicId && c.ChapterNumber == request.ChapterNumber, cancellationToken);
+
+        if (existing is not null)
+        {
+            if (!existing.IsDeleted)
+                throw new InvalidOperationException($"Bu komikda {request.ChapterNumber}-bob allaqachon mavjud.");
+
+            // O'chirilgan bobni qayta tiklaymiz (yangidan yaratmaymiz — unique (ComicId,ChapterNumber) to'qnashmasin).
+            // Eski sahifalarni avval o'chiramiz (unique (ChapterId,PageNumber) to'qnashmasin).
+            var oldPages = await _context.ChapterPages
+                .Where(p => p.ChapterId == existing.Id)
+                .ToListAsync(cancellationToken);
+            if (oldPages.Count > 0)
+            {
+                _context.ChapterPages.RemoveRange(oldPages);
+                await _context.SaveChangesAsync(cancellationToken);
+            }
+
+            existing.IsDeleted   = false;
+            existing.Title       = request.Title;
+            existing.Description = request.Description;
+            existing.IsLocked    = request.IsLocked;
+            existing.CoinPrice   = request.IsLocked ? Math.Max(request.CoinPrice, 1) : 0;
+            existing.PublishedAt = request.PublishedAt ?? DateTime.UtcNow;
+            existing.UpdatedAt   = DateTime.UtcNow;
+
+            foreach (var page in request.Pages)
+            {
+                _context.ChapterPages.Add(new ChapterPage
+                {
+                    ChapterId  = existing.Id,
+                    PageNumber = page.PageNumber,
+                    ImageUrl   = page.ImageUrl,
+                    Width      = page.Width,
+                    Height     = page.Height
+                });
+            }
+            await _context.SaveChangesAsync(cancellationToken);
+            return existing.Id;
+        }
+
         // Slug: comicId + chapterNumber, unique guaranteed
         var slug = $"ch-{request.ComicId.ToString("N")[..8]}-{request.ChapterNumber}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}".Replace(".", "-");
 

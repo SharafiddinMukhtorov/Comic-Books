@@ -1,4 +1,4 @@
-@page "/admin/chapters"
+﻿@page "/admin/chapters"
 @layout AdminLayout
 @inject IMediator Mediator
 @inject ISnackbar Snackbar
@@ -34,14 +34,14 @@
                           Label="Sarlavha (ixtiyoriy)"
                           Variant="Variant.Outlined" Class="mb-3" />
 
-            <MudCheckBox T="bool" @bind-Checked="_locked"
+            <MudCheckBox T="bool" @bind-Value="_locked"
                          Label="🔒 Qulflangan (premium)"
                          Color="Color.Warning" Class="mb-2" />
 
             @if (_locked)
             {
                 <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
-                    <img src="/img/coin.svg" style="width:20px;height:20px;" alt="coin" />
+                    <img src="/img/coin.png" style="width:20px;height:20px;" alt="coin" />
                     <span style="font-size:13px;font-weight:700;">Coin narxi</span>
                 </div>
                 <MudNumericField T="int" @bind-Value="_coinPrice"
@@ -57,13 +57,13 @@
                         border:1px solid rgba(128,128,128,0.2);border-radius:8px;overflow:hidden;">
                 <button @onclick="@(()=>_inputMode=0)"
                         style="flex:1;padding:9px;font-size:13px;font-weight:700;border:none;cursor:pointer;
-                               background:@(_inputMode==0?"#419fd9":"transparent");
+                               background:@(_inputMode==0?"#60a5fa":"transparent");
                                color:@(_inputMode==0?"#fff":"inherit");">
                     📄 PDF yuklash
                 </button>
                 <button @onclick="@(()=>_inputMode=1)"
                         style="flex:1;padding:9px;font-size:13px;font-weight:700;border:none;cursor:pointer;
-                               background:@(_inputMode==1?"#419fd9":"transparent");
+                               background:@(_inputMode==1?"#60a5fa":"transparent");
                                color:@(_inputMode==1?"#fff":"inherit");">
                     🖼️ Rasmlarni yuklash
                 </button>
@@ -72,9 +72,9 @@
             @if (_inputMode == 0)
             {
                 <!-- PDF upload -->
-                <div style="border:2px dashed rgba(65,159,217,0.4);border-radius:10px;
+                <div style="border:2px dashed rgba(96,165,250,0.4);border-radius:10px;
                             padding:20px;text-align:center;margin-bottom:12px;
-                            background:rgba(65,159,217,0.04);position:relative;">
+                            background:rgba(96,165,250,0.04);position:relative;">
                     <InputFile OnChange="@OnPdfSelected" accept=".pdf"
                                style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
                     @if (_pdfFile is null)
@@ -93,7 +93,7 @@
                     {
                         <div>
                             <div style="font-size:2rem;">✅</div>
-                            <div style="font-size:14px;font-weight:700;color:#92d4fc;margin-top:4px;">
+                            <div style="font-size:14px;font-weight:700;color:#4C7DFF;margin-top:4px;">
                                 @_pdfFile.Name
                             </div>
                             <div style="font-size:12px;opacity:0.5;margin-top:3px;">
@@ -128,9 +128,9 @@
             else
             {
                 <!-- Multiple images upload -->
-                <div style="border:2px dashed rgba(65,159,217,0.4);border-radius:10px;
+                <div style="border:2px dashed rgba(96,165,250,0.4);border-radius:10px;
                             padding:20px;text-align:center;margin-bottom:12px;
-                            background:rgba(65,159,217,0.04);position:relative;">
+                            background:rgba(96,165,250,0.04);position:relative;">
                     <InputFile OnChange="@OnImagesSelected" accept="image/*" multiple
                                style="position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;" />
                     <div>

@@ -75,6 +75,24 @@ public class CoinService : ICoinService
         return true;
     }
 
+    public async Task<bool> RemoveCoinsAsync(Guid userId, int amount, string description, CancellationToken cancellationToken = default)
+    {
+        var user = await _db.Users.FindAsync(new object[] { userId }, cancellationToken);
+        if (user is null) return false;
+        // Balansdan ko'p ayirmaymiz (manfiy bo'lib ketmasin)
+        var toRemove = Math.Min(Math.Max(amount, 0), user.CoinBalance);
+        if (toRemove <= 0) return false;
+        user.CoinBalance -= toRemove;
+        _db.CoinTransactions.Add(new CoinTransaction
+        {
+            UserId = userId, Amount = -toRemove,
+            Type = CoinTransactionType.Refund,
+            Description = description,
+        });
+        await _db.SaveChangesAsync(cancellationToken);
+        return true;
+    }
+
     public async Task<AppUserDto?> FindUserAsync(string searchTerm, CancellationToken cancellationToken = default)
     {
         var q = searchTerm.TrimStart('@').Trim().ToLower();

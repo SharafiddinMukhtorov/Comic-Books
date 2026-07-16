@@ -10,8 +10,12 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using MudBlazor.Services;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Webp;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +36,18 @@ builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<BookmarkService>();
 
+// ── Data Protection: auth cookie kalitlarini diskda saqlaymiz ───────────────
+// (aks holda har restart/deploy'da kalitlar yangilanib, hamma tizimdan chiqib ketadi)
+var keysPath = builder.Configuration["DataProtection:KeysPath"];
+if (string.IsNullOrWhiteSpace(keysPath))
+    keysPath = builder.Environment.IsDevelopment()
+        ? Path.Combine(builder.Environment.ContentRootPath, "keys")
+        : "/var/www/comicbooks/keys";
+Directory.CreateDirectory(keysPath);
+builder.Services.AddDataProtection()
+    .PersistKeysToFileSystem(new DirectoryInfo(keysPath))
+    .SetApplicationName("ComicBooks");
+
 // ── Autentifikatsiya ──────────────────────────────────────────────────────
 builder.Services.AddAuthentication(options =>
 {
@@ -42,11 +58,13 @@ builder.Services.AddAuthentication(options =>
 {
     options.LoginPath        = "/login";
     options.LogoutPath       = "/auth/logout";
-    options.ExpireTimeSpan   = TimeSpan.FromDays(30);
+    options.ExpireTimeSpan   = TimeSpan.FromDays(365);   // 1 yil — sliding bilan amalda doimiy
     options.SlidingExpiration = true;
     options.Cookie.HttpOnly  = true;
     options.Cookie.SameSite  = SameSiteMode.Lax;
     options.Cookie.Name      = "mdunyo_auth";
+    options.Cookie.MaxAge    = TimeSpan.FromDays(365);   // brauzer cookie'ni 1 yil saqlaydi
+    options.Cookie.IsEssential = true;
 })
 .AddGoogle(options =>
 {
@@ -78,6 +96,15 @@ builder.Services.AddAuthentication(options =>
         identity.AddClaim(new Claim("app_coin_balance", user.CoinBalance.ToString()));
         identity.AddClaim(new Claim("app_picture",      user.Picture ?? ""));
         identity.AddClaim(new Claim("app_name",         user.Name));
+    };
+
+    // Google orqali kirish ham DOIMIY bo'lsin (brauzer yopilsa ham chiqib ketmasin).
+    // Aks holda Google login session-cookie bo'lib qoladi va brauzer yopilganda yo'qoladi.
+    options.Events.OnTicketReceived = ctx =>
+    {
+        ctx.Properties!.IsPersistent = true;
+        ctx.Properties.ExpiresUtc    = DateTimeOffset.UtcNow.AddDays(365);
+        return Task.CompletedTask;
     };
 });
 
@@ -147,7 +174,7 @@ app.MapStaticAssets();
 // Google bilan kirish
 app.MapGet("/auth/google", () =>
     Results.Challenge(
-        new AuthenticationProperties { RedirectUri = "/" },
+        new AuthenticationProperties { RedirectUri = "/", IsPersistent = true },
         [GoogleDefaults.AuthenticationScheme]));
 
 // Email + parol bilan ro'yxatdan o'tish
@@ -208,14 +235,56 @@ uploadGroup.MapPost("/{kind}", async (string kind, HttpContext ctx) =>
     var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
     if (!allowed.Contains(ext)) return Results.BadRequest(new { error = "Faqat jpg/png/webp/gif" });
 
-    var name = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid():N}{ext}";
-    var fullPath = Path.Combine(uploadsPath, sub, name);
-    using (var fs = new FileStream(fullPath, FileMode.Create))
+    var stamp = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid():N}";
+
+    // Faylni xotiraga buferlash (qayta o'qish uchun)
+    using var buffer = new MemoryStream();
+    await file.CopyToAsync(buffer);
+
+    // GIF (animatsiya) — webp'ga aylantirmaymiz, asl holida saqlaymiz
+    if (ext == ".gif")
     {
-        await file.CopyToAsync(fs);
+        var gifName = $"{stamp}.gif";
+        buffer.Position = 0;
+        await using var gifFs = new FileStream(Path.Combine(uploadsPath, sub, gifName), FileMode.Create);
+        await buffer.CopyToAsync(gifFs);
+        return Results.Json(new { url = $"/uploads/{sub}/{gifName}" });
     }
 
-    return Results.Json(new { url = $"/uploads/{sub}/{name}" });
+    // Boshqa rasmlar — kichraytirib WebP'ga aylantiramiz (kichik hajm, tez yuklash)
+    int maxSide = sub switch { "covers" => 800, "banners" => 1600, _ => 1200 };
+    var webpName = $"{stamp}.webp";
+    var webpPath = Path.Combine(uploadsPath, sub, webpName);
+    try
+    {
+        buffer.Position = 0;
+        using var image = await Image.LoadAsync(buffer);
+        if (sub == "chapters")
+        {
+            // Bob sahifalari uzun bo'ladi — faqat kenglikni cheklaymiz (bo'yi proporsional)
+            if (image.Width > maxSide)
+                image.Mutate(x => x.Resize(maxSide, 0));
+        }
+        else if (image.Width > maxSide || image.Height > maxSide)
+        {
+            image.Mutate(x => x.Resize(new SixLabors.ImageSharp.Processing.ResizeOptions
+            {
+                Mode = SixLabors.ImageSharp.Processing.ResizeMode.Max,
+                Size = new SixLabors.ImageSharp.Size(maxSide, maxSide)
+            }));
+        }
+        await image.SaveAsWebpAsync(webpPath, new WebpEncoder { Quality = 80 });
+        return Results.Json(new { url = $"/uploads/{sub}/{webpName}" });
+    }
+    catch
+    {
+        // Aylantirib bo'lmasa (buzuq fayl va h.k.) — asl faylni saqlaymiz
+        var rawName = $"{stamp}{ext}";
+        buffer.Position = 0;
+        await using var rawFs = new FileStream(Path.Combine(uploadsPath, sub, rawName), FileMode.Create);
+        await buffer.CopyToAsync(rawFs);
+        return Results.Json(new { url = $"/uploads/{sub}/{rawName}" });
+    }
 });
 
 // ── Admin master login (hard-coded credentials, 1 kun) ─────────────────────
@@ -324,7 +393,7 @@ static async Task SignInCookie(HttpContext ctx, ComicBooks.Domain.Entities.AppUs
     var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
     var principal = new ClaimsPrincipal(identity);
     await ctx.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal,
-        new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTime.UtcNow.AddDays(30) });
+        new AuthenticationProperties { IsPersistent = true, ExpiresUtc = DateTime.UtcNow.AddDays(365) });
 }
 
 // ── Blazor ────────────────────────────────────────────────────────────────

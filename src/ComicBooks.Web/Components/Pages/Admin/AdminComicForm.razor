@@ -1,4 +1,4 @@
-@page "/admin/comics/create"
+﻿@page "/admin/comics/create"
 @page "/admin/comics/edit/{Id:guid}"
 @layout AdminLayout
 @inject IMediator Mediator
@@ -53,7 +53,7 @@
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        background: linear-gradient(135deg, #419fd9, #1b13be);
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
         color: #fff;
         padding: 10px 18px;
         border-radius: 9px;
@@ -62,7 +62,7 @@
         font-weight: 700;
         border: none;
         transition: filter 0.15s, transform 0.15s;
-        box-shadow: 0 4px 14px rgba(27,19,190,0.35);
+        box-shadow: 0 4px 14px rgba(59,130,246,0.35);
     }
     .adm-file-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
 
@@ -256,15 +256,15 @@ else
 
             <div style="background:rgba(91,159,217,0.06);border:1px solid rgba(91,159,217,0.15);
                         border-radius:10px;padding:10px 14px;margin-bottom:14px;">
-                <MudCheckBox T="bool" @bind-Checked="_featured" Label="🌟 Featured (Carousel)" Color="Color.Primary" Class="mb-0" />
-                <MudCheckBox T="bool" @bind-Checked="_popular"  Label="🔥 Mashhur" Color="Color.Secondary" Class="mb-0" />
+                <MudCheckBox T="bool" @bind-Value="_featured" Label="🌟 Featured (Carousel)" Color="Color.Primary" Class="mb-0" />
+                <MudCheckBox T="bool" @bind-Value="_popular"  Label="🔥 Mashhur" Color="Color.Secondary" Class="mb-0" />
             </div>
 
             <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
                        OnClick="@Save" Disabled="@_saving"
                        Style="height:48px;text-transform:none;font-weight:800;border-radius:10px;
-                              background:linear-gradient(135deg,#419fd9,#1b13be);
-                              box-shadow:0 6px 18px rgba(27,19,190,0.4);">
+                              background:linear-gradient(135deg,#60a5fa,#3b82f6);
+                              box-shadow:0 6px 18px rgba(59,130,246,0.4);">
                 @(_saving ? "⏳ Saqlanmoqda..." : (IsEdit ? "💾 Saqlash" : "➕ Qo'shish"))
             </MudButton>
             <MudButton Href="/admin/comics" Variant="Variant.Outlined" FullWidth="true" Class="mt-2"

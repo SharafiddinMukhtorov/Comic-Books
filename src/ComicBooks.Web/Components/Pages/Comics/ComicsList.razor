@@ -1,4 +1,4 @@
-@page "/comics"
+﻿@page "/comics"
 @inject IMediator Mediator
 
 <PageTitle>Katalog - Manga Dunyo</PageTitle>
@@ -23,7 +23,7 @@
         content: '';
         display: inline-block;
         width: 4px; height: 20px;
-        background: linear-gradient(180deg,#030082,#419fd9);
+        background: linear-gradient(180deg,#60a5fa,#3b82f6);
         border-radius: 2px;
     }
 
@@ -54,7 +54,7 @@
         outline: none;
         transition: border-color 0.2s;
     }
-    .filter-search:focus { border-color: #419fd9; }
+    .filter-search:focus { border-color: #60a5fa; }
 
     .filter-select {
         height: 42px;
@@ -73,13 +73,13 @@
         background-position: right 10px center;
         min-width: 130px;
     }
-    .filter-select:focus { border-color: #419fd9; }
+    .filter-select:focus { border-color: #60a5fa; }
 
     .filter-btn {
         height: 42px;
         padding: 0 20px;
         border-radius: 8px;
-        background: #1b13be;
+        background: #3b82f6;
         color: #fff;
         font-size: 13.5px;
         font-weight: 700;
@@ -125,7 +125,7 @@
 <div class="browse-wrap">
 
     <div class="browse-header">
-        <span class="browse-title">Komiklar katalogi</span>
+        <span class="browse-title">Asarlar katalogi</span>
     </div>
 
     <!-- Filter bar -->
@@ -134,7 +134,7 @@
                @bind="_search"
                @bind:event="oninput"
                @onkeydown="@OnKey"
-               placeholder="🔍  Series qidirish..." />
+               placeholder="🔍  O'z dunyongizni qidiring..." />
 
         <select class="filter-select" @bind="_status">
             <option value="">Barcha holat</option>
@@ -148,6 +148,14 @@
             <option value="Manhwa">Manhwa</option>
             <option value="Manga">Manga</option>
             <option value="Manhua">Manhua</option>
+        </select>
+
+        <select class="filter-select" @bind="_genreId">
+            <option value="">Barcha janr</option>
+            @foreach (var g in _genres)
+            {
+                <option value="@g.Id">@Translate(g.Name)</option>
+            }
         </select>
 
         <select class="filter-select" @bind="_sort">
@@ -213,17 +221,20 @@
     [SupplyParameterFromQuery] public string? genre   { get; set; }
 
     PaginatedList<ComicDto>? _result;
+    List<GenreDto> _genres = new();
     bool   _loading = true;
     int    _page    = 1;
     string _search  = "";
     string _sort    = "createdAt";
     string _status  = "";
     string _type    = "";
+    string _genreId = "";
 
     protected override async Task OnInitializedAsync()
     {
         _search = search ?? "";
         _sort   = sortBy ?? "createdAt";
+        _genres = await Mediator.Send(new GetAllGenresQuery());
         await Load();
     }
 
@@ -245,10 +256,12 @@
             _        => null
         };
 
+        Guid? gid = Guid.TryParse(_genreId, out var g) ? g : null;
+
         _result = await Mediator.Send(new GetComicsQuery(
             PageNumber: _page, PageSize: 24,
             Search: string.IsNullOrWhiteSpace(_search) ? null : _search,
-            Status: st, Type: ty, SortBy: _sort));
+            Status: st, Type: ty, GenreId: gid, SortBy: _sort));
         _loading = false;
     }
 
