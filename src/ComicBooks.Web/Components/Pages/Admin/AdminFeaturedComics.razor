@@ -30,6 +30,68 @@
 }
 else
 {
+    <!-- Admin tavsiyasi (Reytinglar ostida — faqat bitta komik) -->
+    <MudPaper Class="pa-4 mb-4" Style="border:1px solid rgba(168,85,247,0.3);">
+        <MudText Typo="Typo.h6" Class="mb-1">⭐ Admin tavsiyasi</MudText>
+        <MudText Typo="Typo.body2" Style="opacity:0.6" Class="mb-3">
+            Bosh sahifa "Reytinglar" bo'limi ostida ko'rsatiladigan bitta komikni tanlang
+        </MudText>
+
+        @if (_adminPick != null)
+        {
+            <div class="fc-row fc-row-left">
+                <img class="fc-thumb"
+                     src="@(_adminPick.CoverImageUrl ?? $"https://picsum.photos/seed/{_adminPick.Slug}/80/110")"
+                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_adminPick.Slug)x/80/110'" />
+                <div class="fc-info">
+                    <div class="fc-title">@_adminPick.Title</div>
+                    <div class="fc-meta">★ @_adminPick.AverageRating.ToString("F1") · @_adminPick.Type</div>
+                </div>
+                <MudChip T="string" Color="Color.Error" Size="Size.Small"
+                         OnClick="@(() => SetAdminPick(null))"
+                         Style="cursor:pointer;font-weight:700;">✕ Olib tashlash</MudChip>
+            </div>
+        }
+        else
+        {
+            <div style="opacity:0.4;padding:10px 0;font-size:13px;">Hech qanday komik tanlanmagan</div>
+        }
+
+        <MudTextField @bind-Value="_pickSearch" @bind-Value:after="@OnPickSearchChanged"
+                      Label="Komik qidirish..." Variant="Variant.Outlined"
+                      Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                      Immediate="true" Class="mt-3 mb-2" />
+
+        @if (!string.IsNullOrWhiteSpace(_pickSearch))
+        {
+            <div style="max-height:240px;overflow-y:auto;">
+                @if (!_pickResults.Any())
+                {
+                    <div style="opacity:0.4;padding:8px 0;font-size:13px;">Hech narsa topilmadi</div>
+                }
+                @foreach (var item in _pickResults)
+                {
+                    var id = item.Id;
+                    <div class="fc-row fc-row-right">
+                        <img class="fc-thumb"
+                             src="@(item.CoverImageUrl ?? $"https://picsum.photos/seed/{item.Slug}/80/110")"
+                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(item.Slug)x/80/110'" />
+                        <div class="fc-info">
+                            <div class="fc-title">@item.Title</div>
+                            <div class="fc-meta">★ @item.AverageRating.ToString("F1") · @item.Type</div>
+                        </div>
+                        <MudChip T="string" Color="Color.Success" Size="Size.Small"
+                                 Disabled="@(_adminPick?.Id == id)"
+                                 OnClick="@(() => SetAdminPick(id))"
+                                 Style="cursor:pointer;font-weight:700;">
+                            @(_adminPick?.Id == id ? "Tanlangan" : "Pin qilish")
+                        </MudChip>
+                    </div>
+                }
+            </div>
+        }
+    </MudPaper>
+
     <MudGrid>
         <!-- Tanlangan comiclar -->
         <MudItem xs="12" md="6">
@@ -126,7 +188,30 @@ else
     bool _saving  = false;
     private string _search = "";
 
+    ComicDto? _adminPick;
+    string _pickSearch = "";
+    List<ComicDto> _pickResults = new();
+
     protected override async Task OnInitializedAsync() => await LoadData();
+
+    async Task OnPickSearchChanged()
+    {
+        if (string.IsNullOrWhiteSpace(_pickSearch)) { _pickResults = new(); return; }
+        var r = await Mediator.Send(new GetComicsQuery(PageSize: 20, Search: _pickSearch, SortBy: "rating"));
+        _pickResults = r.Items.ToList();
+    }
+
+    async Task SetAdminPick(Guid? id)
+    {
+        try
+        {
+            await Mediator.Send(new SetAdminPickCommand(id));
+            var pick = await Mediator.Send(new GetComicsQuery(PageSize: 1, IsAdminPick: true));
+            _adminPick = pick.Items.FirstOrDefault();
+            Snackbar.Add(id.HasValue ? "✅ Admin tavsiyasi belgilandi!" : "✅ Admin tavsiyasi olib tashlandi!", Severity.Success);
+        }
+        catch (Exception ex) { Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error); }
+    }
 
     private async Task OnSearchChanged(string val)
     {
@@ -156,6 +241,9 @@ else
 
         var feat = await Mediator.Send(new GetComicsQuery(PageSize: 100, IsFeatured: true, SortBy: "rating"));
         _featuredIds = feat.Items.Select(c => c.Id).ToHashSet();
+
+        var pick = await Mediator.Send(new GetComicsQuery(PageSize: 1, IsAdminPick: true));
+        _adminPick = pick.Items.FirstOrDefault();
 
         _loading = false;
     }

@@ -3,6 +3,12 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# Local dev DB/uploads restored from prod backup — contains real user PII, never commit
+src/ComicBooks.Web/comicbooks.db
+src/ComicBooks.Web/comicbooks.db-shm
+src/ComicBooks.Web/comicbooks.db-wal
+src/ComicBooks.Web/wwwroot/uploads/
+
 # User-specific files
 *.rsuser
 *.suo

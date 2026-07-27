@@ -277,7 +277,7 @@ else
 
         if (_isSuper)
         {
-            try { _users = await Mediator.Send(new GetUsersListQuery(500)); }
+            try { _users = await Mediator.Send(new GetUsersListQuery()); }
             catch { _users = new(); }
         }
         _checking = false;

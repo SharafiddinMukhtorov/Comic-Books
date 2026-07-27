@@ -254,6 +254,11 @@ else
 
             <MudNumericField T="int?" @bind-Value="_year" Label="Yil" Variant="Variant.Outlined" Class="mb-3" Min="1950" Max="2030" />
 
+            <MudNumericField T="double" @bind-Value="_avgRating" Label="⭐ Reyting (admin belgilaydi)"
+                              Variant="Variant.Outlined" Class="mb-3"
+                              Min="0" Max="10" Step="0.1"
+                              HelperText="Foydalanuvchi baholashi bunga endi ta'sir qilmaydi — faqat shu yerdan o'zgartiring" />
+
             <div style="background:rgba(91,159,217,0.06);border:1px solid rgba(91,159,217,0.15);
                         border-radius:10px;padding:10px 14px;margin-bottom:14px;">
                 <MudCheckBox T="bool" @bind-Value="_featured" Label="🌟 Featured (Carousel)" Color="Color.Primary" Class="mb-0" />
@@ -285,6 +290,7 @@ else
     ComicType     _type    = ComicType.Manhwa;
     ContentRating _rating  = ContentRating.Teen;
     int?          _year;
+    double        _avgRating = 0;
     bool          _featured, _popular;
     IEnumerable<Guid> _genreIds = new HashSet<Guid>();
     IEnumerable<Guid> _tagIds   = new HashSet<Guid>();
@@ -400,6 +406,7 @@ else
         _bannerUrl = c.BannerImageUrl ?? ""; _status = c.Status;
         _type = c.Type; _rating = c.Rating; _year = c.ReleaseYear;
         _featured = c.IsFeatured; _popular = c.IsPopular;
+        _avgRating = c.AverageRating;
 
         var gMap = _genres.ToDictionary(g => g.Name, g => g.Id, StringComparer.OrdinalIgnoreCase);
         _genreIds = c.Genres.Where(n => gMap.ContainsKey(n)).Select(n => gMap[n]).ToHashSet();
@@ -412,7 +419,7 @@ else
     {
         _title = ""; _altTitles = ""; _desc = ""; _author = ""; _artist = ""; _coverUrl = ""; _bannerUrl = "";
         _status = ComicStatus.Ongoing; _type = ComicType.Manhwa; _rating = ContentRating.Teen;
-        _year = null; _featured = false; _popular = false;
+        _year = null; _featured = false; _popular = false; _avgRating = 0;
         _genreIds = new HashSet<Guid>(); _tagIds = new HashSet<Guid>();
     }
 
@@ -423,9 +430,9 @@ else
         try
         {
             if (!IsEdit)
-                await Mediator.Send(new CreateComicCommand(_title, _altTitles, _desc, _coverUrl, _bannerUrl, _status, _type, _rating, _author, _artist, _year, _featured, _popular, _genreIds.ToList(), _tagIds.ToList(), _currentUid == Guid.Empty ? null : _currentUid));
+                await Mediator.Send(new CreateComicCommand(_title, _altTitles, _desc, _coverUrl, _bannerUrl, _status, _type, _rating, _author, _artist, _year, _featured, _popular, _genreIds.ToList(), _tagIds.ToList(), _currentUid == Guid.Empty ? null : _currentUid, _avgRating));
             else
-                await Mediator.Send(new UpdateComicCommand(Id, _title, _altTitles, _desc, _coverUrl, _bannerUrl, _status, _type, _rating, _author, _artist, _year, _featured, _popular, _genreIds.ToList(), _tagIds.ToList()));
+                await Mediator.Send(new UpdateComicCommand(Id, _title, _altTitles, _desc, _coverUrl, _bannerUrl, _status, _type, _rating, _author, _artist, _year, _featured, _popular, _genreIds.ToList(), _tagIds.ToList(), _avgRating));
 
             Snackbar.Add("✅ Saqlandi!", Severity.Success);
             Nav.NavigateTo("/admin/comics");

@@ -1,10 +1,8 @@
 ﻿@inherits LayoutComponentBase
-@inject ThemeService Theme
 @inject AuthenticationStateProvider AuthState
 @inject NavigationManager Nav
-@implements IDisposable
 
-<MudThemeProvider @ref="_themeProvider" Theme="@_theme" @bind-IsDarkMode="_dark" />
+<MudThemeProvider @ref="_themeProvider" Theme="@_theme" IsDarkMode="true" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
@@ -196,7 +194,6 @@ else
 @code {
     MudThemeProvider _themeProvider = null!;
     bool _open = false;
-    bool _dark = true;
     bool _checking = true;
     bool _isAdmin  = false;
     string _role   = "regular";
@@ -216,9 +213,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        _dark = true;
-        Theme.OnChange += OnThemeChanged;
-
         var st = await AuthState.GetAuthenticationStateAsync();
         _isAdmin = st.User.Identity?.IsAuthenticated == true
                    && st.User.FindFirst("app_is_admin")?.Value == "true";
@@ -233,12 +227,4 @@ else
         if (exact) return path == href ? "active" : "";
         return path == href || path.StartsWith(href + "/") ? "active" : "";
     }
-
-    async void OnThemeChanged()
-    {
-        _dark = Theme.IsDark;
-        await InvokeAsync(StateHasChanged);
-    }
-
-    public void Dispose() => Theme.OnChange -= OnThemeChanged;
 }

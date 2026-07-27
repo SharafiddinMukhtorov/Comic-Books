@@ -6,6 +6,33 @@
 
 <PageTitle>Coin boshqaruvi - Admin</PageTitle>
 
+<style>
+    .tx-tbl-wrap { overflow-x: auto; border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; }
+    .tx-tbl { width: 100%; border-collapse: collapse; }
+    .tx-tbl th {
+        font-size: 11px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.4px;
+        opacity: 0.55;
+        text-align: left;
+        padding: 10px 12px;
+        background: rgba(255,255,255,0.03);
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+        border-right: 1px solid rgba(255,255,255,0.06);
+    }
+    .tx-tbl th:last-child { border-right: none; }
+    .tx-tbl td {
+        padding: 10px 12px;
+        border-bottom: 1px solid rgba(255,255,255,0.06);
+        border-right: 1px solid rgba(255,255,255,0.05);
+        vertical-align: top;
+    }
+    .tx-tbl td:last-child { border-right: none; }
+    .tx-tbl tbody tr:last-child td { border-bottom: none; }
+    .tx-tbl tbody tr:hover td { background: rgba(91,159,217,0.05); }
+</style>
+
 <MudText Typo="Typo.h5" Class="mb-1">🪙 Coin boshqaruvi</MudText>
 <MudText Typo="Typo.body2" Style="opacity:0.5;margin-bottom:20px;">
     Foydalanuvchilarga coin qo'shing va tranzaksiyalarni kuzating.
@@ -89,11 +116,14 @@
                     </MudButton>
                     <MudButton Variant="Variant.Outlined" Color="Color.Error"
                                OnClick="@RemoveCoins"
-                               Disabled="@(_addAmount <= 0 || _saving || _foundUser.CoinBalance <= 0)"
+                               Disabled="@(_addAmount <= 0 || _saving || _foundUser.CoinBalance < _addAmount)"
                                Style="height:46px;text-transform:none;font-weight:700;border-radius:10px;white-space:nowrap;">
-                        ➖ Olib tashlash
+                        ➖ @_addAmount ni olib tashlash
                     </MudButton>
                 </div>
+                <MudText Typo="Typo.caption" Style="opacity:0.45;display:block;margin-top:6px;">
+                    Yuqoridagi "Coin miqdori" maydoniga xohlagan sonni (masalan 1 yoki 2) kiritib, aynan shuncha coinni qaytarib olishingiz mumkin.
+                </MudText>
             }
             else if (_searched)
             {
@@ -140,42 +170,67 @@
             }
             else
             {
-                <MudTable Items="@_transactions" Dense="true" Hover="true" Elevation="0">
-                    <HeaderContent>
-                        <MudTh>Foydalanuvchi</MudTh>
-                        <MudTh>Miqdor</MudTh>
-                        <MudTh>Tur</MudTh>
-                        <MudTh>Izoh</MudTh>
-                        <MudTh>Sana</MudTh>
-                    </HeaderContent>
-                    <RowTemplate>
-                        <MudTd>
-                            <div style="font-size:12px;">@context.UserName</div>
-                            @if (!string.IsNullOrEmpty(context.TelegramUsername))
+                <div class="tx-tbl-wrap">
+                <table class="tx-tbl">
+                    <thead>
+                        <tr>
+                            <th>Foydalanuvchi</th>
+                            <th>Miqdor</th>
+                            <th>Tur</th>
+                            <th>Izoh</th>
+                            <th>Sana</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_transactions.Count == 0)
+                        {
+                            <tr><td colspan="5" style="text-align:center;opacity:0.4;padding:24px;">Hali tranzaksiyalar yo'q.</td></tr>
+                        }
+                        else
+                        {
+                            @foreach (var t in _transactions)
                             {
-                                <div style="font-size:10px;opacity:0.45;">@@context.TelegramUsername</div>
+                                <tr>
+                                    <td>
+                                        <div style="font-size:12px;font-weight:600;">@t.UserName</div>
+                                        @if (!string.IsNullOrEmpty(t.TelegramUsername))
+                                        {
+                                            <div style="font-size:10px;opacity:0.45;">@@@t.TelegramUsername</div>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span style="color:@(t.Amount > 0 ? "#22c55e" : "#ef4444");font-weight:700;white-space:nowrap;">
+                                            @(t.Amount > 0 ? "+" : "")@t.Amount 🪙
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <MudChip T="string" Size="Size.Small" Label="true"
+                                                 Color="@(t.Type == "Purchase" ? Color.Success : Color.Default)">
+                                            @(t.Type == "Purchase" ? "Sotib olindi" :
+                                              t.Type == "Spend"    ? "Sarflandi"   :
+                                              t.Type == "Bonus"    ? "Bonus"       : "Qaytarildi")
+                                        </MudChip>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(t.ComicTitle) && t.ChapterNumber.HasValue)
+                                        {
+                                            <div style="font-size:12px;">
+                                                <span style="font-weight:600;">@t.ComicTitle</span>
+                                                <span style="opacity:0.55;"> — Bob @t.ChapterNumber.Value.ToString("0.##")</span>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <span style="font-size:12px;opacity:0.6;">@t.Description</span>
+                                        }
+                                    </td>
+                                    <td><span style="font-size:11px;opacity:0.45;white-space:nowrap;">@t.CreatedAt.ToString("dd.MM HH:mm")</span></td>
+                                </tr>
                             }
-                        </MudTd>
-                        <MudTd>
-                            <span style="color:@(context.Amount > 0 ? "#22c55e" : "#ef4444");font-weight:700;">
-                                @(context.Amount > 0 ? "+" : "")@context.Amount 🪙
-                            </span>
-                        </MudTd>
-                        <MudTd>
-                            <MudChip T="string" Size="Size.Small" Label="true"
-                                     Color="@(context.Type == "Purchase" ? Color.Success : Color.Default)">
-                                @(context.Type == "Purchase" ? "Sotib olindi" :
-                                  context.Type == "Spend"    ? "Sarflandi"   :
-                                  context.Type == "Bonus"    ? "Bonus"       : "Qaytarildi")
-                            </MudChip>
-                        </MudTd>
-                        <MudTd><span style="font-size:12px;opacity:0.6;">@context.Description</span></MudTd>
-                        <MudTd><span style="font-size:11px;opacity:0.45;">@context.CreatedAt.ToString("dd.MM HH:mm")</span></MudTd>
-                    </RowTemplate>
-                    <NoRecordsContent>
-                        <MudText Class="pa-4" Style="opacity:0.4;">Hali tranzaksiyalar yo'q.</MudText>
-                    </NoRecordsContent>
-                </MudTable>
+                        }
+                    </tbody>
+                </table>
+                </div>
             }
         </MudPaper>
     </MudItem>

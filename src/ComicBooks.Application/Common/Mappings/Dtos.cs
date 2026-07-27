@@ -22,12 +22,15 @@ public class ComicDto
     public int BookmarkCount { get; set; }
     public bool IsFeatured { get; set; }
     public bool IsPopular { get; set; }
+    public bool IsAdminPick { get; set; }   // Admin tavsiyasi (faqat bitta komikda true bo'ladi)
     public string? Slug { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime LastUpdatedAt { get; set; }   // oxirgi bob qo'shilgan sana (yoki yaratilgan sana)
     public int ChapterCount { get; set; }
     public double? LatestChapterNumber { get; set; }
     public bool LatestChapterLocked { get; set; }   // oxirgi bob qulflanganmi (premium)
+    public double? SecondLatestChapterNumber { get; set; }   // oxirgidan oldingi bob raqami
+    public DateTime? SecondLatestChapterDate { get; set; }   // oxirgidan oldingi bob qo'shilgan sana
     public List<string> Genres { get; set; } = new();
     public List<string> Tags { get; set; } = new();
 }
@@ -97,6 +100,8 @@ public class CoinTransactionDto
     public string? Description     { get; set; }
     public string? TelegramUsername { get; set; }
     public DateTime CreatedAt      { get; set; }
+    public string?  ComicTitle     { get; set; }   // Sarflangan bo'lsa — qaysi komik
+    public double?  ChapterNumber  { get; set; }   // Sarflangan bo'lsa — qaysi bob
 }
 
 public class ChapterPriceItemDto

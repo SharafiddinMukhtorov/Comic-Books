@@ -32,7 +32,6 @@ builder.Services.AddRazorComponents()
     .AddHubOptions(o => o.MaximumReceiveMessageSize = 200 * 1024 * 1024);
 
 // ── Custom xizmatlar ──────────────────────────────────────────────────────
-builder.Services.AddScoped<ThemeService>();
 builder.Services.AddScoped<SessionService>();
 builder.Services.AddScoped<BookmarkService>();
 

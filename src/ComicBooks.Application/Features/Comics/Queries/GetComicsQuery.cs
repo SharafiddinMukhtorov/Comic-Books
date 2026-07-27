@@ -16,6 +16,7 @@ public record GetComicsQuery(
     Guid? GenreId = null,
     bool? IsFeatured = null,
     bool? IsPopular = null,
+    bool? IsAdminPick = null,
     string? SortBy = "createdAt",
     bool SortDescending = true
 ) : IRequest<PaginatedList<ComicDto>>;
@@ -57,6 +58,9 @@ public class GetComicsQueryHandler : IRequestHandler<GetComicsQuery, PaginatedLi
         if (request.IsPopular.HasValue)
             query = query.Where(c => c.IsPopular == request.IsPopular);
 
+        if (request.IsAdminPick.HasValue)
+            query = query.Where(c => c.IsAdminPick == request.IsAdminPick);
+
         query = request.SortBy?.ToLower() switch
         {
             "title" => request.SortDescending ? query.OrderByDescending(c => c.Title) : query.OrderBy(c => c.Title),
@@ -89,12 +93,15 @@ public class GetComicsQueryHandler : IRequestHandler<GetComicsQuery, PaginatedLi
                 BookmarkCount = c.BookmarkCount,
                 IsFeatured = c.IsFeatured,
                 IsPopular = c.IsPopular,
+                IsAdminPick = c.IsAdminPick,
                 Slug = c.Slug,
                 CreatedAt = c.CreatedAt,
                 LastUpdatedAt = c.Chapters.Where(ch => !ch.IsDeleted).Max(ch => (DateTime?)ch.PublishedAt) ?? c.CreatedAt,
                 ChapterCount = c.Chapters.Count(ch => !ch.IsDeleted),
                 LatestChapterNumber = c.Chapters.Where(ch => !ch.IsDeleted).OrderByDescending(ch => ch.ChapterNumber).Select(ch => (double?)ch.ChapterNumber).FirstOrDefault(),
                 LatestChapterLocked = c.Chapters.Where(ch => !ch.IsDeleted).OrderByDescending(ch => ch.ChapterNumber).Select(ch => ch.IsLocked).FirstOrDefault(),
+                SecondLatestChapterNumber = c.Chapters.Where(ch => !ch.IsDeleted).OrderByDescending(ch => ch.ChapterNumber).Skip(1).Select(ch => (double?)ch.ChapterNumber).FirstOrDefault(),
+                SecondLatestChapterDate = c.Chapters.Where(ch => !ch.IsDeleted).OrderByDescending(ch => ch.ChapterNumber).Skip(1).Select(ch => (DateTime?)ch.PublishedAt).FirstOrDefault(),
                 Genres = c.ComicGenres.Select(cg => cg.Genre.Name).ToList(),
                 Tags = c.ComicTags.Select(ct => ct.Tag.Name).ToList()
             })

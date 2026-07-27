@@ -23,16 +23,19 @@ public class GetGlobalRevenueQueryHandler : IRequestHandler<GetGlobalRevenueQuer
 
         var chapterIds = spends.Select(s => s.ChapterId!.Value).Distinct().ToList();
 
-        // Chapter → ComicId map
+        // Chapter → ComicId map — IgnoreQueryFilters: o'chirilgan bob bo'lsa ham
+        // undan oldin sotib olingan coin daromadga hisoblanishi davom etishi kerak
         var chapterMap = await _db.Chapters
+            .IgnoreQueryFilters()
             .Where(ch => chapterIds.Contains(ch.Id))
             .Select(ch => new { ch.Id, ch.ComicId })
             .ToListAsync(ct);
 
         var comicIds = chapterMap.Select(c => c.ComicId).Distinct().ToList();
 
-        // Comics ma'lumotlari
+        // Comics ma'lumotlari — shu sababdan IgnoreQueryFilters
         var comicsList = await _db.Comics
+            .IgnoreQueryFilters()
             .Where(c => comicIds.Contains(c.Id))
             .Select(c => new
             {

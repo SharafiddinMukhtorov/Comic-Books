@@ -3,14 +3,12 @@
 @inject NavigationManager Nav
 @inject BookmarkService BookmarkSvc
 @inject SessionService SessionSvc
-@inject ThemeService Theme
 @inject AuthenticationStateProvider AuthState
 @inject ISnackbar Snackbar
 @inject IJSRuntime JS
 @using ComicBooks.Application.Features.Comics.Commands
 @using ComicBooks.Application.Features.Comments.Queries
 @using ComicBooks.Application.Features.Comments.Commands
-@implements IDisposable
 
 <PageTitle>@(_comic?.Title ?? "Comic") - Manga Dunyo</PageTitle>
 
@@ -33,23 +31,6 @@
         overflow: hidden;
         background: #101014;
     }
-    .dr.light {
-        --acc:        #2D6BFF;
-        --acc2:       #1A58F0;
-        --acc-light:  rgba(96,165,250,0.10);
-        --acc-border: rgba(96,165,250,0.40);
-        --panel-bg:   rgba(255,255,255,0.82);
-        --panel-brd:  rgba(0,0,0,0.08);
-        --ch-hover:   rgba(96,165,250,0.08);
-        --lbl:        rgba(30,30,60,0.45);
-        --val:        #252D55;
-        --tag-bg:     rgba(0,0,0,0.05);
-        --tag-brd:    rgba(0,0,0,0.14);
-        --tag-col:    #252D55;
-        --div:        rgba(0,0,0,0.07);
-        background: #edf2fd;
-    }
-
     /* ── Subtle blur banner (faqat tepa qism) ── */
     .dr-bg {
         position: absolute;
@@ -62,11 +43,6 @@
         z-index: 0;
         opacity: 0.85;
     }
-    .dr.light .dr-bg {
-        filter: blur(12px) brightness(1.05) saturate(1.1);
-        opacity: 0.35;
-    }
-
     /* Gradient: dr-bg (500px) dan balandroq → cheti ko'rinmaydi */
     .dr-bg-grad {
         position: absolute;
@@ -81,16 +57,6 @@
             #101014             66%
         );
     }
-    .dr.light .dr-bg-grad {
-        background: linear-gradient(
-            to bottom,
-            rgba(237,242,253,0.25) 0%,
-            rgba(237,242,253,0.70) 42%,
-            rgba(237,242,253,0.97) 58%,
-            #edf2fd               66%
-        );
-    }
-
     /* ── Outer wrap ── */
     .dr-wrap {
         position: relative;
@@ -374,21 +340,11 @@
         padding: 20px 18px 16px;
         margin-bottom: 12px;
     }
-    .dr.light .dr-info-card {
-        background: #ffffff;
-        border-color: #e4e9f7;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-    }
     .ch-section {
         background: #17181e;
         border: 1px solid rgba(255,255,255,0.08);
         border-radius: 12px;
         padding: 16px;
-    }
-    .dr.light .ch-section {
-        background: #ffffff;
-        border-color: #e4e9f7;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
     }
     .ch-section .ch-hdr { margin-bottom: 12px; }
     .ch-section .ch-srch-wrap { margin-bottom: 12px; }
@@ -593,13 +549,8 @@
         mask: url('/img/stat-star.png') center / contain no-repeat;
         transition: transform 0.13s, background-color 0.13s;
     }
-    .dr.light .dr-star { background-color: rgba(0,0,0,0.22); }
     .dr-star.active { background-color: #FACC15; }
     .dr-star:hover { transform: scale(1.18); }
-    /* ── Light mode: reyting qutisi to'q ranglar bilan o'qiladigan bo'ladi ── */
-    .dr.light .dr-rate-box   { background: rgba(245,158,11,0.12); border-color: rgba(217,119,6,0.50); }
-    .dr.light .dr-rate-label { color: #B45309; }
-    .dr.light .dr-star.active { background-color: #D97706; }
     .dr-rating-thanks  { font-size: 13px; font-weight: 700; color: var(--acc); margin-top: 12px; }
 
     /* Scroll-to-top */
@@ -802,34 +753,8 @@
             max-width: 100%;
             box-sizing: border-box;
         }
-
-        /* ── LIGHT MODE: mobile overrides ── */
-        .dr.light .dr-bg {
-            filter: blur(26px) brightness(1.1) saturate(1.3);
-            transform: scale(1.12);
-            opacity: 1;
-        }
-        .dr.light .dr-bg-grad {
-            background: linear-gradient(
-                to bottom,
-                rgba(237,242,253,0.0)  0%,
-                rgba(237,242,253,0.18) 28%,
-                rgba(237,242,253,0.60) 52%,
-                rgba(237,242,253,0.95) 68%,
-                #edf2fd                80%
-            );
-        }
-        /* ichki cardlar o'z fonini boshqaradi */
-        .dr.light .dr-right  { background: transparent; }
-        .dr.light .dr-panel-body { background: #edf2fd; }
-        /* statistika qutisi: light modeda qoramtir shaffof */
-        .dr.light .dr-stats { background: rgba(0,0,0,0.05); }
     }
 </style>
-
-@{
-    var tc = Theme.IsDark ? "" : "light";
-}
 
 @if (_loading)
 {
@@ -847,7 +772,7 @@ else if (_comic is null)
 }
 else
 {
-<div class="dr @tc">
+<div class="dr">
     <div class="dr-bg" style="background-image:url('@BgUrl()');"></div>
     <div class="dr-bg-grad"></div>
     <div class="dr-wrap">
@@ -1120,7 +1045,7 @@ else
 
     <!-- ════ COMMENTS SECTION ════ -->
     <div style="max-width:1100px;margin:32px auto 90px;padding:0 20px;position:relative;z-index:2;">
-        <div style="background:@(Theme.IsDark ? "#17181e" : "#ffffff");border:1px solid @(Theme.IsDark ? "rgba(255,255,255,0.08)" : "#e4e9f7");
+        <div style="background:#17181e;border:1px solid rgba(255,255,255,0.08);
                     border-radius:14px;padding:26px 24px;">
             <h3 style="font-size:1rem;font-weight:900;margin:0 0 16px;display:flex;align-items:center;gap:8px;">
                 <span style="width:20px;height:20px;background-color:currentColor;-webkit-mask:url('/img/message.png') center/contain no-repeat;mask:url('/img/message.png') center/contain no-repeat;display:inline-block;flex-shrink:0;"></span>
@@ -1231,7 +1156,7 @@ else
     ComicDto?        _comic;
     List<ChapterDto> _chapters      = new();
     bool   _loading         = true;
-    bool   _desc            = true;
+    bool   _desc            = false;   // standart: eski (1-bob) tepada
     bool   _showMore        = false;
     bool   _showRating      = true;   // doim ko'rsatamiz (mobilda rate tugmasi yashirin edi)
     string _chapSearch      = "";
@@ -1287,8 +1212,6 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        Theme.OnChange += Refresh;
-
         var st = await AuthState.GetAuthenticationStateAsync();
         if (st.User.Identity?.IsAuthenticated == true
             && Guid.TryParse(st.User.FindFirst("app_user_id")?.Value, out var uid))
@@ -1414,7 +1337,4 @@ else
         try { await JS.InvokeVoidAsync("localStorage.setItem", $"md_rating_{_currentUserId}_{_comic.Id}", star.ToString()); } catch { }
         await InvokeAsync(StateHasChanged);
     }
-
-    async void Refresh() => await InvokeAsync(StateHasChanged);
-    public void Dispose() => Theme.OnChange -= Refresh;
 }

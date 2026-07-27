@@ -323,6 +323,9 @@ namespace ComicBooks.Infrastructure.Migrations
                         .HasMaxLength(5000)
                         .HasColumnType("TEXT");
 
+                    b.Property<bool>("IsAdminPick")
+                        .HasColumnType("INTEGER");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("INTEGER");
 

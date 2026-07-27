@@ -1229,6 +1229,10 @@ else
             _currentUserId = Guid.Empty;
             _isAdmin = false;
         }
+        // Super admin (master login) — pullik boblarni sotib olmasdan bepul o'qiy oladi.
+        // Coin sarflanmagani uchun CoinTransaction/UserChapterAccess yozuvi yaratilmaydi,
+        // demak daromad statistikasiga hech qanday ta'sir qilmaydi.
+        bool isSuperAdmin = st.User.FindFirst("admin_role")?.Value == "super";
 
         // Komentlarni yuklash
         _ = LoadCommentsAsync();
@@ -1246,7 +1250,11 @@ else
             _nextId = idx < _allChapters.Count - 1 ? _allChapters[idx + 1].Id : Guid.Empty;
 
             _isLocked = _chapter.IsLocked;
-            if (_isLocked && _currentUserId != Guid.Empty)
+            if (isSuperAdmin)
+            {
+                _hasAccess = true;
+            }
+            else if (_isLocked && _currentUserId != Guid.Empty)
             {
                 _hasAccess   = await Mediator.Send(new ComicBooks.Application.Features.Coins.Queries.CheckChapterAccessQuery(_currentUserId, ChapterId));
                 _userBalance = await Mediator.Send(new ComicBooks.Application.Features.Coins.Queries.GetCoinBalanceQuery(_currentUserId));

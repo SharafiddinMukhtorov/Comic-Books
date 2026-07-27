@@ -1,7 +1,6 @@
 ﻿@page "/"
 @inject IMediator Mediator
 @inject NavigationManager Nav
-@inject ThemeService Theme
 @inject IJSRuntime JS
 @implements IDisposable
 
@@ -28,19 +27,22 @@
     .cf-bg::after {
         content: '';
         position: absolute; inset: 0;
-        background: linear-gradient(to bottom, transparent 0%, transparent 60%, rgba(15,17,23,0.55) 88%, #0f1117 100%);
+        /* Tepada va pastda bir xil tezlikda #0f1117 ga so'nadi — carusel aynan
+           shu chegarada "tugaydi", ortiqcha bo'sh (faqat xira blur) joy qolmaydi. */
+        background: linear-gradient(to bottom, #0f1117 0%, transparent 14%, transparent 86%, #0f1117 100%);
     }
 
     /* Stage — kartalar absolyut joylashadi, aylana (loop) offset bilan.
        Bo'sh joy qolmaydi, faqat markaz kartasi kattalashadi (uniform yonlar). */
     .cf-stage {
-        --cf-step: 206px;     /* qo'shni kartalar markazlari orasi (markaz margini bilan) */
+        --cf-card-w: 168px;   /* karta kengligi (oddiy, kattalashmagan holatda) */
+        --cf-gap: 17px;       /* kartalar orasidagi bo'shliq — HAMMASIDA bir xil */
         --cf-cscale: 1.25;    /* markaz kartaning kattalashuvi */
         position: relative;
         z-index: 2;
         height: 330px;
         overflow: hidden;
-        margin: 18px 0 18px;
+        margin: 0;
     }
     .cf-card {
         position: absolute;
@@ -113,10 +115,14 @@
     }
 
     @@media (max-width: 768px) {
-        .cf-stage { height: 332px; margin: 16px 0 16px; --cf-step: 208px; --cf-cscale: 1.375; }
+        .cf-stage { height: 332px; margin: 0; --cf-card-w: 160px; --cf-gap: 18px; --cf-cscale: 1.375; }
         .cf-card { width: 160px; height: 229px; }
         .cf-card-title { font-size: 12px; padding: 26px 10px 10px; }
         .cf-rating { font-size: 11px; padding: 3px 7px; top: 7px; left: 7px; }
+        /* Mobilda ekran tor bo'lgani uchun 7 tadan ortiq karta kerak emas —
+           ortiqchasini butunlay DOMdan (render/animatsiyadan) chiqarib tashlash
+           swipe paytidagi og'ir/sekin harakatni yo'qotadi (kamroq GPU layer) */
+        .cf-card[data-ao="4"], .cf-card[data-ao="5"], .cf-card[data-ao="6"] { display: none; }
     }
 
     /* ── Hero / Carousel (eski — ishlatilmaydi) ── */
@@ -372,35 +378,56 @@
         background: linear-gradient(180deg, #60a5fa, #3b82f6);
         border-radius: 2px;
     }
-    .hb-light .section-title::before {
-        background: linear-gradient(180deg, #5b8cff, #2D6BFF);
-    }
-
     /* Trending — 4-col grid */
+    /* Gorizontal scroll qator (Asura uslubi) — kartalar yon tomonga suriladi */
+    .trending-scroll-wrap { position: relative; min-width: 0; }
     .trending-scroll {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 18px;
+        display: flex;
+        gap: 16px;
+        overflow-x: auto;
+        scroll-behavior: smooth;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding: 2px 2px 6px;
+        margin: -2px -2px 0;
+        cursor: grab;
     }
+    .trending-scroll::-webkit-scrollbar { display: none; }
+    .trending-scroll.drag-scrolling { cursor: grabbing; scroll-behavior: auto; user-select: none; }
+    .trending-scroll.drag-scrolling .trending-card { pointer-events: none; }   /* sudrashda tasodifiy hover/click bo'lmasin */
 
-    @@media (max-width: 1100px) and (min-width: 769px) {
-        .trending-scroll { grid-template-columns: repeat(3, 1fr); }
+    .trending-scroll-nav {
+        position: absolute;
+        top: 42%;
+        transform: translateY(-50%);
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: rgba(15,17,23,0.82);
+        border: 1px solid rgba(255,255,255,0.14);
+        color: #fff;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        z-index: 3;
+        backdrop-filter: blur(6px);
+        transition: background 0.15s, transform 0.15s;
     }
+    .trending-scroll-nav:hover { background: #3b82f6; border-color: #3b82f6; }
+    .trending-scroll-nav.next { right: -6px; }
+    .trending-scroll-nav.prev { left: -6px; }
 
     .trending-card {
+        flex: 0 0 168px;
+        width: 168px;
         border-radius: 10px;
         overflow: hidden;
-        background: #17181e;
-        border: 1px solid var(--mud-palette-lines-default);
-        box-shadow: 0 6px 20px rgba(0,0,0,0.22);
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
         text-decoration: none;
         color: inherit;
         display: block;
         position: relative;
     }
 
-    .trending-card:hover { transform: translateY(-6px); box-shadow: 0 14px 36px rgba(0,0,0,0.34); }
+    .trending-card:hover img { transform: scale(1.06); }
 
     /* ── Reytinglar segmented control (Weekly/Monthly/All Time uslubi) ── */
     .rt-seg {
@@ -410,7 +437,6 @@
         padding: 3px;
         gap: 2px;
     }
-    .hb-light .rt-seg { background: #eef1f8; }
     .rt-seg-btn {
         border: none;
         background: transparent;
@@ -424,30 +450,13 @@
     }
     .rt-seg-btn:hover:not(.active) { color: var(--mud-palette-text-primary); }
     .rt-seg-btn.active { background: #3b82f6; color: #fff; }
-    .hb-light .rt-seg-btn.active { background: #2D6BFF; color: #fff; }
-
-    /* ── Oq rejim: har bir bo'limni alohida kartochka (shape) sifatida ajratish ──
-       Dark rejimda hech narsa qo'shilmaydi — bo'limlar hozirgidek qoladi. */
-    .hb-light .home-card {
-        background: #ffffff;
-        border: 1px solid #e3e8f5;
-        box-shadow: 0 1px 3px rgba(16,24,64,0.05), 0 8px 24px rgba(16,24,64,0.05);
-        border-radius: 14px;
-        padding: 18px 18px 22px;
-    }
-    /* Mashhur kartochkalar oq rejimda yumshoqroq soya bilan */
-    .hb-light .trending-card {
-        box-shadow: 0 1px 4px rgba(16,24,64,0.06);
-    }
-    .hb-light .trending-card:hover {
-        box-shadow: 0 10px 28px rgba(16,24,64,0.12);
-    }
 
     .trending-card img {
         width: 100%;
         aspect-ratio: 3/4;
         object-fit: cover;
         display: block;
+        transition: transform 0.3s ease;
     }
 
     .trending-card-rating {
@@ -483,13 +492,8 @@
     .trending-card-img-wrap { position: relative; }
 
     .trending-info {
-        padding: 10px 10px 12px;
-        background: #17181e;
+        padding: 10px 2px 4px;
     }
-    /* Oq rejimda kartochkalar oq qoladi */
-    .hb-light .trending-card,
-    .hb-light .trending-info { background: #ffffff; }
-
     .trending-info .tc-stars {
         display: flex;
         align-items: center;
@@ -536,9 +540,6 @@
     .rp-btn:hover:not(:disabled):not(.active) { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.4); }
     .rp-btn:disabled { opacity: 0.35; cursor: not-allowed; }
     .rp-btn.active { background: #3b82f6 !important; color: #fff !important; border-color: #3b82f6 !important; }
-    .hb-light .rating-pagination { border-top-color: #e4e9f7; }
-    .hb-light .rp-btn { border-color: #e4e9f7; color: #252D55; }
-    .hb-light .rp-btn:hover:not(:disabled):not(.active) { background: rgba(45,107,255,0.08); border-color: rgba(45,107,255,0.35); }
 
     .rating-item {
         display: flex;
@@ -551,13 +552,70 @@
         transition: background 0.15s;
     }
     .rating-item:hover { background: rgba(59,130,246,0.06); }
-    .hb-light .rating-item { border-bottom-color: #e4e9f7; }
-    .hb-light .rating-item:hover { background: rgba(45,107,255,0.04); }
+
+    /* Admin tavsiyasi — Reytinglar bo'limi ostidagi promo karta (Asura "Editor's Pick" uslubi) */
+    .admin-pick-card {
+        display: block;
+        position: relative;
+        margin-top: 14px;
+        border-radius: 12px;
+        overflow: hidden;
+        min-height: 220px;
+        text-decoration: none;
+        background: #15171f;
+        border: 1px solid rgba(255,255,255,0.08);
+    }
+    .admin-pick-card img {
+        position: absolute; inset: 0;
+        width: 100%; height: 100%;
+        object-fit: cover;
+    }
+    .admin-pick-grad {
+        position: absolute; inset: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.35) 45%, rgba(10,10,18,0.96) 100%);
+    }
+    .admin-pick-badge {
+        position: absolute;
+        top: 10px; left: 10px;
+        z-index: 2;
+        background: linear-gradient(135deg, #a855f7, #7c3aed);
+        color: #fff;
+        font-size: 10px; font-weight: 800;
+        letter-spacing: 0.4px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        box-shadow: 0 4px 12px rgba(124,58,237,0.4);
+    }
+    .admin-pick-info {
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        z-index: 2;
+        padding: 14px 12px;
+    }
+    .admin-pick-title {
+        color: #fff;
+        font-size: 14px; font-weight: 800;
+        line-height: 1.3;
+        margin-bottom: 3px;
+        overflow: hidden;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+    .admin-pick-desc {
+        color: rgba(255,255,255,0.6);
+        font-size: 11px;
+    }
 
     /* Grid item overflow fix */
     .latest-updates-grid > a { min-width: 0; overflow: hidden; display: block; }
     .lr-content { flex: 1; min-width: 0; overflow: hidden; }
     .lr-title { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+
+    /* So'nggi yangilanishlar ajratuvchi chiziq — desktop 2-ustunli grid uchun
+       faqat qator oxirida (har 2 itemda), mobil 1-ustunda esa har bir itemda */
+    .lu-divider { display: none; }
+    .lu-divider.lu-row-end { display: block; }
 
     .latest-row {
         display: flex;
@@ -565,8 +623,8 @@
         gap: 12px;
         padding: 10px 11px;
         overflow: hidden;
-        background: rgba(255,255,255,0.03);
-        border: 1px solid rgba(255,255,255,0.07);
+        background: transparent;
+        border: 1px solid transparent;
         border-radius: 10px;
         cursor: pointer;
         transition: background 0.18s, border-color 0.18s, box-shadow 0.18s;
@@ -578,17 +636,6 @@
         border-color: rgba(59,130,246,0.3);
         box-shadow: inset 3px 0 0 #3b82f6;
     }
-    .hb-light .latest-row {
-        background: #ffffff;
-        border-color: #e3e8f5;
-        box-shadow: 0 1px 4px rgba(16,24,64,0.06);
-    }
-    .hb-light .latest-row:hover {
-        background: #eef3fe;
-        border-color: rgba(45,107,255,0.28);
-        box-shadow: inset 3px 0 0 #2D6BFF;
-    }
-
     /* Latest Updates — genre va status badgelar */
     .lr-badges { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 7px; }
 
@@ -650,32 +697,10 @@
         opacity: 0.38;
     }
 
-    /* ── Light mode badge overrides (.lt-mode prefix) ── */
-    .lt-mode .lr-badge-genre {
-        background: rgba(45,107,255,0.09);
-        border-color: rgba(45,107,255,0.35);
-        color: #2D6BFF;
-    }
-    .lt-mode .lr-badge-ongoing {
-        background: rgba(22,163,74,0.09);
-        border-color: rgba(22,163,74,0.35);
-        color: #16a34a;
-    }
-    .lt-mode .lr-badge-complete {
-        background: rgba(45,107,255,0.09);
-        border-color: rgba(45,107,255,0.35);
-        color: #2D6BFF;
-    }
-    .lt-mode .lr-badge-hiatus {
-        background: rgba(217,119,6,0.09);
-        border-color: rgba(217,119,6,0.35);
-        color: #d97706;
-    }
-
     /* ── Latest grid (desktop: 2-col, mobile: 1-col) ── */
     .latest-grid {
         display: grid;
-        grid-template-columns: 1fr 300px;
+        grid-template-columns: minmax(0, 1fr) 300px;
         gap: 32px;
     }
 
@@ -708,21 +733,25 @@
         /* Body: 16px horizontal padding; pastki bo'sh joy kamaytirildi */
         .home-body { padding: 18px 16px 28px !important; }
 
-        /* Oq rejim kartochkalari mobilda ixchamroq padding */
-        .hb-light .home-card { padding: 14px 12px 16px; border-radius: 12px; }
-
         /* Section sarlavhalar: text-lg = 18px, font-medium (ref: h2 368×28) */
         .section-title { font-size: 18px; font-weight: 500; }
 
-        /* ── MASHHUR (Trending Today) ─────────────────────────── */
-        /* ref: section 400px, 2-ustun, rasm 172×229 px → nisbat 3/4 */
-        .trending-scroll {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
+        /* Mashhur + So'nggi yangilanishlar karta (fon/border) saqlanadi,
+           lekin mobilda kartaning kengligi ekran chetigacha to'liq cho'ziladi —
+           chetda sahifa foni ko'rinib qolmasin (Asura uslubi) */
+        .hb-box {
+            margin-left: -16px !important;
+            margin-right: -16px !important;
+            border-radius: 0 !important;
+            border-left: none !important;
+            border-right: none !important;
         }
-        /* Mobilda faqat 6 ta ko'rsatamiz (desktop 8) */
-        .trending-scroll > a:nth-child(n+7) { display: none; }
-        .trending-card { border-radius: 10px; }
+
+        /* ── MASHHUR (Trending Today) ─────────────────────────── */
+        /* Mobilda ham gorizontal scroll qator — faqat kartalar kichikroq, o'q tugmasi yashiriladi */
+        .trending-scroll { gap: 10px; }
+        .trending-scroll-nav { display: none; }   /* mobilda barmoq bilan suriladi */
+        .trending-card { flex: 0 0 132px; width: 132px; border-radius: 10px; }
         .trending-card img {
             aspect-ratio: 3/4;          /* ref: 172 × 229.33 = aynan 3∶4 */
         }
@@ -744,6 +773,8 @@
             grid-template-columns: 1fr !important;
             gap: 6px !important;
         }
+        /* 1-ustunda har bir item o'zi bitta qator — shuning uchun har birida chiziq */
+        .lu-divider { display: block !important; }
         .latest-row {
             padding: 14px 10px;
             gap: 12px;
@@ -775,6 +806,12 @@
             margin-top: 24px;
             min-width: 0;     /* grid item overflow oldini oladi */
             overflow: hidden;
+            /* Karta fon/border saqlanadi, lekin kengligi ekran chetigacha to'liq cho'ziladi (Mashhur/Latest bilan bir xil) */
+            margin-left: -16px !important;
+            margin-right: -16px !important;
+            border-radius: 0 !important;
+            border-left: none !important;
+            border-right: none !important;
         }
         .ratings-sidebar a {
             display: block;
@@ -787,27 +824,26 @@
             gap: 12px !important;
             overflow: hidden;
         }
-        .ratings-sidebar a > div > div:first-child {
-            /* Raqamli nishon: ref badge 32×32 */
-            width: 32px !important;
-            height: 32px !important;
-            border-radius: 8px !important;
-            font-size: 13px !important;
-        }
-        .ratings-sidebar a > div > img {
+        /* Rasm + ustiga qo'yilgan raqamli nishon (o'ram — 1-farzand) */
+        .ratings-sidebar a > div > div:first-child > img {
             width: 56px !important;      /* ref: w-14 = 56px */
             height: 72px !important;     /* ref: h-[72px]    */
             border-radius: 6px !important;
         }
-        .ratings-sidebar a > div > div:nth-child(3) > div:first-child {
+        .ratings-sidebar a > div > div:first-child > div {
+            width: 20px !important;
+            height: 20px !important;
+            font-size: 10.5px !important;
+        }
+        .ratings-sidebar a > div > div:nth-child(2) > div:first-child {
             font-size: 14px !important;  /* ref: span 14px font-medium */
             font-weight: 700 !important;
             line-height: 1.3 !important;
         }
-        .ratings-sidebar a > div > div:nth-child(3) > div:nth-child(2) {
+        .ratings-sidebar a > div > div:nth-child(2) > div:nth-child(2) {
             font-size: 12px !important;  /* janr: 12px */
         }
-        .ratings-sidebar a > div > div:nth-child(3) > div:last-child {
+        .ratings-sidebar a > div > div:nth-child(2) > div:last-child {
             font-size: 12px !important;  /* ref: svg w-3 h-3 (12px) + italic 12px */
         }
         /* Tab tugmalar: Haftalik / Oylik / Hammasi (segmented) */
@@ -815,6 +851,22 @@
             padding: 6px 11px !important;
             font-size: 11px !important;
         }
+
+        /* ── ADMIN TAVSIYASI (Editor's Pick) — mobil, Asura uslubidek katta va chetigacha to'liq ── */
+        .admin-pick-card {
+            aspect-ratio: 4 / 5;
+            min-height: 420px;
+            margin-top: 16px;
+            margin-left: -16px !important;
+            margin-right: -16px !important;
+            border-radius: 0 !important;
+            border-left: none !important;
+            border-right: none !important;
+        }
+        .admin-pick-badge { font-size: 11px; padding: 5px 12px; top: 14px; left: 14px; }
+        .admin-pick-info { padding: 20px 16px; }
+        .admin-pick-title { font-size: 19px; -webkit-line-clamp: 3; }
+        .admin-pick-desc { font-size: 13px; }
 
         /* ── SAHIFALASH (Pagination) ───────────────────────────── */
         /* ref: div 400×32, mt-4=16px, gap-2=8px, tugma 32×32     */
@@ -861,7 +913,7 @@ else
                 var c = items[idx];
                 int off = CircularOffset(idx, _activeIndex, items.Count);
                 bool isCenter = off == 0;
-                <div class="cf-card @(isCenter ? "cf-center" : "")" style="@CardStyle(off)" @onclick="@(() => CardClick(idx))">
+                <div class="cf-card @(isCenter ? "cf-center" : "")" data-ao="@Math.Abs(off)" style="@CardStyle(off)" @onclick="@(() => CardClick(idx))">
                     <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/350/500")"
                          onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)cv/350/500'"
                          alt="@c.Title" />
@@ -877,56 +929,68 @@ else
     </div>
 
     <!-- BODY -->
-    <div class="home-body @(Theme.IsDark ? "" : "hb-light")" style="max-width:1300px;margin:0 auto;padding:32px 20px 40px;">
+    <div class="home-body" style="max-width:1300px;margin:0 auto;padding:32px 20px 40px;">
 
-        <!-- Mashhur (trending cards) -->
-        <div style="margin-bottom:40px;">
-            <div class="section-header">
-                <span class="section-title">Mashhur</span>
-                <a href="/comics?sortBy=rating"
-                   style="@($"font-size:13px;font-weight:700;color:{(Theme.IsDark?"#60a5fa":"#2D6BFF")};text-decoration:none;")">
-                    Barchasi →
-                </a>
-            </div>
-            <div class="trending-scroll">
-                @foreach (var c in (_trending?.Items ?? new()).Take(8))
-                {
-                    <a href="/comic/@c.Slug" class="trending-card">
-                        <div class="trending-card-img-wrap">
-                            <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/300/420")"
-                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)t/300/420'"
-                                 alt="@c.Title" />
-                        </div>
-                        <div class="trending-info">
-                            <div style="font-weight:700;font-size:13px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                                @c.Title
-                            </div>
-                            <div style="font-size:11px;font-weight:500;opacity:0.5;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-                                Bob @((int)(c.LatestChapterNumber ?? c.ChapterCount))
-                            </div>
-                            <div class="tc-stars">
-                                @for (int s = 1; s <= 5; s++)
-                                {
-                                    <span class="tc-star @(s <= (int)Math.Round(c.AverageRating/2) ? "" : "empty")"></span>
-                                }
-                                <span style="font-size:10.5px;color:#FACC15;font-weight:700;margin-left:3px;">@c.AverageRating.ToString("F1")</span>
-                            </div>
-                        </div>
-                    </a>
-                }
-            </div>
-        </div>
-
-        <!-- Latest Updates + Popular sidebar -->
+        <!-- Trending + Latest Updates (chap ustun) va Popular (o'ng ustun) — Popular tepadan ikkalasi bilan tekis boshlanadi -->
         <div class="latest-grid">
 
+            <!-- Chap ustun: Mashhur (trending) + So'nggi yangilanishlar -->
+            <div style="min-width:0;">
+
+                <!-- Mashhur (trending cards) -->
+                <div class="hb-box" style="margin-bottom:24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 14px;">
+                    <div class="section-header">
+                        <span class="section-title">Mashhur</span>
+                        <a href="/comics?sortBy=rating"
+                           style="font-size:13px;font-weight:700;color:#60a5fa;text-decoration:none;">
+                            Barchasi →
+                        </a>
+                    </div>
+                    <div class="trending-scroll-wrap">
+                        <div class="trending-scroll drag-scroll" id="trending-scroll">
+                            @foreach (var c in (_trending?.Items ?? new()).Take(15))
+                            {
+                                <a href="/comic/@c.Slug" class="trending-card">
+                                    <div class="trending-card-img-wrap">
+                                        <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/300/420")"
+                                             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)t/300/420'"
+                                             alt="@c.Title" />
+                                    </div>
+                                    <div class="trending-info">
+                                        <div style="font-weight:700;font-size:13px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                            @c.Title
+                                        </div>
+                                        <div style="font-size:11px;font-weight:500;opacity:0.5;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
+                                            Bob @((int)(c.LatestChapterNumber ?? c.ChapterCount))
+                                        </div>
+                                        <div class="tc-stars">
+                                            @for (int s = 1; s <= 5; s++)
+                                            {
+                                                <span class="tc-star @(s <= (int)Math.Round(c.AverageRating/2) ? "" : "empty")"></span>
+                                            }
+                                            <span style="font-size:10.5px;color:#FACC15;font-weight:700;margin-left:3px;">@c.AverageRating.ToString("F1")</span>
+                                        </div>
+                                    </div>
+                                </a>
+                            }
+                        </div>
+                        <button type="button" class="trending-scroll-nav next" title="Keyingisi"
+                                @onclick="@(() => JS.InvokeVoidAsync("scrollRow", "trending-scroll", 380))">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="9 18 15 12 9 6"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
             <!-- Latest Updates -->
-            <div>
+            <div class="hb-box" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 14px;">
                 <div class="section-header" id="latest-top" style="scroll-margin-top:80px;">
                     <span class="section-title">So'nggi yangilanishlar</span>
                 </div>
-                <div class="latest-updates-grid @(Theme.IsDark ? "" : "lt-mode")" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-                    @foreach (var c in LatestPaged())
+                <div class="latest-updates-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                    @{ var _lp = LatestPaged(); }
+                    @foreach (var (c, _i) in _lp.Select((c, i) => (c, i)))
                     {
                         <a href="/comic/@c.Slug" style="text-decoration:none;color:inherit;">
                             <div class="latest-row">
@@ -956,17 +1020,21 @@ else
                                             <span class="lr-chap-badge">@if (c.LatestChapterLocked) { <span class="lr-lock"></span> }Bob @((int)c.LatestChapterNumber.Value)</span>
                                             <span class="lr-chap-time">@FmtDate(c.LastUpdatedAt)</span>
                                         </div>
-                                        @if (c.LatestChapterNumber.Value >= 2)
+                                        @if (c.SecondLatestChapterNumber.HasValue)
                                         {
                                             <div class="lr-chap" style="display:flex;align-items:center;justify-content:space-between;">
-                                                <span style="font-size:12px;font-weight:500;opacity:0.5;">Bob @((int)c.LatestChapterNumber.Value - 1)</span>
-                                                <span class="lr-chap-time">o'tgan hafta</span>
+                                                <span style="font-size:12px;font-weight:500;opacity:0.5;">Bob @((int)c.SecondLatestChapterNumber.Value)</span>
+                                                <span class="lr-chap-time">@(c.SecondLatestChapterDate.HasValue ? FmtDate(c.SecondLatestChapterDate.Value) : "")</span>
                                             </div>
                                         }
                                     }
                                 </div>
                             </div>
                         </a>
+                        @if (_i < _lp.Count - 1)
+                        {
+                            <div class="lu-divider @(_i % 2 == 1 ? "lu-row-end" : "")" style="grid-column:1/-1;height:1px;background:rgba(255,255,255,0.08);margin:2px 0 4px;"></div>
+                        }
                     }
                 </div>
 
@@ -985,12 +1053,11 @@ else
                     </div>
                 }
             </div>
+            </div><!-- /chap ustun -->
 
-            <!-- Popular sidebar -->
-            <div class="ratings-sidebar" style="@(Theme.IsDark
-                    ? "background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 14px;"
-                    : "background:#ffffff;border:1px solid #e3e8f5;box-shadow:0 1px 3px rgba(16,24,64,0.05),0 8px 24px rgba(16,24,64,0.05);border-radius:14px;padding:16px 14px;")"
-            >
+            <!-- Popular sidebar + Admin tavsiyasi (o'ng ustun, ikkalasi alohida karta) -->
+            <div style="min-width:0;align-self:start;">
+            <div class="ratings-sidebar" style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 14px;">
                 <div class="section-header" style="flex-wrap:wrap;gap:8px;">
                     <span class="section-title">Reytinglar</span>
                     <div class="rt-seg">
@@ -1006,10 +1073,14 @@ else
                     int r = ++rk;
                     <a href="/comic/@c.Slug" style="text-decoration:none;color:inherit;">
                         <div class="rating-item">
-                            <div style="@RankStyle(r);width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;flex-shrink:0;">@r</div>
-                            <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/44/60")"
-                                 style="width:44px;height:60px;object-fit:cover;border-radius:5px;flex-shrink:0;"
-                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)r/44/60'" />
+                            <div style="position:relative;flex-shrink:0;">
+                                <img src="@(c.CoverImageUrl ?? $"https://picsum.photos/seed/{c.Slug}/44/60")"
+                                     style="width:44px;height:60px;object-fit:cover;border-radius:5px;display:block;"
+                                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(c.Slug)r/44/60'" />
+                                <div style="@RankStyle(r);position:absolute;top:-6px;left:-6px;width:20px;height:20px;border-radius:50%;
+                                            display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:900;
+                                            border:2px solid #15171f;box-shadow:0 2px 6px rgba(0,0,0,0.4);">@r</div>
+                            </div>
                             <div style="flex:1;min-width:0;">
                                 <div style="font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-bottom:2px;">@c.Title</div>
                                 <div style="font-size:11px;opacity:0.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">@string.Join(", ", TranslateMany(c.Genres.Take(2)))</div>
@@ -1019,6 +1090,22 @@ else
                     </a>
                 }
             </div>
+
+            @if (_adminPick != null)
+            {
+                <a href="/comic/@_adminPick.Slug" class="admin-pick-card">
+                    <img src="@(_adminPick.BannerImageUrl ?? _adminPick.CoverImageUrl ?? $"https://picsum.photos/seed/{_adminPick.Slug}/500/280")"
+                         onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_adminPick.Slug)ap/500/280'"
+                         alt="@_adminPick.Title" />
+                    <div class="admin-pick-grad"></div>
+                    <span class="admin-pick-badge">⭐ TAVSIYA ETAMIZ</span>
+                    <div class="admin-pick-info">
+                        <div class="admin-pick-title">@_adminPick.Title</div>
+                        <div class="admin-pick-desc">Admin tomonidan tavsiya etilgan asar</div>
+                    </div>
+                </a>
+            }
+            </div><!-- /o'ng ustun -->
         </div>
     </div>
 }
@@ -1028,21 +1115,23 @@ else
     private System.Threading.Timer? _autoTimer;
 
     PaginatedList<ComicDto>? _featured, _trending, _latest;
+    ComicDto? _adminPick;
     bool _loading = true;
     int _tab = 0;
     int _latestPage = 1;
-    const int LatestPageSize = 10;   // So'nggi yangilanishlar: 10/sahifa
+    const int LatestPageSize = 12;   // So'nggi yangilanishlar: 12/sahifa (2 ustunda 6 to'liq qator)
     const int RatingTop = 10;        // Reytinglar: 10 ta (paginationsiz)
 
     protected override async Task OnInitializedAsync()
     {
-        Theme.OnChange += Refresh;
         _featured = await Mediator.Send(new GetComicsQuery(PageSize: 12, IsFeatured: true, SortBy: "rating"));
         // Karusel chap tomoni bo'sh qolmasligi uchun 3-kartadan boshlanadi
         if (_featured != null && _featured.Items.Count > 0)
             _activeIndex = Math.Min(2, _featured.Items.Count - 1);
         _trending = await Mediator.Send(new GetComicsQuery(PageSize: 25, SortBy: "views"));
         _latest   = await Mediator.Send(new GetComicsQuery(PageSize: 300, SortBy: "createdAt"));
+        var pick  = await Mediator.Send(new GetComicsQuery(PageSize: 1, IsAdminPick: true));
+        _adminPick = pick.Items.FirstOrDefault();
         _loading  = false;
         // Avto-aylanish o'chirilgan — foydalanuvchi o'zi suradi
     }
@@ -1072,15 +1161,22 @@ else
         return o;
     }
 
-    // Har karta uchun inline transform: markazlash + offset siljish + markaz kattalashishi
+    // Har karta uchun inline transform: markazlash + offset siljish + markaz kattalashishi.
+    // Markaz karta kattalashgani uchun oddiy "step*off" bilan bo'shliqlar notekis chiqardi
+    // (markaz atrofida torroq, uzoqroqda kengroq). Endi HAR BIR bo'shliq --cf-gap ga teng
+    // bo'lishi uchun siljishni kartalar kengligi + gap yig'indisi sifatida hisoblaymiz,
+    // markaz kartaning qo'shimcha (kattalashgan) yarim kengligini alohida qo'shib.
     string CardStyle(int off)
     {
         int ao = Math.Abs(off);
         string scale = off == 0 ? "var(--cf-cscale)" : "1";
-        string opacity = ao > 3 ? "0" : "1";
+        string opacity = "1";
         int z = off == 0 ? 10 : Math.Max(1, 5 - ao);
-        string pe = ao > 3 ? "none" : "auto";
-        return $"transform:translate(-50%,-50%) translateX(calc(var(--cf-step) * {off})) scale({scale});opacity:{opacity};z-index:{z};pointer-events:{pe};";
+        string pe = "auto";
+        string translateX = off == 0
+            ? "0px"
+            : $"calc({(off > 0 ? "" : "-1 * ")}({ao} * (var(--cf-card-w) + var(--cf-gap)) + var(--cf-card-w) * (var(--cf-cscale) - 1) / 2))";
+        return $"transform:translate(-50%,-50%) translateX({translateX}) scale({scale});opacity:{opacity};z-index:{z};pointer-events:{pe};";
     }
 
     void CardClick(int i)
@@ -1175,6 +1271,5 @@ else
         _ => "background:#3b82f6;color:#fff;"
     };
 
-    async void Refresh() => await InvokeAsync(StateHasChanged);
-    public void Dispose() { _autoTimer?.Dispose(); Theme.OnChange -= Refresh; }
+    public void Dispose() => _autoTimer?.Dispose();
 }

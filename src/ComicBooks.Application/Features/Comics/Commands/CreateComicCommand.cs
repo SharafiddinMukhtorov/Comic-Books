@@ -23,7 +23,8 @@ public record CreateComicCommand(
     bool IsPopular,
     List<Guid> GenreIds,
     List<Guid> TagIds,
-    Guid? UploaderId = null
+    Guid? UploaderId = null,
+    double AverageRating = 0   // admin qo'lda belgilaydi — foydalanuvchi baholashi bunga ta'sir qilmaydi
 ) : IRequest<Guid>;
 
 // Validator
@@ -34,6 +35,7 @@ public class CreateComicCommandValidator : AbstractValidator<CreateComicCommand>
         RuleFor(v => v.Title).NotEmpty().MaximumLength(500);
         RuleFor(v => v.Description).MaximumLength(5000);
         RuleFor(v => v.ReleaseYear).InclusiveBetween(1900, DateTime.UtcNow.Year + 5).When(v => v.ReleaseYear.HasValue);
+        RuleFor(v => v.AverageRating).InclusiveBetween(0, 10);
     }
 }
 
@@ -67,7 +69,8 @@ public class CreateComicCommandHandler : IRequestHandler<CreateComicCommand, Gui
             IsFeatured = request.IsFeatured,
             IsPopular = request.IsPopular,
             Slug = slug,
-            UploaderId = request.UploaderId
+            UploaderId = request.UploaderId,
+            AverageRating = request.AverageRating
         };
 
         foreach (var genreId in request.GenreIds)

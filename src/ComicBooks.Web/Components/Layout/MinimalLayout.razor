@@ -1,7 +1,6 @@
-﻿@inherits LayoutComponentBase
-@inject ThemeService Theme
+@inherits LayoutComponentBase
 
-<MudThemeProvider @ref="_tp" Theme="@_theme" @bind-IsDarkMode="_dark" />
+<MudThemeProvider @ref="_tp" Theme="@_theme" IsDarkMode="true" />
 <MudPopoverProvider />
 <MudSnackbarProvider />
 
@@ -9,7 +8,6 @@
 
 @code {
     MudThemeProvider _tp = null!;
-    bool _dark = true;
 
     readonly MudTheme _theme = new()
     {
@@ -20,6 +18,4 @@
             Surface = "#1a1c28",
         }
     };
-
-    protected override void OnInitialized() => _dark = true;
 }

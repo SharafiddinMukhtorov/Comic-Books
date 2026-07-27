@@ -2,6 +2,17 @@ window.lazyReader = (function () {
     var _obs    = null;
     var _loaded = new Map(); // url → url : Blazor re-render'dan keyin tiklash uchun
 
+    // Lokalda fayl topilmasa (masalan to'liq backup yuklanmagan bo'lsa) — mock rasm
+    function mockPlaceholder(label) {
+        var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="720" height="1000" viewBox="0 0 720 1000">' +
+            '<rect width="100%" height="100%" fill="#1a1c28"/>' +
+            '<text x="50%" y="47%" fill="#4b5163" font-family="sans-serif" font-size="26" text-anchor="middle">' +
+            (label || 'Sahifa mavjud emas') + '</text>' +
+            '<text x="50%" y="53%" fill="#333a4d" font-family="sans-serif" font-size="15" text-anchor="middle">(lokal mock rasm)</text>' +
+            '</svg>';
+        return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+    }
+
     function loadImage(wrap) {
         var img = wrap.querySelector('img[data-lazy]');
         if (!img) return;
@@ -17,6 +28,9 @@ window.lazyReader = (function () {
             wrap.classList.add('lr-done');
         };
         img.onerror = function () {
+            img.onerror = null;
+            img.src = mockPlaceholder(img.alt);
+            img.classList.add('lr-loaded');
             wrap.classList.add('lr-done');
         };
         img.src = src;

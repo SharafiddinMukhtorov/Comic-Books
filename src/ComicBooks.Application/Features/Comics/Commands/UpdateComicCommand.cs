@@ -23,7 +23,8 @@ public record UpdateComicCommand(
     bool IsFeatured,
     bool IsPopular,
     List<Guid> GenreIds,
-    List<Guid> TagIds
+    List<Guid> TagIds,
+    double AverageRating = 0   // admin qo'lda belgilaydi — foydalanuvchi baholashi bunga ta'sir qilmaydi
 ) : IRequest<bool>;
 
 public class UpdateComicCommandValidator : AbstractValidator<UpdateComicCommand>
@@ -32,6 +33,7 @@ public class UpdateComicCommandValidator : AbstractValidator<UpdateComicCommand>
     {
         RuleFor(v => v.Title).NotEmpty().MaximumLength(500);
         RuleFor(v => v.Description).MaximumLength(5000);
+        RuleFor(v => v.AverageRating).InclusiveBetween(0, 10);
     }
 }
 
@@ -66,6 +68,7 @@ public class UpdateComicCommandHandler : IRequestHandler<UpdateComicCommand, boo
         comic.ReleaseYear = request.ReleaseYear;
         comic.IsFeatured = request.IsFeatured;
         comic.IsPopular = request.IsPopular;
+        comic.AverageRating = request.AverageRating;
         comic.UpdatedAt = DateTime.UtcNow;
 
         // Update genres

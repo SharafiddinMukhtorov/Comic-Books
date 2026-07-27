@@ -18,7 +18,8 @@ public class AdminUserDto
     public DateTime LastLogin    { get; set; }
 }
 
-public record GetUsersListQuery(int Take = 100) : IRequest<List<AdminUserDto>>;
+// Take = null bo'lsa — hammasi qaytariladi (cheklovsiz)
+public record GetUsersListQuery(int? Take = null) : IRequest<List<AdminUserDto>>;
 
 public class GetUsersListQueryHandler : IRequestHandler<GetUsersListQuery, List<AdminUserDto>>
 {
@@ -27,9 +28,11 @@ public class GetUsersListQueryHandler : IRequestHandler<GetUsersListQuery, List<
 
     public async Task<List<AdminUserDto>> Handle(GetUsersListQuery req, CancellationToken ct)
     {
-        return await _db.Users
-            .OrderByDescending(u => u.CreatedAt)
-            .Take(req.Take)
+        var query = _db.Users.OrderByDescending(u => u.CreatedAt).AsQueryable();
+        if (req.Take.HasValue)
+            query = query.Take(req.Take.Value);
+
+        return await query
             .Select(u => new AdminUserDto
             {
                 Id          = u.Id,

@@ -21,6 +21,7 @@ public class Comic : BaseEntity
     public int BookmarkCount { get; set; } = 0;
     public bool IsFeatured { get; set; } = false;
     public bool IsPopular { get; set; } = false;
+    public bool IsAdminPick { get; set; } = false;   // Admin tavsiyasi — Reytinglar kartasi ostida ko'rsatiladi (faqat bitta)
     public string? Slug { get; set; }
 
     // Yuklovchi foydalanuvchi (daromad ulushi uchun)

@@ -6,6 +6,7 @@
 @inject IJSRuntime JS
 @inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
 @inject Microsoft.Extensions.Configuration.IConfiguration Config
+@using System.Text.RegularExpressions
 
 <PageTitle>Boblar - Admin</PageTitle>
 
@@ -336,7 +337,7 @@
         Directory.CreateDirectory(dir);
 
         var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
-        var orderedFiles = files.OrderBy(f => f.Name).ToList();
+        var orderedFiles = files.OrderBy(f => f.Name, NaturalStringComparer.Instance).ToList();
 
         foreach (var file in orderedFiles)
         {
@@ -492,4 +493,45 @@
     }
 
     public void Dispose() => _dotNetRef?.Dispose();
+
+    // Fayl nomlaridagi raqamlarni son sifatida solishtiradi ("2.10.jpg" > "2.9.jpg",
+    // string bo'yicha solishtirilsa "2.10" < "2.9" chiqib, varoqlar tartibi buzilardi)
+    sealed class NaturalStringComparer : IComparer<string>
+    {
+        public static readonly NaturalStringComparer Instance = new();
+        static readonly Regex TokenRe = new(@"\d+|\D+", RegexOptions.Compiled);
+
+        public int Compare(string? x, string? y)
+        {
+            if (x is null || y is null) return string.Compare(x, y, StringComparison.Ordinal);
+
+            var tx = TokenRe.Matches(x);
+            var ty = TokenRe.Matches(y);
+            int n = Math.Min(tx.Count, ty.Count);
+
+            for (int i = 0; i < n; i++)
+            {
+                var a = tx[i].Value;
+                var b = ty[i].Value;
+                int cmp;
+
+                if (char.IsDigit(a[0]) && char.IsDigit(b[0]))
+                {
+                    var na = a.TrimStart('0'); if (na.Length == 0) na = "0";
+                    var nb = b.TrimStart('0'); if (nb.Length == 0) nb = "0";
+                    cmp = na.Length != nb.Length
+                        ? na.Length.CompareTo(nb.Length)
+                        : string.CompareOrdinal(na, nb);
+                }
+                else
+                {
+                    cmp = string.Compare(a, b, StringComparison.OrdinalIgnoreCase);
+                }
+
+                if (cmp != 0) return cmp;
+            }
+
+            return tx.Count.CompareTo(ty.Count);
+        }
+    }
 }

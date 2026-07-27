@@ -124,6 +124,15 @@ public class CoinService : ICoinService
             .Select(u => new { u.Id, u.Name })
             .ToDictionaryAsync(u => u.Id, u => u.Name, cancellationToken);
 
+        // Sarflangan bo'lsa — qaysi bob, qaysi komik ekanini alohida so'rovsiz (jadval saqlagan
+        // matn emas, hozirgi Chapter/Comic ma'lumotidan) ko'rsatamiz — nomi o'zgargan bo'lsa ham to'g'ri chiqadi.
+        var chapterIds = txs.Where(t => t.ChapterId.HasValue).Select(t => t.ChapterId!.Value).Distinct().ToList();
+        var chapterInfo = await _db.Chapters
+            .IgnoreQueryFilters()
+            .Where(ch => chapterIds.Contains(ch.Id))
+            .Select(ch => new { ch.Id, ch.ChapterNumber, ComicTitle = ch.Comic!.Title })
+            .ToDictionaryAsync(ch => ch.Id, cancellationToken);
+
         return txs.Select(t => new CoinTransactionDto
         {
             UserId = t.UserId,
@@ -133,6 +142,8 @@ public class CoinService : ICoinService
             Description = t.Description,
             TelegramUsername = t.TelegramUsername,
             CreatedAt = t.CreatedAt,
+            ComicTitle = t.ChapterId.HasValue && chapterInfo.TryGetValue(t.ChapterId.Value, out var ci) ? ci.ComicTitle : null,
+            ChapterNumber = t.ChapterId.HasValue && chapterInfo.TryGetValue(t.ChapterId.Value, out var ci2) ? ci2.ChapterNumber : null,
         }).ToList();
     }
 }

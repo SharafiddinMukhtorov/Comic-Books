@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace ComicBooks.Application.Features.Revenue.Queries;
 
-// 1 coin = 100 so'm (kelishilgan kurs)
+// 1 coin = 500 so'm (kelishilgan kurs)
 public static class RevenueRates
 {
-    public const decimal CoinToSom    = 100m;
+    public const decimal CoinToSom    = 500m;
     public const decimal PlatformShare = 0.20m;   // 20% platform
     public const decimal UploaderShare = 0.80m;   // 80% yuklovchi
 }
@@ -55,8 +55,10 @@ public class GetMyRevenueQueryHandler : IRequestHandler<GetMyRevenueQuery, Reven
 
     public async Task<RevenueResultDto> Handle(GetMyRevenueQuery req, CancellationToken ct)
     {
-        // Foydalanuvchi yuklagan komikslar
+        // Foydalanuvchi yuklagan komikslar — IgnoreQueryFilters: komik/bob keyinchalik
+        // o'chirilsa ham, undan oldin ishlangan daromad statistikadan tushib qolmasin
         var myComics = await _db.Comics
+            .IgnoreQueryFilters()
             .Where(c => c.UploaderId == req.UserId)
             .Select(c => new
             {
@@ -72,6 +74,7 @@ public class GetMyRevenueQueryHandler : IRequestHandler<GetMyRevenueQuery, Reven
 
         // Mavjud chapters va ularning komikslari
         var chapterToComic = await _db.Chapters
+            .IgnoreQueryFilters()
             .Where(ch => comicIds.Contains(ch.ComicId))
             .Select(ch => new { ch.Id, ch.ComicId, ch.ChapterNumber, ch.Title })
             .ToListAsync(ct);

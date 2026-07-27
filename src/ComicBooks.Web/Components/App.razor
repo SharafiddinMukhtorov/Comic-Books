@@ -72,20 +72,14 @@
             background-color: #3b82f6 !important;
         }
     </style>
-    <!-- Theme flash oldini olish: localStorage dan darhol o'qiymiz -->
     <script>
-        (function(){
-            try {
-                var t = localStorage.getItem('md-theme');
-                if (t === 'light') {
-                    document.documentElement.style.background = '#F8FAFF';
-                    document.body && (document.body.style.background = '#F8FAFF');
-                }
-            } catch(e){}
-        })();
         // Element'ni ko'rinishga olib kelish (pagination bosilganda joyida turishi uchun)
         window.scrollToEl = function(id){
             try { var e = document.getElementById(id); if (e) e.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e){}
+        };
+        // Gorizontal scroll qatorini (masalan Mashhur) chapga/o'ngga suradi
+        window.scrollRow = function(id, amount){
+            try { var e = document.getElementById(id); if (e) e.scrollBy({ left: amount, behavior: 'smooth' }); } catch(e){}
         };
     </script>
 
@@ -117,7 +111,7 @@
     <script src="_framework/blazor.web.js"></script>
     <script src="js/pdf-processor.js"></script>
     <script src="js/lazyReader.js"></script>
-    <script src="js/themeColor.js"></script>
+    <script src="js/dragScroll.js"></script>
     <script src="js/protect.js"></script>
 </body>
 </html>

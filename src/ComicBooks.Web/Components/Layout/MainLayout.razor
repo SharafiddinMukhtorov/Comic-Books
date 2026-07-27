@@ -1,10 +1,7 @@
 ﻿@inherits LayoutComponentBase
-@inject ThemeService Theme
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthState
 @inject IMediator Mediator
-@inject IJSRuntime JS
-@implements IDisposable
 
 <style>
     /* ═══ Responsive utility classes (faster than MudHidden — CSS-only) ═══ */
@@ -459,29 +456,6 @@
     }
     .sf-bottom-link:hover { color: rgba(255,255,255,0.6); }
 
-    /* Light mode footer: dark navbar rangiga mos */
-    .sf-light {
-        background: #141937;
-        border-top-color: rgba(255,255,255,0.06);
-    }
-    .sf-light .sf-logo-text { color: #fff; }
-    .sf-light .sf-tagline    { color: rgba(255,255,255,0.45); }
-    .sf-light .sf-col-title  { color: #60a5fa; }
-    .sf-light .sf-link       { color: rgba(255,255,255,0.45); }
-    .sf-light .sf-link:hover { color: #60a5fa; }
-    .sf-light .sf-soc {
-        background: rgba(255,255,255,0.07);
-        border-color: rgba(255,255,255,0.1);
-        color: rgba(255,255,255,0.6);
-    }
-    .sf-light .sf-soc:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
-    .sf-light .sf-bottom { border-top-color: rgba(255,255,255,0.06); color: rgba(255,255,255,0.28); }
-    .sf-light .sf-bottom-link { color: rgba(255,255,255,0.28); }
-    .sf-light .sf-bottom-link:hover { color: rgba(255,255,255,0.6); }
-
-    /* Light mode footer col title */
-    .sf-light .sf-col-title { color: #60a5fa; }
-
     /* Responsive */
     @@media (max-width: 900px) {
         .sf { margin-top: 24px; }   /* mobil: kontent bilan oraliq kamaytirildi */
@@ -503,16 +477,14 @@
     }
 </style>
 
-<MudThemeProvider @ref="_tp" Theme="@_theme" @bind-IsDarkMode="_dark" />
+<MudThemeProvider @ref="_tp" Theme="@_theme" IsDarkMode="true" />
 <MudPopoverProvider />
 <MudDialogProvider />
 <MudSnackbarProvider />
 
 <MudLayout>
     <MudAppBar Elevation="0" Fixed="true"
-               Style="@(_dark
-                   ? "background:#0f1117 !important;border-bottom:none !important;box-shadow:none !important;"
-                   : "background:#141937 !important;border-bottom:none !important;box-shadow:none !important;")">
+               Style="background:#0f1117 !important;border-bottom:none !important;box-shadow:none !important;">
         <div style="display:flex;align-items:center;width:100%;max-width:1150px;margin:0 auto;position:relative;">
 
         <!-- Logo -->
@@ -537,26 +509,6 @@
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
             </svg>
-        </button>
-
-        <!-- Dark/light toggle (faqat desktop) -->
-        <button @onclick="@ToggleTheme" class="nav-desk nav-icon-btn" title="Tema">
-            @if (_dark)
-            {
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="5"/>
-                    <line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/>
-                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
-                    <line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/>
-                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
-                </svg>
-            }
-            else
-            {
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
-                </svg>
-            }
         </button>
 
         @if (_isLoggedIn)
@@ -669,7 +621,7 @@
         <!-- Backdrop -->
         <div class="mdunyo-backdrop" @onclick="@Close"></div>
 
-        <div class="mdunyo-drawer" style="@(_dark ? "background:#17181e;" : "")">
+        <div class="mdunyo-drawer" style="background:#17181e;">
             <!-- Header inside drawer -->
             <div class="mdunyo-drawer-head">
                 <a href="/" @onclick="@Close" style="display:flex;align-items:center;gap:6px;text-decoration:none;">
@@ -677,10 +629,6 @@
                     <img src="/img/logo-wordmark.png" alt="MANGA DUNYO" style="height:30px;width:auto;display:block;" />
                 </a>
                 <div style="display:flex;align-items:center;gap:6px;">
-                    <button class="mdunyo-head-btn" @onclick="@ToggleTheme" title="Tema">
-                        <MudIcon Icon="@(_dark ? Icons.Material.Filled.LightMode : Icons.Material.Filled.DarkMode)"
-                                 Size="Size.Small" />
-                    </button>
                     <button class="mdunyo-head-btn close" @onclick="@Close" title="Yopish">
                         <MudIcon Icon="@Icons.Material.Filled.Close" Size="Size.Small" />
                     </button>
@@ -870,7 +818,7 @@
         @Body
 
         <!-- ════ SITE FOOTER ════ -->
-        <footer class="sf @(_dark ? "" : "sf-light")">
+        <footer class="sf">
             <div class="sf-inner">
 
                 <!-- Brand -->
@@ -956,7 +904,6 @@
 
 @code {
     MudThemeProvider _tp = null!;
-    bool _dark = true;
     bool _open;
     bool _searchOpen;
     string _q = "";
@@ -972,21 +919,6 @@
 
     readonly MudTheme _theme = new()
     {
-        PaletteLight = new PaletteLight
-        {
-            Primary          = "#2D6BFF",
-            Secondary        = "#1A58F0",
-            Background       = "#F8FAFF",
-            Surface          = "#ffffff",
-            AppbarBackground = "#2D6BFF",
-            AppbarText       = "#ffffff",
-            DrawerBackground = "#ffffff",
-            DrawerText       = "#252D55",
-            TextPrimary      = "#252D55",
-            TextSecondary    = "#6D78A8",
-            ActionDefault    = "#3B4470",
-            LinesDefault     = "#E4E9F7",
-        },
         PaletteDark = new PaletteDark
         {
             Primary          = "#3b82f6",
@@ -1007,9 +939,6 @@
     protected override async Task OnInitializedAsync()
     {
         // TEZ render uchun: faqat claim'dan o'qiymiz, DB query yo'q
-        _dark = Theme.IsDark;
-        Theme.OnChange += Refresh;
-
         var state = await AuthState.GetAuthenticationStateAsync();
         var user  = state.User;
         _isLoggedIn = user.Identity?.IsAuthenticated == true;
@@ -1037,22 +966,6 @@
     {
         if (firstRender)
         {
-            // localStorage dan theme o'qiymiz — refresh qilganda dark modega qaytib ketmasin
-            try
-            {
-                var saved = await JS.InvokeAsync<string>("themeStorage.get");
-                var savedDark = saved != "light";
-                if (savedDark != _dark)
-                {
-                    Theme.SetDark(savedDark);
-                    _dark = savedDark;
-                    await InvokeAsync(StateHasChanged);
-                }
-            }
-            catch { /* prerender yoki JS yo'q bo'lsa e'tibor bermaymiz */ }
-
-            await UpdateThemeColor();
-
             if (_isLoggedIn && _userId != Guid.Empty && !_balanceRefreshed)
             {
                 _balanceRefreshed = true;
@@ -1070,22 +983,6 @@
         }
     }
 
-    async void ToggleTheme()
-    {
-        Theme.Toggle();
-        _dark = Theme.IsDark;
-        // localStorage ga saqlaymiz — refresh qilganda yo'qolmasin
-        try { await JS.InvokeVoidAsync("themeStorage.set", _dark ? "dark" : "light"); }
-        catch { }
-        await UpdateThemeColor();
-        await InvokeAsync(StateHasChanged);
-    }
-    async void Refresh()
-    {
-        _dark = Theme.IsDark;
-        await UpdateThemeColor();
-        await InvokeAsync(StateHasChanged);
-    }
     void Close() { _open = false; _q = ""; _searchResults = new(); }
 
     Task? _loadComicsTask;
@@ -1171,16 +1068,4 @@
         else if (e.Key == "Escape") CloseSearch();
     }
 
-    async Task UpdateThemeColor()
-    {
-        try
-        {
-            // Dark: #0f1117, Light: #2D6BFF
-            var color = _dark ? "#131419" : "#2D6BFF";
-            await JS.InvokeVoidAsync("themeColor.set", color);
-        }
-        catch { /* JS interop not ready in prerender */ }
-    }
-
-    public void Dispose() => Theme.OnChange -= Refresh;
 }
