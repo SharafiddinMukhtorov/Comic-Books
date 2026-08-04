@@ -1,0 +1,95 @@
+@page "/videos"
+@inject IMediator Mediator
+
+<PageTitle>Videolar - Manga Dunyo</PageTitle>
+
+<style>
+    .vh-body { max-width: 1300px; margin: 0 auto; padding: 32px 20px 40px; }
+    .vh-section { margin-bottom: 28px; }
+    .vh-section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+    .vh-section-title { font-size: 20px; font-weight: 700; display: flex; align-items: center; gap: 8px; }
+    .vh-section-title::before {
+        content: '';
+        display: inline-block;
+        width: 4px; height: 20px;
+        background: linear-gradient(180deg, #60a5fa, #3b82f6);
+        border-radius: 2px;
+    }
+    .vh-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; }
+
+    @@media (max-width: 768px) {
+        .vh-body { padding: 18px 16px 28px; }
+    }
+</style>
+
+@if (_loading)
+{
+    <div style="display:flex;justify-content:center;align-items:center;height:60vh;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else
+{
+    @if (_featured.Count > 0)
+    {
+        <VideoHeroCarousel Videos="_featured" />
+    }
+
+    <div class="vh-body">
+        @if (_movies.Count > 0)
+        {
+            <div class="vh-section">
+                <div class="vh-section-header">
+                    <span class="vh-section-title">Filmlar</span>
+                </div>
+                <div class="vh-row drag-scroll">
+                    @foreach (var v in _movies)
+                    {
+                        <VideoCard Video="v" />
+                    }
+                </div>
+            </div>
+        }
+
+        @if (_series.Count > 0)
+        {
+            <div class="vh-section">
+                <div class="vh-section-header">
+                    <span class="vh-section-title">Seriallar</span>
+                </div>
+                <div class="vh-row drag-scroll">
+                    @foreach (var v in _series)
+                    {
+                        <VideoCard Video="v" />
+                    }
+                </div>
+            </div>
+        }
+
+        @if (_movies.Count == 0 && _series.Count == 0)
+        {
+            <div style="text-align:center;padding:60px 0;opacity:0.4;">Hozircha video yo'q.</div>
+        }
+    </div>
+}
+
+@code {
+    List<VideoDto> _featured = new();
+    List<VideoDto> _movies = new();
+    List<VideoDto> _series = new();
+    bool _loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var featuredPage = await Mediator.Send(new GetVideosQuery(PageSize: 10, IsFeatured: true, SortBy: "createdAt"));
+        _featured = featuredPage.Items;
+
+        var moviesPage = await Mediator.Send(new GetVideosQuery(PageSize: 20, Type: VideoType.Movie, SortBy: "views"));
+        _movies = moviesPage.Items;
+
+        var seriesPage = await Mediator.Send(new GetVideosQuery(PageSize: 20, Type: VideoType.Series, SortBy: "views"));
+        _series = seriesPage.Items;
+
+        _loading = false;
+    }
+}

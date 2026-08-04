@@ -137,3 +137,72 @@ public class CoinPackageConfiguration : IEntityTypeConfiguration<CoinPackage>
         builder.HasQueryFilter(p => !p.IsDeleted);
     }
 }
+
+public class VideoConfiguration : IEntityTypeConfiguration<Video>
+{
+    public void Configure(EntityTypeBuilder<Video> builder)
+    {
+        builder.HasKey(v => v.Id);
+        builder.Property(v => v.Title).IsRequired().HasMaxLength(500);
+        builder.Property(v => v.OriginalTitle).HasMaxLength(500);
+        builder.Property(v => v.Description).HasMaxLength(5000);
+        builder.Property(v => v.Language).HasMaxLength(100);
+        builder.Property(v => v.Country).HasMaxLength(100);
+        builder.Property(v => v.Slug).HasMaxLength(600);
+        builder.HasIndex(v => v.Slug).IsUnique();
+        builder.HasIndex(v => v.Title);
+        builder.HasOne(v => v.LinkedComic)
+            .WithMany()
+            .HasForeignKey(v => v.LinkedComicId)
+            .OnDelete(DeleteBehavior.SetNull);
+        builder.HasQueryFilter(v => !v.IsDeleted);
+    }
+}
+
+public class VideoEpisodeConfiguration : IEntityTypeConfiguration<VideoEpisode>
+{
+    public void Configure(EntityTypeBuilder<VideoEpisode> builder)
+    {
+        builder.HasKey(e => e.Id);
+        builder.Property(e => e.Title).HasMaxLength(500);
+        builder.Property(e => e.VideoUrl).IsRequired();
+        builder.HasIndex(e => new { e.VideoId, e.SeasonNumber, e.EpisodeNumber }).IsUnique();
+        builder.HasOne(e => e.Video)
+            .WithMany(v => v.Episodes)
+            .HasForeignKey(e => e.VideoId)
+            .OnDelete(DeleteBehavior.Cascade);
+        builder.HasQueryFilter(e => !e.IsDeleted);
+    }
+}
+
+public class VideoCastMemberConfiguration : IEntityTypeConfiguration<VideoCastMember>
+{
+    public void Configure(EntityTypeBuilder<VideoCastMember> builder)
+    {
+        builder.HasKey(cm => cm.Id);
+        builder.Property(cm => cm.Name).IsRequired().HasMaxLength(200);
+        builder.HasOne(cm => cm.Video)
+            .WithMany(v => v.CastMembers)
+            .HasForeignKey(cm => cm.VideoId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public class VideoGenreConfiguration : IEntityTypeConfiguration<VideoGenre>
+{
+    public void Configure(EntityTypeBuilder<VideoGenre> builder)
+    {
+        builder.HasKey(vg => new { vg.VideoId, vg.GenreId });
+        builder.HasOne(vg => vg.Video).WithMany(v => v.VideoGenres).HasForeignKey(vg => vg.VideoId);
+        builder.HasOne(vg => vg.Genre).WithMany(g => g.VideoGenres).HasForeignKey(vg => vg.GenreId);
+    }
+}
+
+public class VideoViewConfiguration : IEntityTypeConfiguration<VideoView>
+{
+    public void Configure(EntityTypeBuilder<VideoView> builder)
+    {
+        builder.HasKey(v => v.Id);
+        builder.HasIndex(v => new { v.SessionId, v.VideoId, v.ViewedAt });
+    }
+}

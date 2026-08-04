@@ -144,7 +144,8 @@ button img,
 .trending-info,
 .lr-content,
 .hero-title,
-.hero-desc {
+.hero-desc,
+.video-card-info {
     -webkit-user-select: none;
     -moz-user-select: none;
     user-select: none;
@@ -154,4 +155,381 @@ button img,
 input, textarea, [contenteditable] {
     -webkit-user-select: text !important;
     user-select: text !important;
+}
+
+/* ═══ VIDEO CARD (Shared/VideoCard.razor) — Home.razor'dagi .trending-card bilan bir xil o'lcham ═══ */
+.video-card {
+    flex: 0 0 168px;
+    width: 168px;
+    border-radius: 10px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    display: block;
+    position: relative;
+}
+.video-card-img-wrap { position: relative; }
+.video-card img {
+    width: 100%;
+    aspect-ratio: 3/4;
+    object-fit: cover;
+    display: block;
+    transition: transform 0.3s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+    .video-card:hover img { transform: scale(1.06); }
+}
+.video-card-badge {
+    position: absolute;
+    top: 8px; left: 8px;
+    z-index: 3;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    padding: 3px 8px;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(217,119,6,0.4);
+}
+/* Sarlavha poster ustiga gradient bilan qoplanadi (Netflix/streaming uslubi) */
+.video-card-grad {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    background: linear-gradient(to bottom, transparent 45%, rgba(8,9,14,0.94) 100%);
+    pointer-events: none;
+}
+.video-card-info {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    z-index: 2;
+    padding: 10px 8px 8px;
+}
+.video-card-title {
+    color: #fff;
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.6);
+}
+.video-card-meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+}
+.video-card-rating { color: #FACC15; font-weight: 700; }
+
+/* ═══ HERO CAROUSEL (Shared/VideoHeroCarousel.razor) — Yangi.tv uslubi, bitta banner + nuqtalar ═══ */
+.hero-carousel {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    overflow: hidden;
+    background: #0f1117;
+}
+.hero-carousel-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.6s ease;
+}
+.hero-carousel-grad {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(10,10,18,0.15) 0%, rgba(10,10,18,0.35) 55%, rgba(10,10,18,0.96) 100%);
+}
+.hero-carousel-caption {
+    position: absolute;
+    left: 0; right: 0; bottom: 46px;
+    z-index: 2;
+    padding: 0 24px;
+    text-decoration: none;
+    text-align: center;
+}
+.hero-carousel-title {
+    color: #fff;
+    font-size: 24px;
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.6);
+}
+.hero-carousel-sub {
+    color: rgba(255,255,255,0.65);
+    font-size: 13px;
+    margin-top: 4px;
+}
+.hero-carousel-dots {
+    position: absolute;
+    left: 0; right: 0; bottom: 16px;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+.hero-dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.35);
+    cursor: pointer;
+    padding: 0;
+    transition: background 0.2s, width 0.2s;
+}
+.hero-dot.active { background: #ef4444; width: 20px; border-radius: 4px; }
+
+@media (max-width: 768px) {
+    .hero-carousel { height: 280px; }
+    .hero-carousel-title { font-size: 18px; }
+    .hero-carousel-caption { bottom: 34px; padding: 0 16px; }
+}
+
+/* ═══ LINKED CONTENT CARD (Shared/LinkedContentCard.razor) — komik↔video o'zaro havola ═══ */
+.linked-content-card {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin: 0 0 28px;
+    padding: 12px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    text-decoration: none;
+    color: inherit;
+    transition: background 0.15s, border-color 0.15s;
+}
+.linked-content-card:hover {
+    background: rgba(59,130,246,0.08);
+    border-color: rgba(59,130,246,0.3);
+}
+.linked-content-card img {
+    width: 56px; height: 76px;
+    object-fit: cover;
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+.linked-content-info { flex: 1; min-width: 0; }
+.linked-content-label {
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: 0.4px;
+    text-transform: uppercase;
+    color: #60a5fa;
+    margin-bottom: 3px;
+}
+.linked-content-title {
+    font-size: 14px;
+    font-weight: 700;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.linked-content-cta {
+    font-size: 12px;
+    font-weight: 700;
+    color: #60a5fa;
+    margin-top: 3px;
+}
+
+/* ═══ VIDEO PLAYER (Shared/VideoPlayer.razor) ═══
+   Diqqat: bu yerda ataylab HECH QANDAY blur()/backdrop-filter() ishlatilmagan —
+   mobil brauzerlarda (ayniqsa Android WebView) blur+video qatlamlari birga
+   "piksellar buzilib ketishi"ga (rendering artifact) sabab bo'lgani aniqlangan. */
+.vp-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+}
+.vp-container.vp-hide-cursor { cursor: none; }
+.vp-container video {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    display: block;
+    background: #000;
+    object-fit: contain;
+}
+
+/* Markaziy play tugmasi */
+.vp-center-play {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: rgba(20,22,30,0.55);
+    border: 2px solid rgba(255,255,255,0.85);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    z-index: 3;
+    transition: background 0.15s, transform 0.15s;
+}
+.vp-center-play:hover { background: rgba(59,130,246,0.75); transform: translate(-50%, -50%) scale(1.06); }
+.vp-center-play svg { width: 28px; height: 28px; fill: currentColor; margin-left: 3px; }
+
+/* Yuklanish spinneri */
+.vp-spinner {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 42px; height: 42px;
+    z-index: 2;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+.vp-spinner.vp-visible { opacity: 1; }
+.vp-spinner svg { width: 100%; height: 100%; animation: vp-spin 0.9s linear infinite; }
+.vp-spinner circle { stroke: rgba(255,255,255,0.9); stroke-linecap: round; stroke-dasharray: 90 60; }
+@keyframes vp-spin { to { transform: rotate(360deg); } }
+
+/* Boshqaruv paneli — video ustiga qoplama, avtomatik yashiriladi */
+.vp-controls {
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    z-index: 4;
+    padding: 28px 12px 8px;
+    background: linear-gradient(to bottom, transparent, rgba(0,0,0,0.82) 55%);
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+    pointer-events: none;
+}
+.vp-controls.vp-visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+
+.vp-progress-wrap {
+    position: relative;
+    height: 14px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+.vp-progress-wrap::before {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.22);
+}
+.vp-progress-buffered {
+    position: absolute;
+    left: 0; height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.4);
+    width: 0%;
+    pointer-events: none;
+}
+.vp-progress-played {
+    position: absolute;
+    left: 0; height: 4px;
+    border-radius: 2px;
+    background: #ef4444;
+    width: 0%;
+    pointer-events: none;
+}
+.vp-progress-thumb {
+    position: absolute;
+    right: -6px; top: 50%;
+    transform: translateY(-50%);
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #ef4444;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+}
+.vp-seek {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.vp-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+.vp-btn {
+    background: transparent;
+    border: none;
+    color: #fff;
+    cursor: pointer;
+    padding: 6px;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 6px;
+    transition: background 0.15s;
+}
+.vp-btn:hover { background: rgba(255,255,255,0.12); }
+.vp-btn svg { width: 20px; height: 20px; fill: currentColor; }
+.vp-time {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.85);
+    white-space: nowrap;
+    flex-shrink: 0;
+    margin-left: 2px;
+}
+.vp-spacer { flex: 1; }
+.vp-volume {
+    width: 64px;
+    accent-color: #ef4444;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+/* Sifat menyusi (Avto/480p/720p/1080p) — pleer ichida, sozlamalar tugmasi ustida */
+.vp-quality-wrap { position: relative; }
+.vp-quality-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 5;
+}
+.vp-quality-menu {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    right: 0;
+    z-index: 6;
+    background: rgba(21,23,31,0.97);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 4px;
+    min-width: 96px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+}
+.vp-quality-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.8);
+    border-radius: 5px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.vp-quality-item:hover { background: rgba(255,255,255,0.08); }
+.vp-quality-item.active { color: #ef4444; }
+.vp-quality-check { color: #ef4444; font-weight: 800; }
+
+@media (max-width: 768px) {
+    .vp-volume { display: none; }
+    .vp-center-play { width: 52px; height: 52px; }
+    .vp-center-play svg { width: 22px; height: 22px; }
 }

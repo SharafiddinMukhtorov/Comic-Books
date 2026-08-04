@@ -22,6 +22,11 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<UserBookmark> UserBookmarks => Set<UserBookmark>();
     public DbSet<ComicView> ComicViews => Set<ComicView>();
     public DbSet<ChapterComment> ChapterComments => Set<ChapterComment>();
+    public DbSet<Video> Videos => Set<Video>();
+    public DbSet<VideoEpisode> VideoEpisodes => Set<VideoEpisode>();
+    public DbSet<VideoCastMember> VideoCastMembers => Set<VideoCastMember>();
+    public DbSet<VideoGenre> VideoGenres => Set<VideoGenre>();
+    public DbSet<VideoView> VideoViews => Set<VideoView>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

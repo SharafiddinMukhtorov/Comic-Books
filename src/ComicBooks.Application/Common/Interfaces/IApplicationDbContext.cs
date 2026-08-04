@@ -19,6 +19,11 @@ public interface IApplicationDbContext
     DbSet<UserBookmark> UserBookmarks { get; }
     DbSet<ComicView> ComicViews { get; }
     DbSet<ChapterComment> ChapterComments { get; }
+    DbSet<Video> Videos { get; }
+    DbSet<VideoEpisode> VideoEpisodes { get; }
+    DbSet<VideoCastMember> VideoCastMembers { get; }
+    DbSet<VideoGenre> VideoGenres { get; }
+    DbSet<VideoView> VideoViews { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

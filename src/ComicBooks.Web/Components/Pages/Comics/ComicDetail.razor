@@ -904,6 +904,14 @@ else
             </div>
             </div><!-- /dr-info-card -->
 
+            @if (_comic.LinkedVideo is not null)
+            {
+                <LinkedContentCard ImageUrl="@_comic.LinkedVideo.PosterImageUrl"
+                                    Title="@_comic.LinkedVideo.Title"
+                                    Href="@($"/video/{_comic.LinkedVideo.Slug}")"
+                                    Label="@(_comic.LinkedVideo.Type == VideoType.Series ? "Seriali mavjud" : "Filmi mavjud")" />
+            }
+
             <!-- Action buttons (orqa karta yo'q — tugmalar o'zi shaklli) -->
             <div class="dr-actions">
                 <button class="dr-btn-bm @(IsBookmarked ? "saved" : "")"

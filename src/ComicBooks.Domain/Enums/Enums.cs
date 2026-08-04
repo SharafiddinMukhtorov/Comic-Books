@@ -25,3 +25,24 @@ public enum ContentRating
     Mature = 3,
     Adult = 4
 }
+
+public enum VideoType
+{
+    Movie = 1,
+    Series = 2
+}
+
+public enum VideoStatus
+{
+    Ongoing = 1,
+    Completed = 2,
+    Hiatus = 3,
+    Cancelled = 4,
+    ComingSoon = 5
+}
+
+public enum CastRole
+{
+    Actor = 1,
+    Director = 2
+}

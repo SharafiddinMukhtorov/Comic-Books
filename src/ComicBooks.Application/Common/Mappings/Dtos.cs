@@ -33,6 +33,7 @@ public class ComicDto
     public DateTime? SecondLatestChapterDate { get; set; }   // oxirgidan oldingi bob qo'shilgan sana
     public List<string> Genres { get; set; } = new();
     public List<string> Tags { get; set; } = new();
+    public LinkedVideoSummaryDto? LinkedVideo { get; set; }   // shu komikning ekranizatsiyasi (film/serial) bo'lsa
 }
 
 public class ChapterDto
@@ -122,4 +123,81 @@ public class CoinPackageDto
     public string Price      { get; set; } = "";
     public bool   IsPopular  { get; set; }
     public int    SortOrder  { get; set; }
+}
+
+public class VideoDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? OriginalTitle { get; set; }
+    public string? Description { get; set; }
+    public string? PosterImageUrl { get; set; }
+    public string? BannerImageUrl { get; set; }
+    public VideoType Type { get; set; }
+    public VideoStatus Status { get; set; }
+    public ContentRating Rating { get; set; }
+    public string? Language { get; set; }
+    public string? Country { get; set; }
+    public int? ReleaseYear { get; set; }
+    public int? DurationMinutes { get; set; }
+    public double ImdbRating { get; set; }
+    public int LikeCount { get; set; }
+    public int DislikeCount { get; set; }
+    public int ViewCount { get; set; }
+    public string? VideoUrl { get; set; }
+    public string? VideoUrl480p { get; set; }
+    public string? VideoUrl720p { get; set; }
+    public string? VideoUrl1080p { get; set; }
+    public bool IsFeatured { get; set; }
+    public string? Slug { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public List<string> Genres { get; set; } = new();
+    public int SeasonCount { get; set; }
+    public int EpisodeCount { get; set; }
+    // Faqat bitta video sahifasida (GetVideoBySlug/Id) to'ldiriladi — ro'yxatlarda bo'sh qoladi
+    public List<VideoEpisodeDto> Episodes { get; set; } = new();
+    public List<VideoCastMemberDto> CastMembers { get; set; } = new();
+    public LinkedComicSummaryDto? LinkedComic { get; set; }
+}
+
+public class VideoEpisodeDto
+{
+    public Guid Id { get; set; }
+    public Guid VideoId { get; set; }
+    public int SeasonNumber { get; set; }
+    public int EpisodeNumber { get; set; }
+    public string? Title { get; set; }
+    public string VideoUrl { get; set; } = string.Empty;
+    public string? VideoUrl480p { get; set; }
+    public string? VideoUrl720p { get; set; }
+    public string? VideoUrl1080p { get; set; }
+    public string? ThumbnailUrl { get; set; }
+    public int? DurationMinutes { get; set; }
+    public int ViewCount { get; set; }
+}
+
+public class VideoCastMemberDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string? PhotoUrl { get; set; }
+    public CastRole Role { get; set; }
+    public int SortOrder { get; set; }
+}
+
+public class LinkedComicSummaryDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? CoverImageUrl { get; set; }
+    public string? Slug { get; set; }
+}
+
+public class LinkedVideoSummaryDto
+{
+    public Guid Id { get; set; }
+    public string Title { get; set; } = string.Empty;
+    public string? PosterImageUrl { get; set; }
+    public string? Slug { get; set; }
+    public VideoType Type { get; set; }
 }

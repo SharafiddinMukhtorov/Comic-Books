@@ -1,0 +1,18 @@
+@* Komik ↔ Video o'zaro bog'lanish kartasi — ComicDetail.razor va VideoDetail.razor ikkalasida ham
+   xuddi shu ko'rinishda ishlatiladi (raytinglar/janrlar blokidan keyin, action tugmalardan oldin) *@
+
+<a href="@Href" class="linked-content-card">
+    <img src="@(ImageUrl ?? "https://picsum.photos/seed/linked/120/160")" alt="@Title" />
+    <div class="linked-content-info">
+        <div class="linked-content-label">@Label</div>
+        <div class="linked-content-title">@Title</div>
+        <div class="linked-content-cta">Ko'rish →</div>
+    </div>
+</a>
+
+@code {
+    [Parameter, EditorRequired] public string? ImageUrl { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+}

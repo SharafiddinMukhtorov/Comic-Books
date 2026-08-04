@@ -1,0 +1,788 @@
+@page "/admin/videos/create"
+@page "/admin/videos/edit/{Id:guid}"
+@layout AdminLayout
+@inject IMediator Mediator
+@inject NavigationManager Nav
+@inject ISnackbar Snackbar
+@inject Microsoft.AspNetCore.Hosting.IWebHostEnvironment Env
+@inject Microsoft.Extensions.Configuration.IConfiguration Config
+
+<PageTitle>@(IsEdit ? "Tahrirlash" : "Yangi video") - Admin</PageTitle>
+
+<style>
+    .cf-title {
+        font-size: 1.6rem;
+        font-weight: 900;
+        margin: 0 0 6px;
+        background: linear-gradient(135deg, #fff, #60a5fa);
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+    }
+    .cf-sub { opacity: 0.55; font-size: 13px; margin-bottom: 22px; }
+
+    .cf-card {
+        background: rgba(255,255,255,0.04);
+        backdrop-filter: blur(14px);
+        border: 1px solid rgba(255,255,255,0.08);
+        border-radius: 14px;
+        padding: 22px;
+        margin-bottom: 18px;
+    }
+    .cf-section-title {
+        font-size: 13px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        opacity: 0.6;
+        margin: 0 0 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .cf-section-title::after {
+        content: '';
+        flex: 1;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(255,255,255,0.1), transparent);
+    }
+
+    .adm-file-input { display: none; }
+    .adm-file-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        color: #fff;
+        padding: 10px 18px;
+        border-radius: 9px;
+        cursor: pointer;
+        font-size: 13px;
+        font-weight: 700;
+        border: none;
+        transition: filter 0.15s, transform 0.15s;
+        box-shadow: 0 4px 14px rgba(59,130,246,0.35);
+    }
+    .adm-file-btn:hover { filter: brightness(1.12); transform: translateY(-1px); }
+
+    .cf-cover-box { position: relative; width: 130px; flex-shrink: 0; }
+    .cf-cover-box img {
+        width: 130px; height: 176px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+    .cf-banner-box img {
+        width: 240px; height: 96px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid rgba(255,255,255,0.1);
+        box-shadow: 0 6px 20px rgba(0,0,0,0.35);
+    }
+    .cf-rm-btn {
+        position: absolute;
+        top: -8px; right: -8px;
+        width: 26px; height: 26px;
+        border-radius: 50%;
+        background: #ef4444;
+        color: #fff;
+        border: 2px solid rgba(15,15,28,1);
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .cf-rm-btn:hover { background: #dc2626; }
+
+    .vf-seg { display: inline-flex; background: rgba(255,255,255,0.06); border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 18px; }
+    .vf-seg-btn { border: none; background: transparent; color: inherit; opacity: 0.6; font-size: 13px; font-weight: 700; padding: 8px 20px; border-radius: 8px; cursor: pointer; }
+    .vf-seg-btn.active { background: #3b82f6; color: #fff; opacity: 1; }
+
+    .vf-row {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px; border-radius: 8px;
+        background: rgba(255,255,255,0.02);
+        border: 1px solid rgba(255,255,255,0.06);
+        margin-bottom: 8px;
+    }
+    .vf-row-thumb { width: 44px; height: 44px; border-radius: 6px; object-fit: cover; flex-shrink: 0; background: rgba(255,255,255,0.05); }
+
+    .fc-row { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border-radius: 8px; margin-bottom: 5px; }
+    .fc-row-left  { background: rgba(96,165,250,0.08); border: 1px solid rgba(96,165,250,0.18); }
+    .fc-row-right { transition: background 0.15s; }
+    .fc-row-right:hover { background: rgba(128,128,128,0.07); }
+    .fc-thumb { width: 38px; height: 54px; object-fit: cover; border-radius: 5px; flex-shrink: 0; }
+    .fc-info  { flex: 1; min-width: 0; }
+    .fc-title { font-weight: 700; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .fc-meta  { font-size: 11px; opacity: 0.5; }
+</style>
+
+<h1 class="cf-title">@(IsEdit ? "✏️ Videoni tahrirlash" : "➕ Yangi video qo'shish")</h1>
+<p class="cf-sub">Film yoki serial haqida to'liq ma'lumot kiriting</p>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+    <MudText Class="mt-2" Style="opacity:0.5;">Yuklanmoqda...</MudText>
+}
+else
+{
+<MudGrid>
+    <MudItem xs="12" md="8">
+        <!-- Asosiy ma'lumotlar -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">📋 Asosiy ma'lumotlar</h3>
+            <MudTextField @bind-Value="_title"         Label="Nomi *"              Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_originalTitle" Label="Original nomi (ixtiyoriy)" Variant="Variant.Outlined" Class="mb-3" />
+            <MudTextField @bind-Value="_desc"          Label="Tavsif"              Variant="Variant.Outlined" Lines="5" Class="mb-3" />
+            <MudGrid>
+                <MudItem xs="6"><MudTextField @bind-Value="_language" Label="Tili" Variant="Variant.Outlined" /></MudItem>
+                <MudItem xs="6"><MudTextField @bind-Value="_country"  Label="Davlati" Variant="Variant.Outlined" /></MudItem>
+            </MudGrid>
+        </div>
+
+        <!-- Rasmlar -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">🖼️ Poster va Banner</h3>
+
+            <div style="margin-bottom:20px;">
+                <div style="font-size:12px;font-weight:700;opacity:0.75;margin-bottom:10px;">
+                    📷 Poster rasmi <span style="color:#ef4444;">*</span>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+                    @if (!string.IsNullOrEmpty(_posterUrl))
+                    {
+                        <div class="cf-cover-box">
+                            <img src="@_posterUrl" alt="Poster" />
+                            <button type="button" @onclick="@(() => _posterUrl = "")" class="cf-rm-btn">✕</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="cf-cover-box" style="display:flex;align-items:center;justify-content:center;
+                                                       width:130px;height:176px;border-radius:10px;
+                                                       background:rgba(255,255,255,0.03);
+                                                       border:2px dashed rgba(255,255,255,0.12);
+                                                       color:rgba(255,255,255,0.3);font-size:32px;">
+                            📷
+                        </div>
+                    }
+                    <div style="flex:1;min-width:240px;">
+                        <InputFile OnChange="@(e => UploadAsync(e, "videoposter"))" accept="image/*" class="adm-file-input" id="poster-file" />
+                        <label for="poster-file" class="adm-file-btn">
+                            @if (_uploadingPoster) { <text>⏳ Yuklanmoqda...</text> }
+                            else { <text>📁 @(string.IsNullOrEmpty(_posterUrl) ? "Kompyuterdan tanlash" : "Almashtirish")</text> }
+                        </label>
+                        <div style="font-size:11px;opacity:0.45;margin-top:6px;">JPG · PNG · WEBP · 20MB gacha</div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div style="font-size:12px;font-weight:700;opacity:0.75;margin-bottom:10px;">
+                    🎨 Banner rasmi <span style="opacity:0.5;">(ixtiyoriy)</span>
+                </div>
+                <div style="display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;">
+                    @if (!string.IsNullOrEmpty(_bannerUrl))
+                    {
+                        <div class="cf-banner-box" style="position:relative;">
+                            <img src="@_bannerUrl" alt="Banner" />
+                            <button type="button" @onclick="@(() => _bannerUrl = "")" class="cf-rm-btn">✕</button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div style="display:flex;align-items:center;justify-content:center;
+                                    width:240px;height:96px;border-radius:10px;
+                                    background:rgba(255,255,255,0.03);
+                                    border:2px dashed rgba(255,255,255,0.12);
+                                    color:rgba(255,255,255,0.3);font-size:28px;">
+                            🎨
+                        </div>
+                    }
+                    <div style="flex:1;min-width:200px;">
+                        <InputFile OnChange="@(e => UploadAsync(e, "videobanner"))" accept="image/*" class="adm-file-input" id="banner-file" />
+                        <label for="banner-file" class="adm-file-btn">
+                            @if (_uploadingBanner) { <text>⏳ Yuklanmoqda...</text> }
+                            else { <text>📁 @(string.IsNullOrEmpty(_bannerUrl) ? "Bannerni tanlash" : "Almashtirish")</text> }
+                        </label>
+                        <div style="font-size:11px;opacity:0.45;margin-top:6px;">Keng formatdagi rasm (16:9 yoki 21:9) — hero karuselda ishlatiladi</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Turi: Film / Serial -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">🎞️ Turi</h3>
+            <div class="vf-seg">
+                <button type="button" class="vf-seg-btn @(_type == VideoType.Movie ? "active" : "")" @onclick="@(() => _type = VideoType.Movie)">🎬 Film</button>
+                <button type="button" class="vf-seg-btn @(_type == VideoType.Series ? "active" : "")" @onclick="@(() => _type = VideoType.Series)">📺 Serial</button>
+            </div>
+
+            @if (_type == VideoType.Movie)
+            {
+                <div style="display:flex;gap:10px;align-items:flex-start;">
+                    <MudTextField @bind-Value="_videoUrl" Label="Video havolasi (URL) — Avto *" Variant="Variant.Outlined" Class="mb-3" Style="flex:1;"
+                                  HelperText="Tashqi manzil, yoki pastdagi tugma bilan serverga to'g'ridan-to'g'ri yuklang" />
+                    <div>
+                        <InputFile OnChange="@(e => UploadVideoFileAsync(e, url => _videoUrl = url, () => _uploadingMovieVideo = true, () => _uploadingMovieVideo = false))"
+                                   accept="video/*" class="adm-file-input" id="movie-video-file" />
+                        <label for="movie-video-file" class="adm-file-btn" style="white-space:nowrap;">
+                            @if (_uploadingMovieVideo) { <text>⏳ Yuklanmoqda...</text> }
+                            else { <text>📁 Videoni yuklash</text> }
+                        </label>
+                    </div>
+                </div>
+                <div style="font-size:11px;opacity:0.45;margin-top:-8px;margin-bottom:14px;">MP4 · WEBM · MOV · MKV — 2GB gacha</div>
+                <MudNumericField T="int?" @bind-Value="_durationMinutes" Label="Davomiyligi (daqiqa)" Variant="Variant.Outlined" Min="1" Class="mb-4" />
+
+                <div style="font-size:12px;font-weight:700;opacity:0.6;margin-bottom:8px;">🎚️ Qo'shimcha sifatlar (ixtiyoriy — pleerdagi sifat menyusida ko'rinadi)</div>
+                @foreach (var q in _movieQualityFields)
+                {
+                    var qq = q;
+                    <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:10px;">
+                        <MudTextField Value="@qq.Get()" ValueChanged="@((string v) => qq.Set(v))" Label="@qq.Label" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex:1;" />
+                        <InputFile OnChange="@(e => UploadVideoFileAsync(e, url => qq.Set(url), () => qq.Uploading = true, () => qq.Uploading = false))"
+                                   accept="video/*" class="adm-file-input" id="@("movie-video-file-" + qq.Label)" />
+                        <label for="@("movie-video-file-" + qq.Label)" class="adm-file-btn" style="padding:8px 12px;font-size:11px;white-space:nowrap;">
+                            @(qq.Uploading ? "⏳" : "📁")
+                        </label>
+                    </div>
+                }
+            }
+            else
+            {
+                <div style="font-size:12px;font-weight:700;opacity:0.75;margin-bottom:10px;">Qismlar (@_episodes.Count)</div>
+                @foreach (var ep in _episodes)
+                {
+                    var epRow = ep;
+                    <div class="vf-row">
+                        <img class="vf-row-thumb" src="@(string.IsNullOrEmpty(ep.ThumbnailUrl) ? "" : ep.ThumbnailUrl)" />
+                        <MudNumericField T="int" @bind-Value="ep.SeasonNumber" Label="Fasl" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:80px;" Min="1" />
+                        <MudNumericField T="int" @bind-Value="ep.EpisodeNumber" Label="Qism №" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:90px;" Min="1" />
+                        <MudTextField @bind-Value="ep.Title" Label="Sarlavha" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex:1;min-width:120px;" />
+                        <MudTextField @bind-Value="ep.VideoUrl" Label="Video URL (Avto) *" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex:2;min-width:180px;" />
+                        <InputFile OnChange="@(e => UploadVideoFileAsync(e, url => epRow.VideoUrl = url, () => epRow.Uploading = true, () => epRow.Uploading = false))"
+                                   accept="video/*" class="adm-file-input" id="@("ep-video-file-" + ep.LocalId)" />
+                        <label for="@("ep-video-file-" + ep.LocalId)" class="adm-file-btn" style="padding:8px 12px;font-size:11px;white-space:nowrap;">
+                            @(epRow.Uploading ? "⏳" : "📁")
+                        </label>
+                        <button type="button" class="cf-rm-btn" style="position:static;background:@(epRow.ShowQuality ? "#3b82f6" : "#6b7280");" title="Qo'shimcha sifatlar" @onclick="@(() => epRow.ShowQuality = !epRow.ShowQuality)">🎚️</button>
+                        <button type="button" class="cf-rm-btn" style="position:static;" @onclick="@(() => _episodes.Remove(ep))">✕</button>
+                    </div>
+                    @if (epRow.ShowQuality)
+                    {
+                        <div style="margin:-4px 0 10px 44px;padding:10px;border-left:2px solid rgba(255,255,255,0.1);">
+                            @foreach (var q in EpisodeQualityFields(epRow))
+                            {
+                                var qq = q;
+                                <div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px;">
+                                    <MudTextField Value="@qq.Get()" ValueChanged="@((string v) => qq.Set(v))" Label="@qq.Label" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex:1;" />
+                                    <InputFile OnChange="@(e => UploadVideoFileAsync(e, url => qq.Set(url), () => qq.Uploading = true, () => qq.Uploading = false))"
+                                               accept="video/*" class="adm-file-input" id="@("ep-video-file-" + epRow.LocalId + "-" + qq.Label)" />
+                                    <label for="@("ep-video-file-" + epRow.LocalId + "-" + qq.Label)" class="adm-file-btn" style="padding:8px 12px;font-size:11px;white-space:nowrap;">
+                                        @(qq.Uploading ? "⏳" : "📁")
+                                    </label>
+                                </div>
+                            }
+                        </div>
+                    }
+                }
+                <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@AddEpisode" StartIcon="@Icons.Material.Filled.Add" Class="mt-2" Style="text-transform:none;">
+                    Qism qo'shish
+                </MudButton>
+            }
+        </div>
+
+        <!-- Rollar / Rejissyorlar -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">🎭 Rollarda / Rejissyor</h3>
+            @foreach (var cm in _cast)
+            {
+                <div class="vf-row">
+                    <img class="vf-row-thumb" style="border-radius:50%;" src="@(string.IsNullOrEmpty(cm.PhotoUrl) ? "" : cm.PhotoUrl)" />
+                    <div style="flex-shrink:0;">
+                        <InputFile OnChange="@(e => UploadCastPhotoAsync(e, cm))" accept="image/*" class="adm-file-input" id="@("cast-file-" + cm.LocalId)" />
+                        <label for="@("cast-file-" + cm.LocalId)" class="adm-file-btn" style="padding:8px 12px;font-size:11px;">📁</label>
+                    </div>
+                    <MudTextField @bind-Value="cm.Name" Label="Ism" Variant="Variant.Outlined" Margin="Margin.Dense" Style="flex:1;min-width:140px;" />
+                    <MudSelect T="CastRole" @bind-Value="cm.Role" Label="Roli" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:150px;">
+                        <MudSelectItem T="CastRole" Value="@CastRole.Actor">Aktyor</MudSelectItem>
+                        <MudSelectItem T="CastRole" Value="@CastRole.Director">Rejissyor</MudSelectItem>
+                    </MudSelect>
+                    <MudNumericField T="int" @bind-Value="cm.SortOrder" Label="Tartib" Variant="Variant.Outlined" Margin="Margin.Dense" Style="width:80px;" />
+                    <button type="button" class="cf-rm-btn" style="position:static;" @onclick="@(() => _cast.Remove(cm))">✕</button>
+                </div>
+            }
+            <MudButton Variant="Variant.Outlined" Size="Size.Small" OnClick="@AddCast" StartIcon="@Icons.Material.Filled.Add" Class="mt-2" Style="text-transform:none;">
+                Qatnashuvchi qo'shish
+            </MudButton>
+        </div>
+
+        <!-- Janrlar -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">🏷️ Janrlar</h3>
+            <MudSelect T="Guid" @bind-SelectedValues="_genreIds" Label="Janrlar"
+                       MultiSelection="true" Variant="Variant.Outlined">
+                @foreach (var g in _genres)
+                { <MudSelectItem T="Guid" Value="@g.Id">@g.Name</MudSelectItem> }
+            </MudSelect>
+        </div>
+
+        <!-- Kitob bilan bog'lash -->
+        <div class="cf-card">
+            <h3 class="cf-section-title">🔗 Kitob (komik) bilan bog'lash</h3>
+            <MudText Typo="Typo.body2" Style="opacity:0.6" Class="mb-3">
+                Agar shu film/serial biror mangamiz ekranizatsiyasi bo'lsa, kitob sahifasida ham o'zaro havola ko'rinadi
+            </MudText>
+
+            @if (_linkedComic is not null)
+            {
+                <div class="fc-row fc-row-left">
+                    <img class="fc-thumb" src="@(_linkedComic.CoverImageUrl ?? "")" />
+                    <div class="fc-info">
+                        <div class="fc-title">@_linkedComic.Title</div>
+                    </div>
+                    <MudChip T="string" Color="Color.Error" Size="Size.Small" OnClick="@(() => { _linkedComic = null; _linkedComicId = null; })"
+                             Style="cursor:pointer;font-weight:700;">✕ Olib tashlash</MudChip>
+                </div>
+            }
+            else
+            {
+                <div style="opacity:0.4;padding:10px 0;font-size:13px;">Hech qanday kitob bog'lanmagan</div>
+            }
+
+            <MudTextField @bind-Value="_comicSearch" @bind-Value:after="@OnComicSearchChanged"
+                          Label="Kitob qidirish..." Variant="Variant.Outlined"
+                          Adornment="Adornment.Start" AdornmentIcon="@Icons.Material.Filled.Search"
+                          Immediate="true" Class="mt-3 mb-2" />
+
+            @if (!string.IsNullOrWhiteSpace(_comicSearch))
+            {
+                <div style="max-height:220px;overflow-y:auto;">
+                    @if (!_comicResults.Any())
+                    {
+                        <div style="opacity:0.4;padding:8px 0;font-size:13px;">Hech narsa topilmadi</div>
+                    }
+                    @foreach (var item in _comicResults)
+                    {
+                        var picked = item;
+                        <div class="fc-row fc-row-right">
+                            <img class="fc-thumb" src="@(picked.CoverImageUrl ?? "")" />
+                            <div class="fc-info">
+                                <div class="fc-title">@picked.Title</div>
+                            </div>
+                            <MudChip T="string" Color="Color.Success" Size="Size.Small"
+                                     OnClick="@(() => SelectLinkedComic(picked))"
+                                     Style="cursor:pointer;font-weight:700;">Tanlash</MudChip>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </MudItem>
+
+    <MudItem xs="12" md="4">
+        @if (!string.IsNullOrEmpty(_posterUrl))
+        {
+            <div class="cf-card" style="padding:14px;">
+                <h3 class="cf-section-title">👁️ Ko'rinish</h3>
+                <img src="@_posterUrl" style="width:100%;border-radius:10px;max-height:340px;object-fit:cover;display:block;"
+                     onerror="this.style.display='none'" />
+            </div>
+        }
+
+        <div class="cf-card">
+            <h3 class="cf-section-title">⚙️ Sozlamalar</h3>
+
+            <MudSelect T="VideoStatus" @bind-Value="_status" Label="Holati" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem T="VideoStatus" Value="@VideoStatus.Ongoing">Davom etmoqda</MudSelectItem>
+                <MudSelectItem T="VideoStatus" Value="@VideoStatus.Completed">Tugallangan</MudSelectItem>
+                <MudSelectItem T="VideoStatus" Value="@VideoStatus.Hiatus">To'xtatilgan</MudSelectItem>
+                <MudSelectItem T="VideoStatus" Value="@VideoStatus.ComingSoon">Tez kunda</MudSelectItem>
+            </MudSelect>
+
+            <MudSelect T="ContentRating" @bind-Value="_rating" Label="Yosh chegarasi" Variant="Variant.Outlined" Class="mb-3">
+                <MudSelectItem T="ContentRating" Value="@ContentRating.Everyone">Hammaga</MudSelectItem>
+                <MudSelectItem T="ContentRating" Value="@ContentRating.Teen">O'smirlar (13+)</MudSelectItem>
+                <MudSelectItem T="ContentRating" Value="@ContentRating.Mature">Kattalar (18+)</MudSelectItem>
+            </MudSelect>
+
+            <MudNumericField T="int?" @bind-Value="_year" Label="Yil" Variant="Variant.Outlined" Class="mb-3" Min="1950" Max="2030" />
+
+            <MudNumericField T="double" @bind-Value="_imdbRating" Label="⭐ IMDB reyting"
+                              Variant="Variant.Outlined" Class="mb-3"
+                              Min="0" Max="10" Step="0.1" />
+
+            <div style="background:rgba(91,159,217,0.06);border:1px solid rgba(91,159,217,0.15);
+                        border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+                <MudCheckBox T="bool" @bind-Value="_featured" Label="🌟 Featured (Karusel/Bosh sahifa)" Color="Color.Primary" Class="mb-0" />
+            </div>
+
+            <MudButton Variant="Variant.Filled" Color="Color.Primary" FullWidth="true"
+                       OnClick="@Save" Disabled="@_saving"
+                       Style="height:48px;text-transform:none;font-weight:800;border-radius:10px;
+                              background:linear-gradient(135deg,#60a5fa,#3b82f6);
+                              box-shadow:0 6px 18px rgba(59,130,246,0.4);">
+                @(_saving ? "⏳ Saqlanmoqda..." : (IsEdit ? "💾 Saqlash" : "➕ Qo'shish"))
+            </MudButton>
+            <MudButton Href="/admin/videos" Variant="Variant.Outlined" FullWidth="true" Class="mt-2"
+                       Style="text-transform:none;border-radius:10px;height:42px;">
+                ← Orqaga
+            </MudButton>
+        </div>
+    </MudItem>
+</MudGrid>
+}
+
+@code {
+    [Parameter] public Guid Id { get; set; }
+    bool IsEdit => Id != Guid.Empty;
+
+    class QualityField
+    {
+        public string Label { get; }
+        readonly Func<string> _get;
+        readonly Action<string> _set;
+        public bool Uploading { get; set; }
+        public QualityField(string label, Func<string> get, Action<string> set) { Label = label; _get = get; _set = set; }
+        public string Get() => _get() ?? "";
+        public void Set(string v) => _set(v);
+    }
+
+    class EpisodeRow
+    {
+        public string LocalId { get; } = Guid.NewGuid().ToString("N");
+        public int SeasonNumber { get; set; } = 1;
+        public int EpisodeNumber { get; set; } = 1;
+        public string? Title { get; set; }
+        public string VideoUrl { get; set; } = "";
+        public string? VideoUrl480p { get; set; }
+        public string? VideoUrl720p { get; set; }
+        public string? VideoUrl1080p { get; set; }
+        public string? ThumbnailUrl { get; set; }
+        public int? DurationMinutes { get; set; }
+        public bool Uploading { get; set; } = false;
+        public bool ShowQuality { get; set; } = false;
+
+        List<QualityField>? _qualityFields;
+        public List<QualityField> QualityFields => _qualityFields ??= new()
+        {
+            new("480p",  () => VideoUrl480p  ?? "", v => VideoUrl480p  = v),
+            new("720p",  () => VideoUrl720p  ?? "", v => VideoUrl720p  = v),
+            new("1080p", () => VideoUrl1080p ?? "", v => VideoUrl1080p = v),
+        };
+    }
+
+    class CastRow
+    {
+        public string LocalId { get; } = Guid.NewGuid().ToString("N");
+        public string Name { get; set; } = "";
+        public string? PhotoUrl { get; set; }
+        public CastRole Role { get; set; } = CastRole.Actor;
+        public int SortOrder { get; set; } = 0;
+    }
+
+    string _title = "", _originalTitle = "", _desc = "", _language = "", _country = "", _posterUrl = "", _bannerUrl = "", _videoUrl = "";
+    string? _videoUrl480p, _videoUrl720p, _videoUrl1080p;
+    VideoType   _type   = VideoType.Movie;
+    VideoStatus _status = VideoStatus.Ongoing;
+    ContentRating _rating = ContentRating.Teen;
+    int? _year;
+    int? _durationMinutes;
+    double _imdbRating = 0;
+    bool _featured;
+    IEnumerable<Guid> _genreIds = new HashSet<Guid>();
+
+    List<EpisodeRow> _episodes = new();
+    List<CastRow> _cast = new();
+
+    List<QualityField>? _movieQualityFieldsCache;
+    List<QualityField> _movieQualityFields => _movieQualityFieldsCache ??= new()
+    {
+        new("480p",  () => _videoUrl480p  ?? "", v => _videoUrl480p  = v),
+        new("720p",  () => _videoUrl720p  ?? "", v => _videoUrl720p  = v),
+        new("1080p", () => _videoUrl1080p ?? "", v => _videoUrl1080p = v),
+    };
+
+    List<QualityField> EpisodeQualityFields(EpisodeRow ep) => ep.QualityFields;
+
+    List<GenreDto> _genres = new();
+    bool _loading = true;
+    bool _saving = false;
+    bool _uploadingPoster = false;
+    bool _uploadingBanner = false;
+    bool _uploadingMovieVideo = false;
+    Guid _loadedId;
+
+    Guid? _linkedComicId;
+    LinkedComicSummaryDto? _linkedComic;
+    string _comicSearch = "";
+    List<ComicDto> _comicResults = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _genres = await Mediator.Send(new GetAllGenresQuery());
+
+        if (IsEdit)
+            await LoadVideo();
+
+        _loadedId = Id;
+        _loading = false;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id != _loadedId && _loadedId != Guid.Empty)
+        {
+            _loadedId = Id;
+            _loading = true;
+            StateHasChanged();
+
+            _genres = await Mediator.Send(new GetAllGenresQuery());
+            if (IsEdit) await LoadVideo();
+            else Reset();
+
+            _loading = false;
+        }
+    }
+
+    async Task LoadVideo()
+    {
+        var v = await Mediator.Send(new GetVideoByIdQuery(Id));
+        if (v is null) { Nav.NavigateTo("/admin/videos"); return; }
+
+        _title = v.Title; _originalTitle = v.OriginalTitle ?? "";
+        _desc = v.Description ?? ""; _language = v.Language ?? ""; _country = v.Country ?? "";
+        _posterUrl = v.PosterImageUrl ?? ""; _bannerUrl = v.BannerImageUrl ?? "";
+        _type = v.Type; _status = v.Status; _rating = v.Rating;
+        _year = v.ReleaseYear; _durationMinutes = v.DurationMinutes;
+        _imdbRating = v.ImdbRating; _featured = v.IsFeatured; _videoUrl = v.VideoUrl ?? "";
+        _videoUrl480p = v.VideoUrl480p; _videoUrl720p = v.VideoUrl720p; _videoUrl1080p = v.VideoUrl1080p;
+
+        var gMap = _genres.ToDictionary(g => g.Name, g => g.Id, StringComparer.OrdinalIgnoreCase);
+        _genreIds = v.Genres.Where(n => gMap.ContainsKey(n)).Select(n => gMap[n]).ToHashSet();
+
+        _episodes = v.Episodes.Select(e => new EpisodeRow
+        {
+            SeasonNumber = e.SeasonNumber, EpisodeNumber = e.EpisodeNumber,
+            Title = e.Title, VideoUrl = e.VideoUrl, ThumbnailUrl = e.ThumbnailUrl, DurationMinutes = e.DurationMinutes,
+            VideoUrl480p = e.VideoUrl480p, VideoUrl720p = e.VideoUrl720p, VideoUrl1080p = e.VideoUrl1080p
+        }).ToList();
+
+        _cast = v.CastMembers.Select(cm => new CastRow
+        {
+            Name = cm.Name, PhotoUrl = cm.PhotoUrl, Role = cm.Role, SortOrder = cm.SortOrder
+        }).ToList();
+
+        if (v.LinkedComic is not null)
+        {
+            _linkedComicId = v.LinkedComic.Id;
+            _linkedComic = v.LinkedComic;
+        }
+    }
+
+    void Reset()
+    {
+        _title = ""; _originalTitle = ""; _desc = ""; _language = ""; _country = "";
+        _posterUrl = ""; _bannerUrl = ""; _videoUrl = "";
+        _videoUrl480p = null; _videoUrl720p = null; _videoUrl1080p = null;
+        _type = VideoType.Movie; _status = VideoStatus.Ongoing; _rating = ContentRating.Teen;
+        _year = null; _durationMinutes = null; _imdbRating = 0; _featured = false;
+        _genreIds = new HashSet<Guid>();
+        _episodes = new(); _cast = new();
+        _linkedComicId = null; _linkedComic = null;
+    }
+
+    void AddEpisode()
+    {
+        var nextSeason = _episodes.Count == 0 ? 1 : _episodes.Max(e => e.SeasonNumber);
+        var nextEp = _episodes.Where(e => e.SeasonNumber == nextSeason).Select(e => e.EpisodeNumber).DefaultIfEmpty(0).Max() + 1;
+        _episodes.Add(new EpisodeRow { SeasonNumber = nextSeason, EpisodeNumber = nextEp });
+    }
+
+    void AddCast() => _cast.Add(new CastRow { SortOrder = _cast.Count });
+
+    void SelectLinkedComic(ComicDto picked)
+    {
+        _linkedComicId = picked.Id;
+        _linkedComic = new LinkedComicSummaryDto { Id = picked.Id, Title = picked.Title, CoverImageUrl = picked.CoverImageUrl, Slug = picked.Slug };
+        _comicSearch = "";
+        _comicResults = new();
+    }
+
+    async Task OnComicSearchChanged()
+    {
+        if (string.IsNullOrWhiteSpace(_comicSearch)) { _comicResults = new(); return; }
+        var r = await Mediator.Send(new GetComicsQuery(PageSize: 15, Search: _comicSearch, SortBy: "rating"));
+        _comicResults = r.Items.ToList();
+    }
+
+    async Task UploadAsync(InputFileChangeEventArgs e, string kind)
+    {
+        var file = e.File;
+        if (file is null) return;
+
+        var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        if (!allowed.Contains(ext))
+        {
+            Snackbar.Add("❌ Faqat jpg/png/webp/gif", Severity.Error);
+            return;
+        }
+
+        if (kind == "videoposter") _uploadingPoster = true;
+        if (kind == "videobanner") _uploadingBanner = true;
+        StateHasChanged();
+
+        try
+        {
+            var url = await SaveUploadedFileAsync(file, ext, kind);
+            if (kind == "videoposter") _posterUrl = url;
+            if (kind == "videobanner") _bannerUrl = url;
+            Snackbar.Add("✅ Yuklandi", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"❌ Xato: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            _uploadingPoster = false;
+            _uploadingBanner = false;
+            StateHasChanged();
+        }
+    }
+
+    async Task UploadCastPhotoAsync(InputFileChangeEventArgs e, CastRow cm)
+    {
+        var file = e.File;
+        if (file is null) return;
+
+        var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+        var allowed = new[] { ".jpg", ".jpeg", ".png", ".webp", ".gif" };
+        if (!allowed.Contains(ext))
+        {
+            Snackbar.Add("❌ Faqat jpg/png/webp/gif", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            cm.PhotoUrl = await SaveUploadedFileAsync(file, ext, "cast");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"❌ Xato: {ex.Message}", Severity.Error);
+        }
+    }
+
+    async Task<string> SaveUploadedFileAsync(IBrowserFile file, string ext, string kind, long maxSizeBytes = 30 * 1024 * 1024)
+    {
+        var uploadsPath = Config["Uploads:Path"];
+        if (string.IsNullOrWhiteSpace(uploadsPath))
+        {
+            uploadsPath = Env.IsDevelopment()
+                ? Path.Combine(Env.ContentRootPath, "wwwroot", "uploads")
+                : "/var/www/comicbooks/uploads";
+        }
+
+        var sub = kind switch
+        {
+            "videoposter" => "videoposters",
+            "videobanner" => "videobanners",
+            "cast"        => "cast",
+            "video"       => "videos",
+            _             => "videoposters"
+        };
+        var dir = Path.Combine(uploadsPath, sub);
+        Directory.CreateDirectory(dir);
+
+        var name = $"{DateTime.UtcNow:yyyyMMddHHmmss}_{Guid.NewGuid():N}{ext}";
+        var fullPath = Path.Combine(dir, name);
+
+        using var stream = file.OpenReadStream(maxAllowedSize: maxSizeBytes);
+        await using (var fs = new FileStream(fullPath, FileMode.Create))
+        {
+            await stream.CopyToAsync(fs);
+        }
+
+        return $"/uploads/{sub}/{name}";
+    }
+
+    async Task UploadVideoFileAsync(InputFileChangeEventArgs e, Action<string> setUrl, Action onStart, Action onEnd)
+    {
+        var file = e.File;
+        if (file is null) return;
+
+        var ext = Path.GetExtension(file.Name).ToLowerInvariant();
+        var allowed = new[] { ".mp4", ".webm", ".mov", ".mkv", ".avi" };
+        if (!allowed.Contains(ext))
+        {
+            Snackbar.Add("❌ Faqat mp4/webm/mov/mkv/avi", Severity.Error);
+            return;
+        }
+
+        onStart();
+        StateHasChanged();
+
+        try
+        {
+            var url = await SaveUploadedFileAsync(file, ext, "video", maxSizeBytes: 2L * 1024 * 1024 * 1024);
+            setUrl(url);
+            Snackbar.Add("✅ Video yuklandi", Severity.Success);
+        }
+        catch (Exception ex)
+        {
+            Snackbar.Add($"❌ Xato: {ex.Message}", Severity.Error);
+        }
+        finally
+        {
+            onEnd();
+            StateHasChanged();
+        }
+    }
+
+    async Task Save()
+    {
+        if (string.IsNullOrWhiteSpace(_title)) { Snackbar.Add("Nomni kiriting!", Severity.Warning); return; }
+        if (_type == VideoType.Movie && string.IsNullOrWhiteSpace(_videoUrl)) { Snackbar.Add("Film uchun video havolasini kiriting!", Severity.Warning); return; }
+        if (_type == VideoType.Series && _episodes.Count == 0) { Snackbar.Add("Serial uchun kamida bitta qism qo'shing!", Severity.Warning); return; }
+
+        _saving = true;
+        try
+        {
+            var episodeDtos = _episodes.Select(e => new VideoEpisodeItemDto(
+                e.SeasonNumber, e.EpisodeNumber, e.Title, e.VideoUrl, e.ThumbnailUrl, e.DurationMinutes,
+                e.VideoUrl480p, e.VideoUrl720p, e.VideoUrl1080p)).ToList();
+            var castDtos = _cast.Select(cm => new VideoCastMemberItemDto(cm.Name, cm.PhotoUrl, cm.Role, cm.SortOrder)).ToList();
+
+            if (!IsEdit)
+            {
+                await Mediator.Send(new CreateVideoCommand(
+                    _title, _originalTitle, _desc, _posterUrl, _bannerUrl, _type, _status, _rating,
+                    _language, _country, _year, _durationMinutes, _imdbRating, _videoUrl, _featured,
+                    _genreIds.ToList(), episodeDtos, castDtos, _linkedComicId,
+                    _videoUrl480p, _videoUrl720p, _videoUrl1080p));
+            }
+            else
+            {
+                await Mediator.Send(new UpdateVideoCommand(
+                    Id, _title, _originalTitle, _desc, _posterUrl, _bannerUrl, _type, _status, _rating,
+                    _language, _country, _year, _durationMinutes, _imdbRating, _videoUrl, _featured,
+                    _genreIds.ToList(), episodeDtos, castDtos, _linkedComicId,
+                    _videoUrl480p, _videoUrl720p, _videoUrl1080p));
+            }
+
+            Snackbar.Add("✅ Saqlandi!", Severity.Success);
+            Nav.NavigateTo("/admin/videos");
+        }
+        catch (Exception ex) { Snackbar.Add($"Xatolik: {ex.Message}", Severity.Error); }
+        finally { _saving = false; }
+    }
+}

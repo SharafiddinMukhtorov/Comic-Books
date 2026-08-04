@@ -62,8 +62,12 @@
         object-fit: cover; display: block;
         transition: transform 0.4s ease;
     }
-    /* Hover: rasm zoom bo'ladi */
-    .cf-card:hover img { transform: scale(1.09); }
+    /* Hover: rasm zoom bo'ladi — FAQAT sichqonchali qurilmalarda (mobil/tach ekranda
+       barmoq tegishi "hover" sifatida qabul qilinib, swipe boshida keraksiz zoom
+       o'ynab, silliq surilishga xalaqit berardi) */
+    @@media (hover: hover) and (pointer: fine) {
+        .cf-card:hover img { transform: scale(1.09); }
+    }
     .cf-card::after {
         content: '';
         position: absolute; inset: 0;
@@ -427,7 +431,9 @@
         position: relative;
     }
 
-    .trending-card:hover img { transform: scale(1.06); }
+    @@media (hover: hover) and (pointer: fine) {
+        .trending-card:hover img { transform: scale(1.06); }
+    }
 
     /* ── Reytinglar segmented control (Weekly/Monthly/All Time uslubi) ── */
     .rt-seg {
@@ -1107,6 +1113,22 @@ else
             }
             </div><!-- /o'ng ustun -->
         </div>
+
+        @if (_videos.Count > 0)
+        {
+            <div class="hb-box" style="margin-top:24px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:16px 14px;">
+                <div class="section-header">
+                    <span class="section-title">Tarjima kinolar</span>
+                    <a href="/videos" style="font-size:13px;font-weight:700;color:#60a5fa;text-decoration:none;">Barchasi →</a>
+                </div>
+                <div class="vh-row drag-scroll" style="display:flex;gap:16px;overflow-x:auto;padding-bottom:6px;">
+                    @foreach (var v in _videos)
+                    {
+                        <VideoCard Video="v" />
+                    }
+                </div>
+            </div>
+        }
     </div>
 }
 
@@ -1116,6 +1138,7 @@ else
 
     PaginatedList<ComicDto>? _featured, _trending, _latest;
     ComicDto? _adminPick;
+    List<VideoDto> _videos = new();
     bool _loading = true;
     int _tab = 0;
     int _latestPage = 1;
@@ -1132,6 +1155,8 @@ else
         _latest   = await Mediator.Send(new GetComicsQuery(PageSize: 300, SortBy: "createdAt"));
         var pick  = await Mediator.Send(new GetComicsQuery(PageSize: 1, IsAdminPick: true));
         _adminPick = pick.Items.FirstOrDefault();
+        var videosPage = await Mediator.Send(new GetVideosQuery(PageSize: 15, IsFeatured: true, SortBy: "views"));
+        _videos = videosPage.Items;
         _loading  = false;
         // Avto-aylanish o'chirilgan — foydalanuvchi o'zi suradi
     }

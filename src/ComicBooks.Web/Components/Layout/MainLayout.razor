@@ -500,6 +500,7 @@
             <a href="/" class="nav-link-btn">Bosh sahifa</a>
             <a href="/bookmarks" class="nav-link-btn">Saqlanganlar</a>
             <a href="/comics" class="nav-link-btn">Katalog</a>
+            <a href="/videos" class="nav-link-btn">Videolar</a>
         </div>
 
         <MudSpacer />
@@ -716,6 +717,9 @@
                 <a href="/comics"    @onclick="@Close" class="mdunyo-nav-item @(path.StartsWith("/comics") ? "active" : "")">
                     <MudIcon Icon="@Icons.Material.Filled.MenuBook" Size="Size.Small" /> Katalog
                 </a>
+                <a href="/videos"    @onclick="@Close" class="mdunyo-nav-item @(path.StartsWith("/videos") || path.StartsWith("/video/") ? "active" : "")">
+                    <MudIcon Icon="@Icons.Material.Filled.Movie" Size="Size.Small" /> Videolar
+                </a>
                 <a href="/bookmarks" @onclick="@Close" class="mdunyo-nav-item @(path.StartsWith("/bookmarks") ? "active" : "")">
                     <MudIcon Icon="@Icons.Material.Filled.Favorite" Size="Size.Small" /> Sevimlilar
                 </a>
@@ -857,6 +861,7 @@
                     <div class="sf-col-title">Navigatsiya</div>
                     <a href="/" class="sf-link">Bosh sahifa</a>
                     <a href="/comics" class="sf-link">Katalog</a>
+                    <a href="/videos" class="sf-link">Videolar</a>
                     <a href="/bookmarks" class="sf-link">Saqlanganlar</a>
                     <a href="/coins" class="sf-link">Tanga sotib olish</a>
                 </div>

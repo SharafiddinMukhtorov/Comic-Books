@@ -1,0 +1,55 @@
+@* Yangi.tv uslubidagi banner-karusel — bitta to'liq kenglikdagi rasm + pastida nuqtachalar.
+   Bosh sahifadagi coverflow (.cf-wrapper) dan butunlay mustaqil, video bo'limi uchun alohida. *@
+@implements IDisposable
+
+@if (Videos is { Count: > 0 })
+{
+    var active = Videos[_active % Videos.Count];
+    <div class="hero-carousel">
+        <img class="hero-carousel-bg" src="@(active.BannerImageUrl ?? active.PosterImageUrl ?? $"https://picsum.photos/seed/{active.Slug}/1400/700")"
+             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(active.Slug)h/1400/700'"
+             alt="@active.Title" />
+        <div class="hero-carousel-grad"></div>
+        <a href="/video/@active.Slug" class="hero-carousel-caption">
+            <div class="hero-carousel-title">@active.Title</div>
+            @if (!string.IsNullOrWhiteSpace(active.OriginalTitle))
+            {
+                <div class="hero-carousel-sub">@active.OriginalTitle</div>
+            }
+        </a>
+        @if (Videos.Count > 1)
+        {
+            <div class="hero-carousel-dots">
+                @for (int i = 0; i < Videos.Count; i++)
+                {
+                    int idx = i;
+                    <button type="button" class="hero-dot @(idx == _active ? "active" : "")" @onclick="@(() => SetActive(idx))"></button>
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public List<VideoDto> Videos { get; set; } = new();
+    [Parameter] public int AutoplaySeconds { get; set; } = 6;
+
+    int _active = 0;
+    Timer? _timer;
+
+    protected override void OnParametersSet()
+    {
+        if (_timer is null && Videos is { Count: > 1 })
+        {
+            _timer = new Timer(_ => InvokeAsync(() =>
+            {
+                _active = (_active + 1) % Videos.Count;
+                StateHasChanged();
+            }), null, TimeSpan.FromSeconds(AutoplaySeconds), TimeSpan.FromSeconds(AutoplaySeconds));
+        }
+    }
+
+    void SetActive(int idx) => _active = idx;
+
+    public void Dispose() => _timer?.Dispose();
+}

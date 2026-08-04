@@ -51,6 +51,21 @@ public class GetComicBySlugQueryHandler : IRequestHandler<GetComicBySlugQuery, C
             })
             .FirstOrDefaultAsync(cancellationToken);
 
+        if (comic is not null)
+        {
+            comic.LinkedVideo = await _context.Videos
+                .Where(v => !v.IsDeleted && v.LinkedComicId == comic.Id)
+                .Select(v => new LinkedVideoSummaryDto
+                {
+                    Id = v.Id,
+                    Title = v.Title,
+                    PosterImageUrl = v.PosterImageUrl,
+                    Slug = v.Slug,
+                    Type = v.Type
+                })
+                .FirstOrDefaultAsync(cancellationToken);
+        }
+
         return comic;
     }
 }

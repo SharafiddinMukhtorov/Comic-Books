@@ -3,6 +3,7 @@ using System;
 using ComicBooks.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ComicBooks.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260727120232_AddVideosVertical")]
+    partial class AddVideosVertical
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
@@ -642,15 +645,6 @@ namespace ComicBooks.Infrastructure.Migrations
                     b.Property<string>("VideoUrl")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("VideoUrl1080p")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("VideoUrl480p")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("VideoUrl720p")
-                        .HasColumnType("TEXT");
-
                     b.Property<int>("ViewCount")
                         .HasColumnType("INTEGER");
 
@@ -744,15 +738,6 @@ namespace ComicBooks.Infrastructure.Migrations
 
                     b.Property<string>("VideoUrl")
                         .IsRequired()
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("VideoUrl1080p")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("VideoUrl480p")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("VideoUrl720p")
                         .HasColumnType("TEXT");
 
                     b.Property<int>("ViewCount")

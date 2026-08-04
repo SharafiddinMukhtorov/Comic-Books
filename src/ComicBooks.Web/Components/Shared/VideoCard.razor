@@ -1,0 +1,33 @@
+@* Video poster karta — Home.razor'dagi .trending-card bilan bir xil o'lcham, sarlavha esa
+   poster ustiga (gradient bilan) qoplanadi — barcha joyda (Home, Videolar, "Boshqa filmlar") bir xil *@
+
+<a href="/video/@Video.Slug" class="video-card">
+    <div class="video-card-img-wrap">
+        <img src="@(Video.PosterImageUrl ?? $"https://picsum.photos/seed/{Video.Slug}/300/420")"
+             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(Video.Slug)v/300/420'"
+             alt="@Video.Title" />
+        @if (Video.IsFeatured)
+        {
+            <span class="video-card-badge">PREMIUM</span>
+        }
+        <div class="video-card-grad"></div>
+        <div class="video-card-info">
+            <div class="video-card-title">@Video.Title</div>
+            <div class="video-card-meta">
+                @if (Video.Type == VideoType.Series)
+                {
+                    <span>@Video.EpisodeCount qism</span>
+                }
+                else if (Video.DurationMinutes.HasValue)
+                {
+                    <span>@Video.DurationMinutes daqiqa</span>
+                }
+                <span class="video-card-rating">★ @(Video.ImdbRating > 0 ? Video.ImdbRating.ToString("F1") : "—")</span>
+            </div>
+        </div>
+    </div>
+</a>
+
+@code {
+    [Parameter, EditorRequired] public VideoDto Video { get; set; } = null!;
+}

@@ -1,0 +1,91 @@
+@page "/admin/videos"
+@layout AdminLayout
+@inject IMediator Mediator
+@inject ISnackbar Snackbar
+@inject IDialogService DialogSvc
+
+<PageTitle>Videolar - Admin</PageTitle>
+
+<MudStack Row="true" AlignItems="AlignItems.Center" Class="mb-4">
+    <MudText Typo="Typo.h5">🎬 Videolar</MudText>
+    <MudSpacer />
+    <MudButton Href="/admin/videos/create" Variant="Variant.Filled" Color="Color.Primary"
+               StartIcon="@Icons.Material.Filled.Add" Style="text-transform:none;">Yangi video</MudButton>
+</MudStack>
+
+<MudPaper Class="pa-3 mb-4">
+    <MudStack Row="true" Spacing="2">
+        <MudTextField @bind-Value="_search" Label="Qidirish..." Variant="Variant.Outlined"
+                      Margin="Margin.Dense" Style="flex:1" OnKeyDown="@OnKey" />
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" OnClick="@Load" Style="text-transform:none;height:40px;">Qidirish</MudButton>
+        <MudButton Variant="Variant.Outlined" OnClick="@Clear" Style="text-transform:none;height:40px;">Tozalash</MudButton>
+    </MudStack>
+</MudPaper>
+
+@if (_loading)
+{
+    <MudProgressLinear Indeterminate="true" Color="Color.Primary" />
+}
+
+<MudTable Items="@(_result?.Items ?? new())" Hover="true" Elevation="2" Loading="@_loading">
+    <HeaderContent>
+        <MudTh>Poster</MudTh>
+        <MudTh>Nomi</MudTh>
+        <MudTh>Turi</MudTh>
+        <MudTh>Qismlar/Davomiyligi</MudTh>
+        <MudTh>IMDB</MudTh>
+        <MudTh>Featured</MudTh>
+        <MudTh>Amallar</MudTh>
+    </HeaderContent>
+    <RowTemplate>
+        <MudTd><MudAvatar Image="@context.PosterImageUrl" Size="Size.Medium" /></MudTd>
+        <MudTd>
+            <MudText Style="font-weight:700;">@context.Title</MudText>
+            <MudText Typo="Typo.caption" Style="opacity:0.5;">@context.ReleaseYear</MudText>
+        </MudTd>
+        <MudTd><MudChip T="string" Size="Size.Small" Label="true">@(context.Type == VideoType.Movie ? "Film" : "Serial")</MudChip></MudTd>
+        <MudTd>@(context.Type == VideoType.Series ? $"{context.EpisodeCount} qism" : (context.DurationMinutes.HasValue ? $"{context.DurationMinutes} daq" : "—"))</MudTd>
+        <MudTd><span style="color:#FACC15;font-weight:700;">★ @context.ImdbRating.ToString("F1")</span></MudTd>
+        <MudTd>@(context.IsFeatured ? "✅" : "—")</MudTd>
+        <MudTd>
+            <MudIconButton Icon="@Icons.Material.Filled.Visibility" Size="Size.Small" Href="@($"/video/{context.Slug}")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Edit" Size="Size.Small" Color="Color.Primary" Href="@($"/admin/videos/edit/{context.Id}")" />
+            <MudIconButton Icon="@Icons.Material.Filled.Delete" Size="Size.Small" Color="Color.Error" OnClick="@(() => Delete(context))" />
+        </MudTd>
+    </RowTemplate>
+    <NoRecordsContent><MudText Class="pa-4" Style="opacity:0.5;">Hech narsa topilmadi.</MudText></NoRecordsContent>
+</MudTable>
+
+@if ((_result?.TotalPages ?? 0) > 1)
+{
+    <MudStack AlignItems="AlignItems.Center" Class="mt-4">
+        <MudPagination Count="@_result!.TotalPages" Selected="@_page" SelectedChanged="@OnPage" Color="Color.Primary" />
+    </MudStack>
+}
+
+@code {
+    PaginatedList<VideoDto>? _result;
+    string _search = "";
+    bool _loading = true;
+    int _page = 1;
+
+    protected override async Task OnInitializedAsync() => await Load();
+
+    async Task Load()
+    {
+        _loading = true;
+        _result = await Mediator.Send(new GetVideosQuery(PageNumber: _page, PageSize: 20,
+            Search: string.IsNullOrWhiteSpace(_search) ? null : _search.Trim()));
+        _loading = false;
+    }
+
+    async Task OnPage(int p) { _page = p; await Load(); }
+    async Task OnKey(KeyboardEventArgs e) { if (e.Key == "Enter") { _page = 1; await Load(); } }
+    void Clear() { _search = ""; _page = 1; _ = Load(); }
+
+    async Task Delete(VideoDto v)
+    {
+        var ok = await DialogSvc.ShowMessageBox("O'chirish", $"'{v.Title}' ni o'chirasizmi?", yesText: "Ha", cancelText: "Yo'q");
+        if (ok == true) { await Mediator.Send(new DeleteVideoCommand(v.Id)); Snackbar.Add("O'chirildi", Severity.Success); await Load(); }
+    }
+}

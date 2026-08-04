@@ -10,4 +10,5 @@ public class Genre : BaseEntity
 
     // Navigation
     public ICollection<ComicGenre> ComicGenres { get; set; } = new List<ComicGenre>();
+    public ICollection<VideoGenre> VideoGenres { get; set; } = new List<VideoGenre>();
 }
