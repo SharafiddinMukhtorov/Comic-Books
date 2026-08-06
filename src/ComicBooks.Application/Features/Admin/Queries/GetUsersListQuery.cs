@@ -28,7 +28,7 @@ public class GetUsersListQueryHandler : IRequestHandler<GetUsersListQuery, List<
 
     public async Task<List<AdminUserDto>> Handle(GetUsersListQuery req, CancellationToken ct)
     {
-        var query = _db.Users.OrderByDescending(u => u.CreatedAt).AsQueryable();
+        var query = _db.Users.AsNoTracking().OrderByDescending(u => u.CreatedAt).AsQueryable();
         if (req.Take.HasValue)
             query = query.Take(req.Take.Value);
 

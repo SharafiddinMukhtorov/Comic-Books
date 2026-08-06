@@ -2,30 +2,87 @@
 @inject IMediator Mediator
 @inject NavigationManager Nav
 @inject SessionService SessionSvc
+@inject AuthenticationStateProvider AuthState
 
 <PageTitle>@(_video?.Title ?? "Video") - Manga Dunyo</PageTitle>
 
 <style>
-    .vd-mobile-hero { display: none; }
+    /* ── Hero banner (orqa fon) ── */
+    .vd-hero {
+        position: relative;
+        width: 100%;
+        height: 340px;
+        overflow: hidden;
+        background: #0f1117;
+    }
+    .vd-hero-bg {
+        width: 100%; height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+    .vd-hero-grad {
+        position: absolute; inset: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.45) 0%, rgba(10,10,18,0.10) 38%, rgba(15,17,23,0.96) 100%);
+    }
+    .vd-hero-back, .vd-hero-bookmark {
+        position: absolute;
+        top: 16px;
+        width: 38px; height: 38px;
+        border-radius: 50%;
+        background: rgba(15,17,23,0.62);
+        backdrop-filter: blur(6px);
+        color: #fff;
+        border: none;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 20px;
+        text-decoration: none;
+        cursor: pointer;
+        z-index: 3;
+    }
+    .vd-hero-back { left: 16px; }
+    .vd-hero-bookmark { right: 16px; font-size: 18px; }
+    .vd-hero-bookmark.active { color: #ef4444; }
+    .vd-hero-play {
+        position: absolute;
+        top: 50%; left: 50%;
+        transform: translate(-50%, -50%);
+        width: 64px; height: 64px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.95);
+        color: #15171f;
+        border: none;
+        display: flex; align-items: center; justify-content: center;
+        cursor: pointer;
+        z-index: 3;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.45);
+        transition: transform 0.15s;
+    }
+    .vd-hero-play:hover { transform: translate(-50%, -50%) scale(1.06); }
+    .vd-hero-play svg { width: 26px; height: 26px; margin-left: 3px; }
 
-    .vd-wrap {
+    /* ── Sahifa konteyneri ── */
+    .vd-page {
         position: relative;
         max-width: 1100px;
         margin: 0 auto;
-        padding: 36px 20px 60px;
+        padding: 0 20px 60px;
+    }
+
+    /* ── Yuqori qator: poster + asosiy ma'lumot ── */
+    .vd-head {
         display: flex;
-        gap: 28px;
+        gap: 22px;
         align-items: flex-start;
+        margin-top: -96px;
+        position: relative;
+        z-index: 2;
     }
-    .vd-left {
+    .vd-poster {
         flex: 0 0 264px;
-        border-radius: 8px;
-        overflow: hidden;
-        position: sticky;
-        top: 80px;
+        width: 264px;
+        position: relative;
     }
-    .vd-left { position: relative; }
-    .vd-left img {
+    .vd-poster > img {
         width: 100%;
         aspect-ratio: 2/3;
         object-fit: cover;
@@ -36,74 +93,95 @@
     .vd-poster-badge {
         position: absolute;
         top: 8px; right: 8px;
-        z-index: 2;
         background: linear-gradient(135deg, #f59e0b, #d97706);
         color: #fff;
-        font-size: 10px;
-        font-weight: 800;
+        font-size: 10px; font-weight: 800;
         letter-spacing: 0.4px;
         padding: 3px 9px;
         border-radius: 5px;
         box-shadow: 0 3px 10px rgba(217,119,6,0.4);
     }
-    .vd-right { flex: 1; min-width: 0; }
-
-    .vd-title { font-size: 26px; font-weight: 900; margin: 0 0 4px; }
-    .vd-original-title { opacity: 0.55; font-size: 14px; margin-bottom: 16px; }
-
-    .vd-info-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-        gap: 8px 20px;
-        margin-bottom: 16px;
-        font-size: 13px;
+    .vd-quality-tags {
+        position: absolute;
+        left: 8px; bottom: 8px;
+        display: flex; flex-direction: column; gap: 5px;
+        align-items: flex-start;
     }
-    .vd-info-grid b { opacity: 0.55; font-weight: 600; margin-right: 6px; }
-
-    .vd-badges { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
-    .vd-age-badge {
-        background: rgba(239,68,68,0.14);
-        border: 1px solid rgba(239,68,68,0.4);
-        color: #ef4444;
-        font-weight: 800;
-        font-size: 12px;
-        padding: 4px 10px;
-        border-radius: 6px;
-    }
-    .vd-imdb-badge {
-        background: rgba(250,204,21,0.12);
-        border: 1px solid rgba(250,204,21,0.4);
+    .vd-quality-tag {
+        background: rgba(15,17,23,0.78);
+        border: 1px solid rgba(250,204,21,0.5);
         color: #FACC15;
-        font-weight: 800;
-        font-size: 12px;
-        padding: 4px 10px;
-        border-radius: 6px;
+        font-size: 10px; font-weight: 800;
+        padding: 2px 7px;
+        border-radius: 5px;
+        backdrop-filter: blur(4px);
     }
-    .vd-reaction-btn {
-        display: inline-flex; align-items: center; gap: 6px;
-        background: rgba(255,255,255,0.04);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 6px;
-        padding: 4px 10px;
-        font-size: 12px; font-weight: 700;
-        color: inherit;
-        cursor: pointer;
-    }
-    .vd-reaction-btn:hover { background: rgba(59,130,246,0.1); border-color: rgba(59,130,246,0.35); }
+    .vd-basic { flex: 1; min-width: 0; padding-top: 100px; }
+    .vd-title { font-size: 26px; font-weight: 900; margin: 0 0 3px; line-height: 1.2; }
+    .vd-original-title { opacity: 0.5; font-size: 14px; margin-bottom: 14px; line-height: 1.4; }
+    .vd-basic-rows { font-size: 13.5px; line-height: 1.9; }
+    .vd-basic-rows b { opacity: 0.5; font-weight: 600; margin-right: 8px; }
 
-    .vd-stats {
+    /* ── Meta qator: gorizontal karusel (poster chetidan boshlanadi) ── */
+    .vd-meta-row {
         display: flex;
-        border: 1px solid rgba(255,255,255,0.07);
-        border-radius: 10px;
-        overflow: hidden;
-        margin-bottom: 18px;
+        gap: 8px;
+        margin: 18px 0 16px;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        padding-bottom: 2px;
     }
-    .vd-stat { flex: 1; padding: 9px 4px; text-align: center; border-right: 1px solid rgba(255,255,255,0.07); }
-    .vd-stat:last-child { border-right: none; }
-    .vd-stat-val { font-size: 14px; font-weight: 900; }
-    .vd-stat-lbl { font-size: 11px; opacity: 0.55; margin-top: 2px; }
+    .vd-meta-row::-webkit-scrollbar { display: none; }
+    /* Kenglik kontentga qarab (har xil), balandlik esa hammasida bir xil.
+       Yuqori qator — ikonka/yulduz/izoh, pastki qator — qiymat. */
+    .vd-meta-box {
+        flex: 0 0 auto;
+        height: 76px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+        background: rgba(255,255,255,0.035);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px;
+        padding: 0 18px;
+        text-align: center;
+        color: inherit;
+        font-family: inherit;
+        cursor: default;
+    }
+    button.vd-meta-box { cursor: pointer; transition: background 0.15s, border-color 0.15s, color 0.15s; }
+    button.vd-meta-box:hover:not(:disabled) { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.22); }
+    button.vd-meta-box:disabled { cursor: default; }
+    /* Foydalanuvchi bosgan reaksiya — sariq */
+    button.vd-meta-box.reacted {
+        background: rgba(250,204,21,0.12);
+        border-color: rgba(250,204,21,0.55);
+    }
+    button.vd-meta-box.reacted .vd-meta-ic,
+    button.vd-meta-box.reacted .vd-meta-val { color: #FACC15; }
+    .vd-meta-ic { width: 25px; height: 25px; display: block; color: #fff; }
+    .vd-meta-ic.down { transform: rotate(180deg); }
+    .vd-meta-lbl {
+        font-size: 12.5px; line-height: 1;
+        color: rgba(255,255,255,0.42);
+        white-space: nowrap;
+    }
+    .vd-meta-val {
+        font-size: 15.5px; font-weight: 800; line-height: 1;
+        color: #fff;
+        white-space: nowrap;
+    }
+    .vd-meta-stars {
+        color: #FACC15; font-size: 15px; line-height: 1;
+        letter-spacing: 1.5px; white-space: nowrap;
+    }
+    .vd-age-box .vd-meta-val { color: #ef4444; }
 
-    .vd-actions { display: flex; gap: 10px; margin-bottom: 22px; }
+    /* ── Amallar ── */
+    .vd-actions { display: flex; gap: 10px; margin-bottom: 20px; }
     .vd-watch-btn {
         flex: 1;
         display: flex; align-items: center; justify-content: center; gap: 8px;
@@ -111,114 +189,67 @@
         color: #fff;
         border: none;
         border-radius: 10px;
-        height: 48px;
+        height: 52px;
         font-weight: 800;
-        font-size: 14px;
+        font-size: 15px;
+        letter-spacing: 0.3px;
         cursor: pointer;
-        box-shadow: 0 8px 20px rgba(220,38,38,0.35);
+        box-shadow: 0 8px 20px rgba(220,38,38,0.32);
     }
-    .vd-dl-btn {
-        width: 48px; height: 48px;
-        display: flex; align-items: center; justify-content: center;
-        background: linear-gradient(135deg, #22c55e, #16a34a);
-        color: #fff;
-        border-radius: 10px;
-        text-decoration: none;
-        flex-shrink: 0;
+    .vd-watch-btn:hover { filter: brightness(1.06); }
+
+    /* ── Pleyer: to'liq kenglik ── */
+    .vd-player-wrap {
+        margin: 0 0 22px;
+        border-radius: 12px;
+        overflow: hidden;
+        scroll-margin-top: 70px;
     }
 
-    .vd-tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+    .vd-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 18px; }
     .vd-tag {
         background: rgba(96,165,250,0.1);
         border: 1px solid rgba(96,165,250,0.25);
         color: #60a5fa;
-        font-size: 12px;
-        font-weight: 700;
-        padding: 5px 12px;
+        font-size: 12.5px; font-weight: 700;
+        padding: 6px 14px;
         border-radius: 999px;
         text-decoration: none;
     }
 
-    .vd-section-title { font-size: 15px; font-weight: 800; margin: 24px 0 12px; }
-    .vd-desc { font-size: 14px; line-height: 1.6; opacity: 0.85; margin-bottom: 8px; }
-
-    .vd-season-tabs { display: inline-flex; background: rgba(255,255,255,0.06); border-radius: 10px; padding: 3px; gap: 2px; margin-bottom: 14px; }
-    .vd-season-tab { border: none; background: transparent; color: inherit; opacity: 0.6; font-size: 12px; font-weight: 700; padding: 7px 16px; border-radius: 8px; cursor: pointer; }
-    .vd-season-tab.active { background: #3b82f6; color: #fff; opacity: 1; }
-
-    .vd-ep-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-    .vd-ep-tile { cursor: pointer; border: none; background: none; padding: 0; text-align: left; color: inherit; }
-    .vd-ep-tile img { width: 100%; aspect-ratio: 2/3; object-fit: cover; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); }
-    .vd-ep-tile.active img { border-color: #3b82f6; box-shadow: 0 0 0 2px #3b82f6; }
-    .vd-ep-label { font-size: 12px; font-weight: 700; margin-top: 6px; }
+    .vd-section-title { font-size: 16px; font-weight: 800; margin: 24px 0 12px; }
+    .vd-desc { font-size: 14px; line-height: 1.65; opacity: 0.85; white-space: pre-line; }
 
     .vd-more-wrap { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; min-width: 0; }
     .vd-more-title { font-size: 18px; font-weight: 800; margin-bottom: 14px; }
     .vd-more-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; }
 
-    /* ── Mobil hero banner (skrinshot uslubi) — faqat mobilda ko'rinadi ── */
-    .vd-mobile-hero-bg {
-        width: 100%; height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-    .vd-mobile-hero-grad {
-        position: absolute; inset: 0;
-        background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(10,10,18,0.15) 40%, rgba(10,10,18,0.92) 100%);
-    }
-    .vd-hero-back, .vd-hero-bookmark {
-        position: absolute;
-        top: 14px;
-        width: 36px; height: 36px;
-        border-radius: 50%;
-        background: rgba(15,17,23,0.62);
-        color: #fff;
-        border: none;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 20px;
-        text-decoration: none;
-        z-index: 2;
-    }
-    .vd-hero-back { left: 14px; }
-    .vd-hero-bookmark { right: 14px; font-size: 17px; }
-    .vd-hero-bookmark.active { color: #ef4444; }
-    .vd-hero-play {
-        position: absolute;
-        top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        width: 56px; height: 56px;
-        border-radius: 50%;
-        background: rgba(255,255,255,0.92);
-        color: #15171f;
-        border: none;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 22px;
-        z-index: 2;
-        box-shadow: 0 6px 18px rgba(0,0,0,0.4);
-    }
-
     @@media (max-width: 768px) {
-        .vd-mobile-hero { display: block; position: relative; width: 100%; height: 200px; overflow: hidden; background: #0f1117; }
+        .vd-hero { height: 280px; }
+        .vd-page { padding: 0 16px 40px; }
 
-        .vd-wrap { flex-direction: row; padding: 16px 16px 32px; gap: 14px; align-items: flex-start; overflow-x: hidden; }
-        .vd-left { flex: 0 0 130px; width: 130px; margin-top: -56px; z-index: 3; }
-        .vd-right { min-width: 0; }
+        .vd-head { gap: 14px; margin-top: -100px; }
+        .vd-poster { flex: 0 0 130px; width: 130px; }
+        .vd-basic { padding-top: 104px; }
 
-        .vd-title { font-size: 17px; text-align: left; margin-top: 4px; }
-        .vd-original-title { text-align: left; font-size: 12px; }
+        .vd-title { font-size: 19px; }
+        .vd-original-title { font-size: 12.5px; margin-bottom: 10px; }
+        .vd-basic-rows { font-size: 12.5px; line-height: 1.75; }
 
-        .vd-info-grid { display: block; font-size: 12px; margin-bottom: 12px; }
-        .vd-info-grid > div { margin-bottom: 3px; }
+        .vd-meta-row { gap: 9px; margin: 18px 0 14px; }
+        .vd-meta-box { height: 70px; padding: 0 15px; gap: 6px; border-radius: 13px; }
+        .vd-meta-ic { width: 23px; height: 23px; }
+        .vd-meta-val { font-size: 14.5px; }
+        .vd-meta-lbl { font-size: 12px; }
+        .vd-meta-stars { font-size: 14px; letter-spacing: 1.2px; }
 
-        .vd-badges { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
-        .vd-badges > * { flex-shrink: 0; }
+        .vd-watch-btn { height: 48px; font-size: 14px; }
+        .vd-dl-btn { width: 56px; height: 48px; }
 
-        .vd-stats { display: none; }
-
-        .vd-section-title { font-size: 14px; margin: 18px 0 10px; }
-        .vd-ep-grid { grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; }
+        .vd-section-title { font-size: 15px; }
         .vd-more-wrap { padding: 0 16px 40px; }
     }
+
 </style>
 
 @if (_loading)
@@ -233,137 +264,145 @@ else if (_video is null)
 }
 else
 {
-    <div class="vd-mobile-hero">
-        <img class="vd-mobile-hero-bg"
-             src="@(_video.BannerImageUrl ?? _video.PosterImageUrl ?? $"https://picsum.photos/seed/{_video.Slug}/900/500")"
-             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_video.Slug)b/900/500'" />
-        <div class="vd-mobile-hero-grad"></div>
+    <div class="vd-hero">
+        <img class="vd-hero-bg"
+             src="@(_video.BannerImageUrl ?? _video.PosterImageUrl ?? $"https://picsum.photos/seed/{_video.Slug}/1200/700")"
+             onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_video.Slug)b/1200/700'"
+             alt="@_video.Title" />
+        <div class="vd-hero-grad"></div>
+
         <a href="/videos" class="vd-hero-back" aria-label="Orqaga">‹</a>
-        <button type="button" class="vd-hero-play" @onclick="StartWatching" aria-label="Tomosha qilish">▶</button>
-        <button type="button" class="vd-hero-bookmark @(_localBookmarked ? "active" : "")" @onclick="@(() => _localBookmarked = !_localBookmarked)" aria-label="Saqlash">
-            @(_localBookmarked ? "♥" : "♡")
+
+        <button type="button" class="vd-hero-play" @onclick="StartWatching"
+                aria-label="@(_video.Type == VideoType.Series ? "Qismlar" : "Tomosha qilish")">
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+        </button>
+
+        <button type="button" class="vd-hero-bookmark @(_isFavorite ? "active" : "")"
+                @onclick="ToggleFavorite" disabled="@_savingFavorite" aria-label="Saqlash">
+            @(_isFavorite ? "♥" : "♡")
         </button>
     </div>
 
-    <div class="vd-wrap">
-        <div class="vd-left">
-            <img src="@(_video.PosterImageUrl ?? $"https://picsum.photos/seed/{_video.Slug}/400/600")"
-                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_video.Slug)p/400/600'"
-                 alt="@_video.Title" />
-            @if (_video.IsFeatured)
-            {
-                <span class="vd-poster-badge">PREMIUM</span>
-            }
-        </div>
-        <div class="vd-right">
-            <h1 class="vd-title">@_video.Title</h1>
-            @if (!string.IsNullOrWhiteSpace(_video.OriginalTitle))
-            {
-                <div class="vd-original-title">@_video.OriginalTitle</div>
-            }
+    <div class="vd-page">
 
-            <div class="vd-info-grid">
-                @if (!string.IsNullOrWhiteSpace(_video.Language)) { <div><b>Tili:</b> @_video.Language</div> }
-                @if (_video.ReleaseYear.HasValue) { <div><b>Yili:</b> @_video.ReleaseYear</div> }
-                @if (!string.IsNullOrWhiteSpace(_video.Country)) { <div><b>Davlati:</b> @_video.Country</div> }
-                @if (_video.DurationMinutes.HasValue) { <div><b>Davomiyligi:</b> @_video.DurationMinutes daqiqa</div> }
-            </div>
-
-            <div class="vd-badges">
-                <span class="vd-age-badge">@AgeLabel(_video.Rating)</span>
-                @if (_video.ImdbRating > 0)
+        <!-- Poster + asosiy ma'lumot (nomi, tili, yili, davlati) -->
+        <div class="vd-head">
+            <div class="vd-poster">
+                <img src="@(_video.PosterImageUrl ?? $"https://picsum.photos/seed/{_video.Slug}/400/600")"
+                     onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_video.Slug)p/400/600'"
+                     alt="@_video.Title" />
+                @if (_video.IsFeatured)
                 {
-                    <span class="vd-imdb-badge">★ @_video.ImdbRating.ToString("F1")/10 IMDB</span>
+                    <span class="vd-poster-badge">PREMIUM</span>
                 }
-                <button type="button" class="vd-reaction-btn" @onclick="Like">👍 @_video.LikeCount</button>
-                <button type="button" class="vd-reaction-btn" @onclick="Dislike">👎 @_video.DislikeCount</button>
-            </div>
-
-            <div class="vd-stats">
-                <div class="vd-stat">
-                    <div class="vd-stat-val" style="color:#FACC15;">@(_video.ImdbRating > 0 ? _video.ImdbRating.ToString("F1") : "—")</div>
-                    <div class="vd-stat-lbl">Reyting</div>
-                </div>
-                <div class="vd-stat">
-                    <div class="vd-stat-val" style="color:#60a5fa;">@FmtViews(_video.ViewCount)</div>
-                    <div class="vd-stat-lbl">Ko'rishlar</div>
-                </div>
-                @if (_video.Type == VideoType.Series)
+                @if (_qualityLabels.Count > 0)
                 {
-                    <div class="vd-stat">
-                        <div class="vd-stat-val" style="color:#34d399;">@_video.EpisodeCount</div>
-                        <div class="vd-stat-lbl">Qismlar</div>
-                    </div>
-                }
-            </div>
-
-            @if (_video.LinkedComic is not null)
-            {
-                <LinkedContentCard ImageUrl="@_video.LinkedComic.CoverImageUrl"
-                                    Title="@_video.LinkedComic.Title"
-                                    Href="@($"/comic/{_video.LinkedComic.Slug}")"
-                                    Label="Kitobi mavjud" />
-            }
-
-            <div class="vd-actions">
-                <button type="button" class="vd-watch-btn" @onclick="StartWatching">▶ TOMOSHA QILISH</button>
-                @if (!string.IsNullOrWhiteSpace(_currentSrc))
-                {
-                    <a class="vd-dl-btn" href="@_currentSrc" download title="Yuklab olish">⬇</a>
-                }
-            </div>
-
-            @if (_showPlayer && !string.IsNullOrWhiteSpace(_currentSrc))
-            {
-                <div style="margin-bottom:22px;">
-                    <VideoPlayer Src="@_currentSrc" Url480p="@_current480p" Url720p="@_current720p" Url1080p="@_current1080p" />
-                </div>
-            }
-
-            @if (_video.Genres.Count > 0)
-            {
-                <div class="vd-tags">
-                    @foreach (var g in _video.Genres)
-                    {
-                        <a class="vd-tag" href="/videos?genre=@g">@g</a>
-                    }
-                </div>
-            }
-
-            @if (!string.IsNullOrWhiteSpace(_video.Description))
-            {
-                <div class="vd-section-title">Film haqida qisqacha</div>
-                <div class="vd-desc">@_video.Description</div>
-            }
-
-            @if (_video.Type == VideoType.Series && _video.Episodes.Count > 0)
-            {
-                var seasons = _video.Episodes.Select(e => e.SeasonNumber).Distinct().OrderBy(s => s).ToList();
-                <div class="vd-section-title">Qismlar</div>
-                @if (seasons.Count > 1)
-                {
-                    <div class="vd-season-tabs">
-                        @foreach (var s in seasons)
+                    <div class="vd-quality-tags">
+                        @foreach (var q in _qualityLabels)
                         {
-                            int season = s;
-                            <button type="button" class="vd-season-tab @(season == _activeSeason ? "active" : "")" @onclick="@(() => _activeSeason = season)">@(season)-fasl</button>
+                            <span class="vd-quality-tag">@q</span>
                         }
                     </div>
                 }
-                <div class="vd-ep-grid">
-                    @foreach (var ep in _video.Episodes.Where(e => e.SeasonNumber == _activeSeason).OrderByDescending(e => e.EpisodeNumber))
-                    {
-                        var episode = ep;
-                        <button type="button" class="vd-ep-tile @(_currentSrc == episode.VideoUrl ? "active" : "")" @onclick="@(() => PlayEpisode(episode))">
-                            <img src="@(episode.ThumbnailUrl ?? _video.PosterImageUrl ?? $"https://picsum.photos/seed/{_video.Slug}-{episode.SeasonNumber}-{episode.EpisodeNumber}/300/450")"
-                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_video.Slug)e@(episode.EpisodeNumber)/300/450'" />
-                            <div class="vd-ep-label">@(episode.EpisodeNumber)-qism@(episode.EpisodeNumber == _video.Episodes.Where(e => e.SeasonNumber == _activeSeason).Max(e => e.EpisodeNumber) ? " (oxirgi)" : "")</div>
-                        </button>
-                    }
+            </div>
+
+            <div class="vd-basic">
+                <h1 class="vd-title">@_video.Title</h1>
+                @if (!string.IsNullOrWhiteSpace(_video.OriginalTitle))
+                {
+                    <div class="vd-original-title">@_video.OriginalTitle</div>
+                }
+                <div class="vd-basic-rows">
+                    @if (!string.IsNullOrWhiteSpace(_video.Language)) { <div><b>Tili:</b> @_video.Language</div> }
+                    @if (_video.ReleaseYear.HasValue) { <div><b>Yili:</b> @_video.ReleaseYear</div> }
+                    @if (!string.IsNullOrWhiteSpace(_video.Country)) { <div><b>Davlati:</b> @_video.Country</div> }
+                </div>
+            </div>
+        </div>
+
+        <!-- Meta qator: gorizontal karusel -->
+        <div class="vd-meta-row drag-scroll">
+            <button type="button" class="vd-meta-box @(_myReaction == true ? "reacted" : "")"
+                    @onclick="Like" disabled="@_reacting">
+                <svg class="vd-meta-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 22H4.5A1.5 1.5 0 0 1 3 20.5v-7A1.5 1.5 0 0 1 4.5 12H7" />
+                    <path d="M7 12l4.4-8.1a2.4 2.4 0 0 1 4.5 1.5L14.9 10h4.5a2.3 2.3 0 0 1 2.2 2.9l-1.8 6.7A2.3 2.3 0 0 1 17.6 22H7z" />
+                </svg>
+                <div class="vd-meta-val">@_video.LikeCount</div>
+            </button>
+            <button type="button" class="vd-meta-box @(_myReaction == false ? "reacted" : "")"
+                    @onclick="Dislike" disabled="@_reacting">
+                <svg class="vd-meta-ic down" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 22H4.5A1.5 1.5 0 0 1 3 20.5v-7A1.5 1.5 0 0 1 4.5 12H7" />
+                    <path d="M7 12l4.4-8.1a2.4 2.4 0 0 1 4.5 1.5L14.9 10h4.5a2.3 2.3 0 0 1 2.2 2.9l-1.8 6.7A2.3 2.3 0 0 1 17.6 22H7z" />
+                </svg>
+                <div class="vd-meta-val">@_video.DislikeCount</div>
+            </button>
+            @if (_video.ImdbRating > 0)
+            {
+                <div class="vd-meta-box">
+                    <div class="vd-meta-stars">@Stars(_video.ImdbRating)</div>
+                    <div class="vd-meta-val">@_video.ImdbRating.ToString("F1")/10 IMDB</div>
                 </div>
             }
+            @if (_video.DurationMinutes.HasValue)
+            {
+                <div class="vd-meta-box">
+                    <div class="vd-meta-lbl">Davomiyligi</div>
+                    <div class="vd-meta-val">@_video.DurationMinutes daqiqa</div>
+                </div>
+            }
+            <div class="vd-meta-box vd-age-box">
+                <div class="vd-meta-lbl">Yosh chegarasi</div>
+                <div class="vd-meta-val">@AgeLabel(_video.Rating)</div>
+            </div>
+            <div class="vd-meta-box">
+                <div class="vd-meta-lbl">Ko'rishlar</div>
+                <div class="vd-meta-val">@FmtViews(_video.ViewCount)</div>
+            </div>
         </div>
+
+        @if (_video.LinkedComic is not null)
+        {
+            <LinkedContentCard ImageUrl="@_video.LinkedComic.CoverImageUrl"
+                                Title="@_video.LinkedComic.Title"
+                                Href="@($"/comic/{_video.LinkedComic.Slug}")"
+                                Label="Kitobi mavjud" />
+        }
+
+        <div class="vd-actions">
+            <button type="button" class="vd-watch-btn" @onclick="StartWatching">▶ TOMOSHA QILISH</button>
+        </div>
+
+        @if (_video.Genres.Count > 0)
+        {
+            <div class="vd-section-title">Janrlar</div>
+            <div class="vd-tags">
+                @foreach (var g in _video.Genres)
+                {
+                    <a class="vd-tag" href="/videos?genre=@g">@g</a>
+                }
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_video.Description))
+        {
+            <div class="vd-section-title">Film haqida qisqacha</div>
+            <div class="vd-desc">@_video.Description</div>
+        }
+
     </div>
+
+    @if (_showPlayer && !string.IsNullOrWhiteSpace(_currentSrc))
+    {
+        <FullscreenPlayer Src="@_currentSrc" Url480p="@_current480p" Url720p="@_current720p"
+                          Url1080p="@_current1080p" Title="@_video.Title"
+                          Subtitle="@(_video.ReleaseYear?.ToString())"
+                          OnClose="@(() => _showPlayer = false)" />
+    }
 
     @if (_related.Count > 0)
     {
@@ -387,8 +426,12 @@ else
     bool _loading = true;
     bool _showPlayer = false;
     string? _currentSrc, _current480p, _current720p, _current1080p;
-    int _activeSeason = 1;
-    bool _localBookmarked = false;
+    List<string> _qualityLabels = new();
+
+    Guid  _viewerId = Guid.Empty;
+    bool? _myReaction;          // true = like, false = dislike, null = qo'yilmagan
+    bool  _isFavorite;
+    bool  _reacting, _savingFavorite;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -399,8 +442,8 @@ else
         _video = await Mediator.Send(new GetVideoBySlugQuery(Slug));
         if (_video is not null)
         {
-            _activeSeason = _video.Episodes.Select(e => e.SeasonNumber).DefaultIfEmpty(1).Min();
             SetDefaultSource();
+            BuildQualityLabels();
 
             var page = await Mediator.Send(new GetVideosQuery(PageSize: 15, SortBy: "views"));
             _related = page.Items.Where(v => v.Id != _video.Id).Take(10).ToList();
@@ -409,13 +452,33 @@ else
         _loading = false;
     }
 
+    bool _viewTracked;
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (!firstRender || _video is null) return;
+        if (_video is null || _viewTracked) return;
+        _viewTracked = true;
+
         var sessionId = await SessionSvc.GetSessionIdAsync();
         var counted = await Mediator.Send(new TrackVideoViewCommand(sessionId, _video.Id));
         if (counted) _video.ViewCount++;
+
+        // Kim ekanini aniqlaymiz: tizimga kirgan bo'lsa user Id, aks holda sessiya Id
+        var st = await AuthState.GetAuthenticationStateAsync();
+        _viewerId = Guid.TryParse(st.User.FindFirst("app_user_id")?.Value, out var uid) ? uid : sessionId;
+
+        var state = await Mediator.Send(new GetMyVideoStateQuery(_video.Id, _viewerId));
+        _myReaction = state.Reaction;
+        _isFavorite = state.IsFavorite;
+
         StateHasChanged();
+    }
+
+    void BuildQualityLabels()
+    {
+        _qualityLabels = new();
+        if (!string.IsNullOrWhiteSpace(_current480p))  _qualityLabels.Add("480p");
+        if (!string.IsNullOrWhiteSpace(_current720p))  _qualityLabels.Add("720p");
+        if (!string.IsNullOrWhiteSpace(_current1080p)) _qualityLabels.Add("1080p");
     }
 
     void SetDefaultSource()
@@ -429,38 +492,57 @@ else
         else
         {
             var ep = _video.Episodes.OrderBy(e => e.SeasonNumber).ThenBy(e => e.EpisodeNumber).FirstOrDefault();
-            if (ep is not null) SetEpisodeSource(ep);
+            if (ep is not null)
+            {
+                _currentSrc = ep.VideoUrl;
+                _current480p = ep.VideoUrl480p; _current720p = ep.VideoUrl720p; _current1080p = ep.VideoUrl1080p;
+            }
         }
     }
 
-    void SetEpisodeSource(VideoEpisodeDto ep)
-    {
-        _currentSrc = ep.VideoUrl;
-        _current480p = ep.VideoUrl480p; _current720p = ep.VideoUrl720p; _current1080p = ep.VideoUrl1080p;
-    }
-
+    // Kino bo'lsa to'liq ekranda ochiladi, serial bo'lsa qismlar sahifasiga o'tadi
     void StartWatching()
     {
-        _showPlayer = true;
+        if (_video is null) return;
+        if (_video.Type == VideoType.Series)
+        {
+            Nav.NavigateTo($"/video/{_video.Slug}/qismlar");
+            return;
+        }
         if (string.IsNullOrWhiteSpace(_currentSrc)) SetDefaultSource();
-    }
-
-    void PlayEpisode(VideoEpisodeDto ep)
-    {
-        SetEpisodeSource(ep);
         _showPlayer = true;
     }
 
-    async Task Like()
+    Task Like()    => ReactAsync(true);
+    Task Dislike() => ReactAsync(false);
+
+    async Task ReactAsync(bool isLike)
     {
-        if (_video is null) return;
-        _video.LikeCount = await Mediator.Send(new LikeVideoCommand(_video.Id));
+        if (_video is null || _reacting || _viewerId == Guid.Empty) return;
+        _reacting = true;
+        try
+        {
+            var r = await Mediator.Send(new SetVideoReactionCommand(_video.Id, _viewerId, isLike));
+            _video.LikeCount    = r.LikeCount;
+            _video.DislikeCount = r.DislikeCount;
+            _myReaction         = r.MyReaction;
+        }
+        finally { _reacting = false; }
     }
 
-    async Task Dislike()
+    async Task ToggleFavorite()
     {
-        if (_video is null) return;
-        _video.DislikeCount = await Mediator.Send(new DislikeVideoCommand(_video.Id));
+        if (_video is null || _savingFavorite || _viewerId == Guid.Empty) return;
+        _savingFavorite = true;
+        try { _isFavorite = await Mediator.Send(new ToggleVideoFavoriteCommand(_video.Id, _viewerId)); }
+        finally { _savingFavorite = false; }
+    }
+
+    static string Stars(double imdb10)
+    {
+        var filled = (int)Math.Round(imdb10 / 2);
+        filled = Math.Clamp(filled, 0, 5);
+        return new string('★', filled) + new string('☆', 5 - filled);
     }
 
     static string AgeLabel(ContentRating r) => r switch

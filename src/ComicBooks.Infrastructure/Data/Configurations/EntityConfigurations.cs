@@ -206,3 +206,22 @@ public class VideoViewConfiguration : IEntityTypeConfiguration<VideoView>
         builder.HasIndex(v => new { v.SessionId, v.VideoId, v.ViewedAt });
     }
 }
+
+public class VideoReactionConfiguration : IEntityTypeConfiguration<VideoReaction>
+{
+    public void Configure(EntityTypeBuilder<VideoReaction> builder)
+    {
+        builder.HasKey(r => r.Id);
+        // Bitta foydalanuvchi bitta videoga faqat bitta reaksiya qo'ya oladi
+        builder.HasIndex(r => new { r.ViewerId, r.VideoId }).IsUnique();
+    }
+}
+
+public class VideoFavoriteConfiguration : IEntityTypeConfiguration<VideoFavorite>
+{
+    public void Configure(EntityTypeBuilder<VideoFavorite> builder)
+    {
+        builder.HasKey(f => f.Id);
+        builder.HasIndex(f => new { f.ViewerId, f.VideoId }).IsUnique();
+    }
+}

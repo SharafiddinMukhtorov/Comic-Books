@@ -81,6 +81,40 @@
         window.scrollRow = function(id, amount){
             try { var e = document.getElementById(id); if (e) e.scrollBy({ left: amount, behavior: 'smooth' }); } catch(e){}
         };
+        // To'liq ekranli qatlam ochilganda sahifani qulflaydi.
+        // iOS ichki brauzerlarida position:fixed layout viewportga nisbatan siljib,
+        // orqadagi sahifa tepada ko'rinib qolardi — body'ni qotirish shuni yo'q qiladi.
+        window.scrollLock = {
+            on: function () {
+                try {
+                    var b = document.body;
+                    if (b.hasAttribute('data-lock-y')) return;
+                    var y = window.scrollY || window.pageYOffset || 0;
+                    b.setAttribute('data-lock-y', y);
+                    b.style.position = 'fixed';
+                    b.style.top = (-y) + 'px';
+                    b.style.left = '0';
+                    b.style.right = '0';
+                    b.style.width = '100%';
+                    b.style.overflow = 'hidden';
+                } catch (e) {}
+            },
+            off: function () {
+                try {
+                    var b = document.body;
+                    if (!b.hasAttribute('data-lock-y')) return;
+                    var y = parseInt(b.getAttribute('data-lock-y'), 10) || 0;
+                    b.removeAttribute('data-lock-y');
+                    b.style.position = '';
+                    b.style.top = '';
+                    b.style.left = '';
+                    b.style.right = '';
+                    b.style.width = '';
+                    b.style.overflow = '';
+                    window.scrollTo(0, y);
+                } catch (e) {}
+            }
+        };
     </script>
 
     <!-- Favicon (browser tab icon) -->

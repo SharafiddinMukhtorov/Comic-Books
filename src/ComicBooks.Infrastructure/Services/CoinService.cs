@@ -8,126 +8,216 @@ namespace ComicBooks.Infrastructure.Services;
 
 public class CoinService : ICoinService
 {
-    private readonly ApplicationDbContext _db;
-    public CoinService(ApplicationDbContext db) => _db = db;
+    private readonly IDbContextFactory<ApplicationDbContext> _factory;
+    public CoinService(IDbContextFactory<ApplicationDbContext> factory) => _factory = factory;
 
     public async Task<int> GetBalanceAsync(Guid userId, CancellationToken cancellationToken = default)
     {
-        var user = await _db.Users.FindAsync(new object[] { userId }, cancellationToken);
-        return user?.CoinBalance ?? 0;
+        await using var db = await _factory.CreateDbContextAsync(cancellationToken);
+        return await db.Users
+            .AsNoTracking()
+            .Where(u => u.Id == userId)
+            .Select(u => u.CoinBalance)
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<bool> HasAccessAsync(Guid userId, Guid chapterId, CancellationToken cancellationToken = default)
     {
-        var chapter = await _db.Chapters.FindAsync(new object[] { chapterId }, cancellationToken);
+        await using var db = await _factory.CreateDbContextAsync(cancellationToken);
+
+        var chapter = await db.Chapters
+            .AsNoTracking()
+            .Where(c => c.Id == chapterId)
+            .Select(c => new { c.IsLocked, c.CoinPrice })
+            .FirstOrDefaultAsync(cancellationToken);
+
         if (chapter is null) return false;
         if (!chapter.IsLocked || chapter.CoinPrice <= 0) return true;
-        return await _db.ChapterAccesses
+
+        return await db.ChapterAccesses
+            .AsNoTracking()
             .AnyAsync(a => a.UserId == userId && a.ChapterId == chapterId && !a.IsDeleted, cancellationToken);
     }
 
     public async Task<(bool Success, string Message)> SpendCoinsAsync(Guid userId, Guid chapterId, CancellationToken cancellationToken = default)
     {
-        var user = await _db.Users.FindAsync(new object[] { userId }, cancellationToken);
-        if (user is null) return (false, "Foydalanuvchi topilmadi");
+        await using var db = await _factory.CreateDbContextAsync(cancellationToken);
 
-        var chapter = await _db.Chapters.FindAsync(new object[] { chapterId }, cancellationToken);
+        var chapter = await db.Chapters
+            .AsNoTracking()
+            .Where(c => c.Id == chapterId)
+            .Select(c => new { c.ChapterNumber, c.IsLocked, c.CoinPrice })
+            .FirstOrDefaultAsync(cancellationToken);
         if (chapter is null) return (false, "Bob topilmadi");
 
         if (!chapter.IsLocked || chapter.CoinPrice <= 0) return (true, "Bepul bob");
 
-        bool alreadyOwned = await _db.ChapterAccesses
-            .AnyAsync(a => a.UserId == userId && a.ChapterId == chapterId && !a.IsDeleted, cancellationToken);
-        if (alreadyOwned) return (true, "Allaqachon sotib olingan");
+        if (!await db.Users.AsNoTracking().AnyAsync(u => u.Id == userId, cancellationToken))
+            return (false, "Foydalanuvchi topilmadi");
 
-        if (user.CoinBalance < chapter.CoinPrice)
-            return (false, $"Yetarli coin yo'q. Kerak: {chapter.CoinPrice}, Sizda: {user.CoinBalance}");
+        if (await db.ChapterAccesses.AsNoTracking()
+                .AnyAsync(a => a.UserId == userId && a.ChapterId == chapterId && !a.IsDeleted, cancellationToken))
+            return (true, "Allaqachon sotib olingan");
 
-        user.CoinBalance -= chapter.CoinPrice;
-        _db.CoinTransactions.Add(new CoinTransaction
+        var price = chapter.CoinPrice;
+
+        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+        try
         {
-            UserId = userId, Amount = -chapter.CoinPrice,
-            Type = CoinTransactionType.Spend,
-            Description = $"Chapter {chapter.ChapterNumber} uchun",
-            ChapterId = chapterId,
-        });
-        _db.ChapterAccesses.Add(new UserChapterAccess
+            // Balansni shart bilan atomar kamaytiramiz — parallel so'rovlarda ham
+            // manfiyga tushmaydi va eski keshdan qayta yozilmaydi.
+            var affected = await db.Users
+                .Where(u => u.Id == userId && u.CoinBalance >= price)
+                .ExecuteUpdateAsync(s => s.SetProperty(u => u.CoinBalance, u => u.CoinBalance - price),
+                    cancellationToken);
+
+            if (affected == 0)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                var balance = await db.Users.AsNoTracking()
+                    .Where(u => u.Id == userId).Select(u => u.CoinBalance)
+                    .FirstOrDefaultAsync(cancellationToken);
+                return (false, $"Yetarli coin yo'q. Kerak: {price}, Sizda: {balance}");
+            }
+
+            db.CoinTransactions.Add(new CoinTransaction
+            {
+                UserId = userId, Amount = -price,
+                Type = CoinTransactionType.Spend,
+                Description = $"Chapter {chapter.ChapterNumber} uchun",
+                ChapterId = chapterId,
+            });
+            db.ChapterAccesses.Add(new UserChapterAccess
+            {
+                UserId = userId, ChapterId = chapterId, CoinSpent = price,
+            });
+            await db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return (true, "Muvaffaqiyatli");
+        }
+        catch (DbUpdateException)
         {
-            UserId = userId, ChapterId = chapterId, CoinSpent = chapter.CoinPrice,
-        });
-        await _db.SaveChangesAsync(cancellationToken);
-        return (true, "Muvaffaqiyatli");
+            // Unique (UserId, ChapterId) — bir vaqtda ikki marta sotib olishga urinilgan.
+            // Tranzaksiya qaytarilgani uchun coin yechilmay qoladi.
+            await tx.RollbackAsync(cancellationToken);
+            return (true, "Allaqachon sotib olingan");
+        }
     }
 
     public async Task<bool> AddCoinsAsync(Guid userId, int amount, string description, string? telegramUsername = null, CancellationToken cancellationToken = default)
     {
-        var user = await _db.Users.FindAsync(new object[] { userId }, cancellationToken);
-        if (user is null) return false;
-        user.CoinBalance += amount;
-        _db.CoinTransactions.Add(new CoinTransaction
+        if (amount <= 0) return false;
+
+        await using var db = await _factory.CreateDbContextAsync(cancellationToken);
+        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var affected = await db.Users
+            .Where(u => u.Id == userId)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.CoinBalance, u => u.CoinBalance + amount),
+                cancellationToken);
+
+        if (affected == 0)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return false;
+        }
+
+        db.CoinTransactions.Add(new CoinTransaction
         {
             UserId = userId, Amount = amount,
             Type = CoinTransactionType.Purchase,
             Description = description,
             TelegramUsername = telegramUsername,
         });
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        await tx.CommitAsync(cancellationToken);
         return true;
     }
 
     public async Task<bool> RemoveCoinsAsync(Guid userId, int amount, string description, CancellationToken cancellationToken = default)
     {
-        var user = await _db.Users.FindAsync(new object[] { userId }, cancellationToken);
-        if (user is null) return false;
+        if (amount <= 0) return false;
+
+        await using var db = await _factory.CreateDbContextAsync(cancellationToken);
+        await using var tx = await db.Database.BeginTransactionAsync(cancellationToken);
+
+        var before = await db.Users.AsNoTracking()
+            .Where(u => u.Id == userId).Select(u => (int?)u.CoinBalance)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (before is null or <= 0)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return false;
+        }
+
         // Balansdan ko'p ayirmaymiz (manfiy bo'lib ketmasin)
-        var toRemove = Math.Min(Math.Max(amount, 0), user.CoinBalance);
-        if (toRemove <= 0) return false;
-        user.CoinBalance -= toRemove;
-        _db.CoinTransactions.Add(new CoinTransaction
+        var toRemove = Math.Min(amount, before.Value);
+
+        var affected = await db.Users
+            .Where(u => u.Id == userId && u.CoinBalance >= toRemove)
+            .ExecuteUpdateAsync(s => s.SetProperty(u => u.CoinBalance, u => u.CoinBalance - toRemove),
+                cancellationToken);
+
+        if (affected == 0)
+        {
+            await tx.RollbackAsync(cancellationToken);
+            return false;
+        }
+
+        db.CoinTransactions.Add(new CoinTransaction
         {
             UserId = userId, Amount = -toRemove,
             Type = CoinTransactionType.Refund,
             Description = description,
         });
-        await _db.SaveChangesAsync(cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        await tx.CommitAsync(cancellationToken);
         return true;
     }
 
     public async Task<AppUserDto?> FindUserAsync(string searchTerm, CancellationToken cancellationToken = default)
     {
-        var q = searchTerm.TrimStart('@').Trim().ToLower();
-        var user = await _db.Users.FirstOrDefaultAsync(u =>
-            u.Email.ToLower().Contains(q) ||
-            (u.TelegramUsername != null && u.TelegramUsername.ToLower().Contains(q)) ||
-            u.Name.ToLower().Contains(q), cancellationToken);
+        await using var db = await _factory.CreateDbContextAsync(cancellationToken);
 
-        if (user is null) return null;
-        return new AppUserDto
-        {
-            Id = user.Id, Name = user.Name, Email = user.Email,
-            Picture = user.Picture, CoinBalance = user.CoinBalance,
-            TelegramUsername = user.TelegramUsername, IsAdmin = user.IsAdmin,
-        };
+        var q = searchTerm.TrimStart('@').Trim().ToLower();
+        return await db.Users
+            .AsNoTracking()
+            .Where(u => u.Email.ToLower().Contains(q) ||
+                        (u.TelegramUsername != null && u.TelegramUsername.ToLower().Contains(q)) ||
+                        u.Name.ToLower().Contains(q))
+            .Select(u => new AppUserDto
+            {
+                Id = u.Id, Name = u.Name, Email = u.Email,
+                Picture = u.Picture, CoinBalance = u.CoinBalance,
+                TelegramUsername = u.TelegramUsername, IsAdmin = u.IsAdmin,
+            })
+            .FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<List<CoinTransactionDto>> GetRecentTransactionsAsync(int take = 50, CancellationToken cancellationToken = default)
     {
-        var txs = await _db.CoinTransactions
+        await using var db = await _factory.CreateDbContextAsync(cancellationToken);
+
+        var txs = await db.CoinTransactions
+            .AsNoTracking()
             .Where(t => !t.IsDeleted)
             .OrderByDescending(t => t.CreatedAt)
             .Take(take)
             .ToListAsync(cancellationToken);
 
         var userIds = txs.Select(t => t.UserId).Distinct().ToList();
-        var users = await _db.Users
+        var users = await db.Users
+            .AsNoTracking()
             .Where(u => userIds.Contains(u.Id))
             .Select(u => new { u.Id, u.Name })
             .ToDictionaryAsync(u => u.Id, u => u.Name, cancellationToken);
 
-        // Sarflangan bo'lsa — qaysi bob, qaysi komik ekanini alohida so'rovsiz (jadval saqlagan
-        // matn emas, hozirgi Chapter/Comic ma'lumotidan) ko'rsatamiz — nomi o'zgargan bo'lsa ham to'g'ri chiqadi.
+        // Sarflangan bo'lsa — qaysi bob, qaysi komik ekanini hozirgi Chapter/Comic
+        // ma'lumotidan ko'rsatamiz — nomi o'zgargan bo'lsa ham to'g'ri chiqadi.
         var chapterIds = txs.Where(t => t.ChapterId.HasValue).Select(t => t.ChapterId!.Value).Distinct().ToList();
-        var chapterInfo = await _db.Chapters
+        var chapterInfo = await db.Chapters
+            .AsNoTracking()
             .IgnoreQueryFilters()
             .Where(ch => chapterIds.Contains(ch.Id))
             .Select(ch => new { ch.Id, ch.ChapterNumber, ComicTitle = ch.Comic!.Title })

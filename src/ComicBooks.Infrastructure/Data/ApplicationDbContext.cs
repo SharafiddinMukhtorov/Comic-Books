@@ -27,6 +27,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<VideoCastMember> VideoCastMembers => Set<VideoCastMember>();
     public DbSet<VideoGenre> VideoGenres => Set<VideoGenre>();
     public DbSet<VideoView> VideoViews => Set<VideoView>();
+    public DbSet<VideoReaction> VideoReactions => Set<VideoReaction>();
+    public DbSet<VideoFavorite> VideoFavorites => Set<VideoFavorite>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

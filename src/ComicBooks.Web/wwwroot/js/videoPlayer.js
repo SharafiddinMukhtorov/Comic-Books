@@ -33,6 +33,10 @@ window.videoPlayer = (function () {
             var volume     = q(root, '[data-vp="volume"]');
             var timeLbl    = q(root, '[data-vp="time"]');
             var fullBtn    = q(root, '[data-vp="fullscreen"]');
+            var back5      = q(root, '[data-vp="back5"]');
+            var fwd5       = q(root, '[data-vp="fwd5"]');
+            var icFsOn     = fullBtn ? fullBtn.querySelector('.vp-ic-fs-on') : null;
+            var icFsOff    = fullBtn ? fullBtn.querySelector('.vp-ic-fs-off') : null;
             if (!video) return;
 
             if (src) video.src = src;
@@ -118,10 +122,70 @@ window.videoPlayer = (function () {
                 video.muted = !video.muted;
                 if (volume) volume.value = video.muted ? 0 : (video.volume * 100 || 100);
             };
-            if (fullBtn) fullBtn.onclick = function () {
-                if (root.requestFullscreen) root.requestFullscreen();
-                else if (video.requestFullscreen) video.requestFullscreen();
-            };
+
+            // ── 5 soniya orqaga / oldinga ──
+            function skip(sec) {
+                var d = video.duration;
+                var t = video.currentTime + sec;
+                if (isFinite(d)) t = Math.min(t, d);
+                video.currentTime = Math.max(0, t);
+                updateProgress();
+                showControls();
+            }
+            if (back5) back5.onclick = function (e) { e.stopPropagation(); skip(-5); };
+            if (fwd5)  fwd5.onclick  = function (e) { e.stopPropagation(); skip(5); };
+
+            // ── To'liq ekran ──
+            // iOS Safari Element.requestFullscreen ni qo'llab-quvvatlamaydi —
+            // u yerda faqat video elementining webkitEnterFullscreen'i ishlaydi.
+            function fsElement() {
+                return document.fullscreenElement || document.webkitFullscreenElement || null;
+            }
+            // Telefonda to'liq ekranga o'tganda gorizontalga buramiz —
+            // video ekranning to'liq eni bilan katta ko'rinadi.
+            function lockLandscape() {
+                try {
+                    if (screen.orientation && screen.orientation.lock) {
+                        var p = screen.orientation.lock('landscape');
+                        if (p && p.catch) p.catch(function () {});
+                    }
+                } catch (e) {}
+            }
+            function unlockOrientation() {
+                try {
+                    if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock();
+                } catch (e) {}
+            }
+            function toggleFullscreen() {
+                if (fsElement()) {
+                    if (document.exitFullscreen) document.exitFullscreen();
+                    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+                    return;
+                }
+                if (root.requestFullscreen) {
+                    var p = root.requestFullscreen();
+                    if (p && p.then) p.then(lockLandscape).catch(function () {});
+                    else lockLandscape();
+                } else if (root.webkitRequestFullscreen) {
+                    root.webkitRequestFullscreen();
+                    lockLandscape();
+                } else if (video.webkitEnterFullscreen) {
+                    // iOS: o'zining native pleyeri ochiladi va burilishni o'zi boshqaradi
+                    video.webkitEnterFullscreen();
+                } else if (video.webkitEnterFullScreen) {
+                    video.webkitEnterFullScreen();
+                }
+            }
+            function updateFsIcon() {
+                var on = !!fsElement();
+                if (icFsOn)  icFsOn.style.display  = on ? '' : 'none';
+                if (icFsOff) icFsOff.style.display = on ? 'none' : '';
+                if (!on) unlockOrientation();
+            }
+            if (fullBtn) fullBtn.onclick = function (e) { e.stopPropagation(); toggleFullscreen(); };
+            document.addEventListener('fullscreenchange', updateFsIcon);
+            document.addEventListener('webkitfullscreenchange', updateFsIcon);
+            updateFsIcon();
 
             root.addEventListener('mousemove', showControls);
             root.addEventListener('touchstart', showControls, { passive: true });
@@ -137,13 +201,19 @@ window.videoPlayer = (function () {
                     ['play', onPlay], ['pause', onPause], ['ended', onPause],
                     ['waiting', onWaiting], ['playing', onPlaying], ['canplay', onCanPlay]
                 ],
+                docListeners: [
+                    ['fullscreenchange', updateFsIcon], ['webkitfullscreenchange', updateFsIcon]
+                ],
                 hideTimer: function () { return hideTimer; }
             };
         },
 
         play: function (containerId) {
             var p = _players[containerId];
-            if (p) p.video.play();
+            if (!p) return;
+            // Brauzer avtomatik ijroni bloklashi mumkin — bunda markazdagi play tugmasi qoladi
+            var pr = p.video.play();
+            if (pr && pr.catch) pr.catch(function () {});
         },
 
         setSrc: function (containerId, src) {
@@ -178,7 +248,11 @@ window.videoPlayer = (function () {
             var p = _players[containerId];
             if (!p) return;
             p.listeners.forEach(function (pair) { p.video.removeEventListener(pair[0], pair[1]); });
+            if (p.docListeners) {
+                p.docListeners.forEach(function (pair) { document.removeEventListener(pair[0], pair[1]); });
+            }
             try { p.video.pause(); } catch (e) {}
+            try { p.video.removeAttribute('src'); p.video.load(); } catch (e) {}
             delete _players[containerId];
         }
     };

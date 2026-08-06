@@ -8,12 +8,15 @@ namespace ComicBooks.Infrastructure.Services;
 
 public class CoinPackageService : ICoinPackageService
 {
-    private readonly ApplicationDbContext _db;
-    public CoinPackageService(ApplicationDbContext db) => _db = db;
+    private readonly IDbContextFactory<ApplicationDbContext> _factory;
+    public CoinPackageService(IDbContextFactory<ApplicationDbContext> factory) => _factory = factory;
 
     public async Task<List<CoinPackageDto>> GetAllAsync(CancellationToken ct = default)
     {
-        return await _db.CoinPackages
+        await using var db = await _factory.CreateDbContextAsync(ct);
+
+        return await db.CoinPackages
+            .AsNoTracking()
             .Where(p => !p.IsDeleted)
             .OrderBy(p => p.SortOrder).ThenBy(p => p.CoinAmount)
             .Select(p => new CoinPackageDto
@@ -27,50 +30,56 @@ public class CoinPackageService : ICoinPackageService
 
     public async Task<CoinPackageDto> CreateAsync(CoinPackageDto dto, CancellationToken ct = default)
     {
+        await using var db = await _factory.CreateDbContextAsync(ct);
+
         // Faqat bitta mashhur bo'lishi mumkin
         if (dto.IsPopular)
-            await ClearPopularFlagAsync(null, ct);
+            await ClearPopularFlagAsync(db, null, ct);
 
         var entity = new CoinPackage
         {
             Name = dto.Name, CoinAmount = dto.CoinAmount, BonusCoins = dto.BonusCoins,
             Price = dto.Price, IsPopular = dto.IsPopular, SortOrder = dto.SortOrder
         };
-        _db.CoinPackages.Add(entity);
-        await _db.SaveChangesAsync(ct);
+        db.CoinPackages.Add(entity);
+        await db.SaveChangesAsync(ct);
         dto.Id = entity.Id;
         return dto;
     }
 
     public async Task<bool> UpdateAsync(CoinPackageDto dto, CancellationToken ct = default)
     {
-        var entity = await _db.CoinPackages.FindAsync(new object[] { dto.Id }, ct);
+        await using var db = await _factory.CreateDbContextAsync(ct);
+
+        var entity = await db.CoinPackages.FirstOrDefaultAsync(p => p.Id == dto.Id, ct);
         if (entity is null) return false;
 
         // Faqat bitta mashhur — boshqalardan olib tashlaymiz
         if (dto.IsPopular)
-            await ClearPopularFlagAsync(dto.Id, ct);
+            await ClearPopularFlagAsync(db, dto.Id, ct);
 
         entity.Name = dto.Name; entity.CoinAmount = dto.CoinAmount;
         entity.BonusCoins = dto.BonusCoins; entity.Price = dto.Price;
         entity.IsPopular = dto.IsPopular; entity.SortOrder = dto.SortOrder;
-        await _db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);
         return true;
     }
 
     public async Task<bool> DeleteAsync(Guid id, CancellationToken ct = default)
     {
-        var entity = await _db.CoinPackages.FindAsync(new object[] { id }, ct);
+        await using var db = await _factory.CreateDbContextAsync(ct);
+
+        var entity = await db.CoinPackages.FirstOrDefaultAsync(p => p.Id == id, ct);
         if (entity is null) return false;
         entity.IsDeleted = true;
-        await _db.SaveChangesAsync(ct);
+        await db.SaveChangesAsync(ct);
         return true;
     }
 
     // Boshqa barcha paketlardan IsPopular = false qilamiz (except exceptId)
-    private async Task ClearPopularFlagAsync(Guid? exceptId, CancellationToken ct)
+    private static async Task ClearPopularFlagAsync(ApplicationDbContext db, Guid? exceptId, CancellationToken ct)
     {
-        var others = await _db.CoinPackages
+        var others = await db.CoinPackages
             .Where(p => !p.IsDeleted && p.IsPopular && (exceptId == null || p.Id != exceptId))
             .ToListAsync(ct);
         foreach (var p in others) p.IsPopular = false;

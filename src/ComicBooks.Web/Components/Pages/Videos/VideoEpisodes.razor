@@ -1,0 +1,267 @@
+@page "/video/{Slug}/qismlar"
+@layout MinimalLayout
+@inject IMediator Mediator
+@inject NavigationManager Nav
+
+<PageTitle>@(_video?.Title ?? "Qismlar")</PageTitle>
+
+<style>
+    .ve-shell {
+        min-height: 100vh;
+        background: #0b0c11;
+        color: #f0f0f8;
+        padding-bottom: 40px;
+    }
+
+    /* ── Sarlavha qatori: orqaga + markazda nom ── */
+    .ve-topbar {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 14px 16px;
+        background: #0b0c11;
+    }
+    .ve-back {
+        width: 38px; height: 38px;
+        flex-shrink: 0;
+        display: flex; align-items: center; justify-content: center;
+        color: #fff;
+        text-decoration: none;
+        font-size: 26px;
+        line-height: 1;
+    }
+    .ve-topbar-title {
+        flex: 1;
+        text-align: center;
+        font-size: 18px;
+        font-weight: 800;
+        overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        padding-right: 38px;
+    }
+
+    /* ── Fasl tablari (ostidagi chiziq bilan) ── */
+    .ve-seasons {
+        display: flex;
+        justify-content: center;
+        gap: 26px;
+        padding: 6px 16px 18px;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .ve-seasons::-webkit-scrollbar { display: none; }
+    .ve-season {
+        background: none;
+        border: none;
+        color: rgba(255,255,255,0.5);
+        font-family: inherit;
+        font-size: 15px;
+        font-weight: 600;
+        padding: 4px 2px 9px;
+        cursor: pointer;
+        position: relative;
+        white-space: nowrap;
+    }
+    .ve-season.active { color: #fff; font-weight: 700; }
+    .ve-season.active::after {
+        content: '';
+        position: absolute;
+        left: 0; right: 0; bottom: 0;
+        height: 3px;
+        border-radius: 2px;
+        background: #fff;
+    }
+
+    /* ── Qism kartalari ── */
+    .ve-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(78px, 1fr));
+        gap: 16px 10px;
+        padding: 0 14px;
+    }
+    .ve-card {
+        background: none;
+        border: none;
+        padding: 0;
+        color: inherit;
+        font-family: inherit;
+        cursor: pointer;
+        text-align: center;
+        display: block;
+        width: 100%;
+    }
+    .ve-card-img {
+        position: relative;
+        width: 100%;
+        border-radius: 10px;
+        overflow: hidden;
+        background: #15171f;
+    }
+    .ve-card-img img {
+        width: 100%;
+        aspect-ratio: 2/3;
+        object-fit: cover;
+        display: block;
+        transition: transform 0.25s;
+    }
+    .ve-card:hover .ve-card-img img { transform: scale(1.05); }
+    .ve-card.active .ve-card-img { box-shadow: 0 0 0 2px #3b82f6; }
+    .ve-quality {
+        position: absolute;
+        top: 6px; right: 6px;
+        background: rgba(0,0,0,0.62);
+        backdrop-filter: blur(4px);
+        color: #fff;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        border-radius: 5px;
+    }
+    .ve-card-label {
+        font-size: 12.5px;
+        font-weight: 600;
+        color: rgba(255,255,255,0.82);
+        margin-top: 8px;
+    }
+
+    .ve-empty { text-align: center; padding: 60px 20px; opacity: 0.45; font-size: 14px; }
+
+    @@media (min-width: 700px) {
+        .ve-grid { grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 20px 14px; max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+        .ve-topbar { max-width: 1100px; margin: 0 auto; }
+        .ve-topbar-title { font-size: 20px; }
+    }
+</style>
+
+@if (_loading)
+{
+    <div class="ve-shell" style="display:flex;justify-content:center;align-items:center;">
+        <MudProgressCircular Color="Color.Primary" Indeterminate="true" Size="Size.Large" />
+    </div>
+}
+else if (_video is null)
+{
+    <div class="ve-shell"><div class="ve-empty">Video topilmadi.</div></div>
+}
+else
+{
+    <div class="ve-shell">
+
+        <div class="ve-topbar">
+            <a href="/video/@_video.Slug" class="ve-back" aria-label="Orqaga">‹</a>
+            <div class="ve-topbar-title">@_video.Title</div>
+        </div>
+
+        @if (_seasons.Count > 0)
+        {
+            <div class="ve-seasons">
+                @foreach (var s in _seasons)
+                {
+                    int season = s;
+                    <button type="button" class="ve-season @(season == _activeSeason ? "active" : "")"
+                            @onclick="@(() => _activeSeason = season)">@(season)-fasl</button>
+                }
+            </div>
+        }
+
+        @{
+            var eps = _video.Episodes
+                .Where(e => e.SeasonNumber == _activeSeason)
+                .OrderByDescending(e => e.EpisodeNumber)
+                .ToList();
+        }
+
+        @if (eps.Count == 0)
+        {
+            <div class="ve-empty">Bu faslda hali qismlar yo'q.</div>
+        }
+        else
+        {
+            <div class="ve-grid">
+                @foreach (var ep in eps)
+                {
+                    var episode = ep;
+                    <button type="button" class="ve-card @(_current?.Id == episode.Id ? "active" : "")"
+                            @onclick="@(() => PlayEpisode(episode))">
+                        <div class="ve-card-img">
+                            <img src="@(episode.ThumbnailUrl ?? _video.PosterImageUrl ?? $"https://picsum.photos/seed/{_video.Slug}-{episode.SeasonNumber}-{episode.EpisodeNumber}/300/450")"
+                                 onerror="this.onerror=null;this.src='https://picsum.photos/seed/@(_video.Slug)e@(episode.EpisodeNumber)/300/450'"
+                                 alt="@(episode.EpisodeNumber)-qism" />
+                            @{ var q = TopQuality(episode); }
+                            @if (q is not null)
+                            {
+                                <span class="ve-quality">@q</span>
+                            }
+                        </div>
+                        <div class="ve-card-label">@(episode.EpisodeNumber)-qism</div>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    @if (_current is not null)
+    {
+        <FullscreenPlayer Src="@_current.VideoUrl" Url480p="@_current.VideoUrl480p"
+                          Url720p="@_current.VideoUrl720p" Url1080p="@_current.VideoUrl1080p"
+                          Title="@_video.Title"
+                          Subtitle="@($"{(_seasons.Count > 1 ? $"{_current.SeasonNumber}-fasl, " : "")}{_current.EpisodeNumber}-qism")"
+                          OnClose="ClosePlayer" />
+    }
+}
+
+@code {
+    [Parameter] public string Slug { get; set; } = "";
+    [SupplyParameterFromQuery(Name = "ep")] public Guid? EpisodeId { get; set; }
+
+    VideoDto? _video;
+    VideoEpisodeDto? _current;
+    List<int> _seasons = new();
+    int _activeSeason = 1;
+    bool _loading = true;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _loading = true;
+        _video = await Mediator.Send(new GetVideoBySlugQuery(Slug));
+
+        if (_video is not null)
+        {
+            // Film bo'lsa qismlar sahifasi kerak emas
+            if (_video.Type != VideoType.Series || _video.Episodes.Count == 0)
+            {
+                Nav.NavigateTo($"/video/{_video.Slug}", replace: true);
+                return;
+            }
+
+            _seasons = _video.Episodes.Select(e => e.SeasonNumber).Distinct().OrderBy(s => s).ToList();
+            _activeSeason = _seasons.FirstOrDefault(1);
+
+            if (EpisodeId.HasValue)
+            {
+                var ep = _video.Episodes.FirstOrDefault(e => e.Id == EpisodeId.Value);
+                if (ep is not null)
+                {
+                    _current = ep;
+                    _activeSeason = ep.SeasonNumber;
+                }
+            }
+        }
+
+        _loading = false;
+    }
+
+    void PlayEpisode(VideoEpisodeDto ep) => _current = ep;
+
+    void ClosePlayer() => _current = null;
+
+    static string? TopQuality(VideoEpisodeDto ep)
+    {
+        if (!string.IsNullOrWhiteSpace(ep.VideoUrl1080p)) return "1080p";
+        if (!string.IsNullOrWhiteSpace(ep.VideoUrl720p))  return "720p";
+        if (!string.IsNullOrWhiteSpace(ep.VideoUrl480p))  return "480p";
+        return null;
+    }
+}

@@ -24,6 +24,8 @@ public interface IApplicationDbContext
     DbSet<VideoCastMember> VideoCastMembers { get; }
     DbSet<VideoGenre> VideoGenres { get; }
     DbSet<VideoView> VideoViews { get; }
+    DbSet<VideoReaction> VideoReactions { get; }
+    DbSet<VideoFavorite> VideoFavorites { get; }
 
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

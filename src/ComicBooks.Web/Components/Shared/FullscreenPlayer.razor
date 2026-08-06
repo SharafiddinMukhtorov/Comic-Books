@@ -1,0 +1,55 @@
+@* Kino/qismni to'liq ekranda ochadigan qatlam — VideoDetail va VideoEpisodes uchun umumiy *@
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="fsp-overlay">
+    <div class="fsp-bar">
+        <button type="button" class="fsp-close" @onclick="Close" aria-label="Yopish">✕</button>
+        <div>
+            <div class="fsp-title">@Title</div>
+            @if (!string.IsNullOrWhiteSpace(Subtitle))
+            {
+                <div class="fsp-sub">@Subtitle</div>
+            }
+        </div>
+    </div>
+    <div class="fsp-body">
+        <div class="fsp-player">
+            <VideoPlayer Src="@Src" Url480p="@Url480p" Url720p="@Url720p" Url1080p="@Url1080p" AutoPlay="true" />
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Src { get; set; } = "";
+    [Parameter] public string? Url480p { get; set; }
+    [Parameter] public string? Url720p { get; set; }
+    [Parameter] public string? Url1080p { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    bool _locked;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || _locked) return;
+        _locked = true;
+        try { await JS.InvokeVoidAsync("scrollLock.on"); } catch { }
+    }
+
+    async Task Close()
+    {
+        await UnlockAsync();
+        await OnClose.InvokeAsync();
+    }
+
+    async Task UnlockAsync()
+    {
+        if (!_locked) return;
+        _locked = false;
+        try { await JS.InvokeVoidAsync("scrollLock.off"); } catch { }
+    }
+
+    public async ValueTask DisposeAsync() => await UnlockAsync();
+}

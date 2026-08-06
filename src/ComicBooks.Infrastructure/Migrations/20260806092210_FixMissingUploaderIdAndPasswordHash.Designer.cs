@@ -3,6 +3,7 @@ using System;
 using ComicBooks.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace ComicBooks.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260806092210_FixMissingUploaderIdAndPasswordHash")]
+    partial class FixMissingUploaderIdAndPasswordHash
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "9.0.0");
@@ -766,35 +769,6 @@ namespace ComicBooks.Infrastructure.Migrations
                     b.ToTable("VideoEpisodes");
                 });
 
-            modelBuilder.Entity("ComicBooks.Domain.Entities.VideoFavorite", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("VideoId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("ViewerId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ViewerId", "VideoId")
-                        .IsUnique();
-
-                    b.ToTable("VideoFavorites");
-                });
-
             modelBuilder.Entity("ComicBooks.Domain.Entities.VideoGenre", b =>
                 {
                     b.Property<Guid>("VideoId")
@@ -808,38 +782,6 @@ namespace ComicBooks.Infrastructure.Migrations
                     b.HasIndex("GenreId");
 
                     b.ToTable("VideoGenres");
-                });
-
-            modelBuilder.Entity("ComicBooks.Domain.Entities.VideoReaction", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<bool>("IsLike")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("VideoId")
-                        .HasColumnType("TEXT");
-
-                    b.Property<Guid>("ViewerId")
-                        .HasColumnType("TEXT");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ViewerId", "VideoId")
-                        .IsUnique();
-
-                    b.ToTable("VideoReactions");
                 });
 
             modelBuilder.Entity("ComicBooks.Domain.Entities.VideoView", b =>

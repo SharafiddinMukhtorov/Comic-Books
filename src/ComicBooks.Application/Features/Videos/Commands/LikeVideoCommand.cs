@@ -1,47 +1,108 @@
 using ComicBooks.Application.Common.Interfaces;
+using ComicBooks.Domain.Entities;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
 
 namespace ComicBooks.Application.Features.Videos.Commands;
 
-public record LikeVideoCommand(Guid VideoId) : IRequest<int>;
+public record VideoReactionResult(int LikeCount, int DislikeCount, bool? MyReaction);
 
-public class LikeVideoCommandHandler : IRequestHandler<LikeVideoCommand, int>
+// IsLike = true → like, false → dislike.
+// Xuddi shu tugma qayta bosilsa reaksiya bekor qilinadi, boshqasi bosilsa almashadi.
+public record SetVideoReactionCommand(Guid VideoId, Guid ViewerId, bool IsLike) : IRequest<VideoReactionResult>;
+
+public class SetVideoReactionCommandHandler : IRequestHandler<SetVideoReactionCommand, VideoReactionResult>
 {
     private readonly IApplicationDbContext _context;
+    public SetVideoReactionCommandHandler(IApplicationDbContext context) => _context = context;
 
-    public LikeVideoCommandHandler(IApplicationDbContext context) => _context = context;
-
-    public async Task<int> Handle(LikeVideoCommand request, CancellationToken cancellationToken)
+    public async Task<VideoReactionResult> Handle(SetVideoReactionCommand request, CancellationToken ct)
     {
-        await _context.Videos
-            .Where(v => v.Id == request.VideoId)
-            .ExecuteUpdateAsync(s => s.SetProperty(v => v.LikeCount, v => v.LikeCount + 1), cancellationToken);
+        if (request.ViewerId == Guid.Empty)
+            return await CountsAsync(request.VideoId, null, ct);
 
-        return await _context.Videos
-            .Where(v => v.Id == request.VideoId)
-            .Select(v => v.LikeCount)
-            .FirstOrDefaultAsync(cancellationToken);
+        var existing = await _context.VideoReactions
+            .FirstOrDefaultAsync(r => r.VideoId == request.VideoId && r.ViewerId == request.ViewerId, ct);
+
+        bool? mine;
+        if (existing is null)
+        {
+            _context.VideoReactions.Add(new VideoReaction
+            {
+                VideoId  = request.VideoId,
+                ViewerId = request.ViewerId,
+                IsLike   = request.IsLike
+            });
+            mine = request.IsLike;
+        }
+        else if (!existing.IsDeleted && existing.IsLike == request.IsLike)
+        {
+            existing.IsDeleted = true;
+            existing.UpdatedAt = DateTime.UtcNow;
+            mine = null;
+        }
+        else
+        {
+            existing.IsDeleted = false;
+            existing.IsLike    = request.IsLike;
+            existing.UpdatedAt = DateTime.UtcNow;
+            mine = request.IsLike;
+        }
+
+        await _context.SaveChangesAsync(ct);
+        return await CountsAsync(request.VideoId, mine, ct);
+    }
+
+    // Sanoqlar reaksiyalar jadvalidan qayta hisoblanadi — ustma-ust bosish sanoqni oshirmaydi
+    private async Task<VideoReactionResult> CountsAsync(Guid videoId, bool? mine, CancellationToken ct)
+    {
+        var likes = await _context.VideoReactions
+            .CountAsync(r => r.VideoId == videoId && r.IsLike && !r.IsDeleted, ct);
+        var dislikes = await _context.VideoReactions
+            .CountAsync(r => r.VideoId == videoId && !r.IsLike && !r.IsDeleted, ct);
+
+        await _context.Videos
+            .Where(v => v.Id == videoId)
+            .ExecuteUpdateAsync(s => s
+                .SetProperty(v => v.LikeCount, likes)
+                .SetProperty(v => v.DislikeCount, dislikes), ct);
+
+        return new VideoReactionResult(likes, dislikes, mine);
     }
 }
 
-public record DislikeVideoCommand(Guid VideoId) : IRequest<int>;
+public record ToggleVideoFavoriteCommand(Guid VideoId, Guid ViewerId) : IRequest<bool>;
 
-public class DislikeVideoCommandHandler : IRequestHandler<DislikeVideoCommand, int>
+public class ToggleVideoFavoriteCommandHandler : IRequestHandler<ToggleVideoFavoriteCommand, bool>
 {
     private readonly IApplicationDbContext _context;
+    public ToggleVideoFavoriteCommandHandler(IApplicationDbContext context) => _context = context;
 
-    public DislikeVideoCommandHandler(IApplicationDbContext context) => _context = context;
-
-    public async Task<int> Handle(DislikeVideoCommand request, CancellationToken cancellationToken)
+    public async Task<bool> Handle(ToggleVideoFavoriteCommand request, CancellationToken ct)
     {
-        await _context.Videos
-            .Where(v => v.Id == request.VideoId)
-            .ExecuteUpdateAsync(s => s.SetProperty(v => v.DislikeCount, v => v.DislikeCount + 1), cancellationToken);
+        if (request.ViewerId == Guid.Empty) return false;
 
-        return await _context.Videos
-            .Where(v => v.Id == request.VideoId)
-            .Select(v => v.DislikeCount)
-            .FirstOrDefaultAsync(cancellationToken);
+        var existing = await _context.VideoFavorites
+            .FirstOrDefaultAsync(f => f.VideoId == request.VideoId && f.ViewerId == request.ViewerId, ct);
+
+        bool result;
+        if (existing is null)
+        {
+            _context.VideoFavorites.Add(new VideoFavorite
+            {
+                VideoId  = request.VideoId,
+                ViewerId = request.ViewerId
+            });
+            result = true;
+        }
+        else
+        {
+            existing.IsDeleted = !existing.IsDeleted;
+            existing.UpdatedAt = DateTime.UtcNow;
+            result = !existing.IsDeleted;
+        }
+
+        await _context.SaveChangesAsync(ct);
+        return result;
     }
 }

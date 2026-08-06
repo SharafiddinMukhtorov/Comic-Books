@@ -1,5 +1,7 @@
 @page "/videos"
 @inject IMediator Mediator
+@inject SessionService SessionSvc
+@inject AuthenticationStateProvider AuthState
 
 <PageTitle>Videolar - Manga Dunyo</PageTitle>
 
@@ -16,6 +18,9 @@
         border-radius: 2px;
     }
     .vh-row { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 6px; }
+
+    /* Sevimlilar — qizil chiziqcha bilan ajratiladi */
+    .vh-fav-title::before { background: linear-gradient(180deg, #f87171, #ef4444); }
 
     @@media (max-width: 768px) {
         .vh-body { padding: 18px 16px 28px; }
@@ -36,6 +41,21 @@ else
     }
 
     <div class="vh-body">
+        @if (_favorites.Count > 0)
+        {
+            <div class="vh-section">
+                <div class="vh-section-header">
+                    <span class="vh-section-title vh-fav-title">Sevimlilar</span>
+                </div>
+                <div class="vh-row drag-scroll">
+                    @foreach (var v in _favorites)
+                    {
+                        <VideoCard Video="v" />
+                    }
+                </div>
+            </div>
+        }
+
         @if (_movies.Count > 0)
         {
             <div class="vh-section">
@@ -77,6 +97,7 @@ else
     List<VideoDto> _featured = new();
     List<VideoDto> _movies = new();
     List<VideoDto> _series = new();
+    List<VideoDto> _favorites = new();
     bool _loading = true;
 
     protected override async Task OnInitializedAsync()
@@ -91,5 +112,21 @@ else
         _series = seriesPage.Items;
 
         _loading = false;
+    }
+
+    // Sevimlilar sessiya Id ga bog'liq — u faqat JS (localStorage) orqali olinadi,
+    // shuning uchun sahifa chizilgandan keyin yuklanadi.
+    bool _favoritesLoaded;
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_loading || _favoritesLoaded) return;
+        _favoritesLoaded = true;
+
+        var sessionId = await SessionSvc.GetSessionIdAsync();
+        var st = await AuthState.GetAuthenticationStateAsync();
+        var viewerId = Guid.TryParse(st.User.FindFirst("app_user_id")?.Value, out var uid) ? uid : sessionId;
+
+        _favorites = await Mediator.Send(new GetMyFavoriteVideosQuery(viewerId));
+        if (_favorites.Count > 0) StateHasChanged();
     }
 }

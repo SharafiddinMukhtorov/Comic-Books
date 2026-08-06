@@ -28,7 +28,7 @@ public class GetUserProfileQueryHandler : IRequestHandler<GetUserProfileQuery, U
 
     public async Task<UserProfileDto?> Handle(GetUserProfileQuery req, CancellationToken ct)
     {
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == req.UserId, ct);
+        var user = await _db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == req.UserId, ct);
         if (user is null) return null;
 
         var bookmarkCount = await _db.UserBookmarks
